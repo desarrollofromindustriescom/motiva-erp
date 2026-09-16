@@ -28,6 +28,29 @@ services:
          interval: 5s
          timeout: 10s
          retries: 5
+   golang-api:
+      container_name: motiva-goapi
+      restart: unless-stopped
+      build:
+         context: ./backend/
+         dockerfile: Dockerfile
+      ports:
+         - "${API_PORT}:${API_PORT}"
+      volumes:
+         - ./backend:/app
+      networks:
+         - motiva_net
+      environment:
+         - API_PORT=${API_PORT}
+         - DB_HOST=${DB_HOST}
+         - DB_PORT=${DB_PORT}
+         - POSTGRES_DB=${POSTGRES_DB}
+         - POSTGRES_USER=${POSTGRES_USER}
+         - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      depends_on:
+         postgres-db:
+            condition: service_healthy
+            restart: true
 
 volumes:
    pgdata:
