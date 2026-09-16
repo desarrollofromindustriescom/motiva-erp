@@ -8,6 +8,8 @@ ROOT_DIR="/docker-entrypoint-initdb.d"
 FILES=(
    "schema/types"
    "schema/schema"
+
+   "seeds/status"
 )
 
 # Iterate each sql file name and check if
