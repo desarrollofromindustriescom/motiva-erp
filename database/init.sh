@@ -11,6 +11,7 @@ FILES=(
 
    "seeds/status"
    "seeds/users"
+   "seeds/settings"
 )
 
 # Iterate each sql file name and check if

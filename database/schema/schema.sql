@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS Users (
    account_clabe VARCHAR(18),
    account_bank VARCHAR(128),
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '9e150222-2e27-464d-9356-f4e2515d5755'
 );
 
 CREATE TABLE IF NOT EXISTS Sessions (
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS Sessions (
    last_login TIMESTAMP NOT NULL,
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
    user_id UUID NOT NULL REFERENCES Users(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '9e150222-2e27-464d-9356-f4e2515d5755'
 );
 
 CREATE TABLE IF NOT EXISTS Settings (
@@ -39,14 +39,14 @@ CREATE TABLE IF NOT EXISTS Settings (
    slug VARCHAR(64) NOT NULL,
    value INTEGER NOT NULL,
    unit SETTINGS_UNIT NOT NULL,
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '9e150222-2e27-464d-9356-f4e2515d5755'
 );
 
 CREATE TABLE IF NOT EXISTS CashBalanceCycles (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    reward_cycle INTEGER NOT NULL,
    weight INTEGER NOT NULL,
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '9e150222-2e27-464d-9356-f4e2515d5755'
 );
 
 CREATE TABLE IF NOT EXISTS CashBalances (
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS CashBalances (
    last_update TIMESTAMP NOT NULL,
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
    user_id UUID UNIQUE REFERENCES Users(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '9e150222-2e27-464d-9356-f4e2515d5755'
 );
 
 CREATE TABLE IF NOT EXISTS CashBalanceDetails (
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS CashBalanceDetails (
    closed_at TIMESTAMP,
    cash_balance_cycle_id UUID NOT NULL REFERENCES CashBalanceCycles(id),
    cash_balance_id UUID NOT NULL REFERENCES CashBalances(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '9e150222-2e27-464d-9356-f4e2515d5755'
 );
 
 CREATE TABLE IF NOT EXISTS CancelRequest (
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS CancelRequest (
    document UUID NOT NULL UNIQUE,
    message VARCHAR(1024) NOT NULL,
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '71408795-67e0-46a0-821d-ccdc6e126d59'
 );
 
 CREATE TABLE IF NOT EXISTS CancelRequestDetails (
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS Notifications (
    important BOOLEAN NOT NULL,
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
    user_id UUID NOT NULL REFERENCES Users(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT 'dab9d4a3-e641-443b-a6df-c0839ab190d9'
 );
 
 CREATE TABLE IF NOT EXISTS Loans (
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS Loans (
    rate_settings_id UUID REFERENCES Settings(id),
    request_user_id UUID NOT NULL REFERENCES Users(id),
    resolution_user_id UUID REFERENCES Users(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '71408795-67e0-46a0-821d-ccdc6e126d59'
 );
 
 CREATE TABLE IF NOT EXISTS LoanDetails (
@@ -117,8 +117,7 @@ CREATE TABLE IF NOT EXISTS LoanDetails (
    percentage_settings_id UUID NOT NULL REFERENCES Settings(id),
    cash_balance_detail_id UUID REFERENCES CashBalanceDetails(id),
    cash_balance_id UUID NOT NULL REFERENCES CashBalances(id),
-   loan_id UUID NOT NULL REFERENCES Loans(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   loan_id UUID NOT NULL REFERENCES Loans(id)
 );
 
 CREATE TABLE IF NOT EXISTS Agreements (
@@ -129,7 +128,7 @@ CREATE TABLE IF NOT EXISTS Agreements (
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
    percentage_settings_id UUID NOT NULL REFERENCES Settings(id),
    user_id UUID NOT NULL REFERENCES Users(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '9e150222-2e27-464d-9356-f4e2515d5755'
 );
 
 CREATE TABLE IF NOT EXISTS AgreementDetails (
@@ -146,7 +145,7 @@ CREATE TABLE IF NOT EXISTS Payments (
    expected_payment_date TIMESTAMP NOT NULL,
    loan_id UUID REFERENCES Loans(id),
    agreement_id UUID REFERENCES Agreements(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '71408795-67e0-46a0-821d-ccdc6e126d59'
 );
 
 CREATE TABLE IF NOT EXISTS PaymentDetails (
@@ -163,8 +162,7 @@ CREATE TABLE IF NOT EXISTS PaymentExtras (
    concept PAYMENT_EXTRA_CONCEPT NOT NULL,
    payment_date TIMESTAMP,
    settings_id UUID NOT NULL REFERENCES Settings(id),
-   payment_id UUID NOT NULL REFERENCES Payments(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   payment_id UUID NOT NULL REFERENCES Payments(id)
 );
 
 CREATE TABLE IF NOT EXISTS Movements (
@@ -179,5 +177,5 @@ CREATE TABLE IF NOT EXISTS Movements (
    origin_payment_id UUID REFERENCES Payments(id),
    origin_payment_extra_id UUID REFERENCES Payments(id),
    user_id UUID NOT NULL REFERENCES Users(id),
-   status_id UUID NOT NULL REFERENCES Status(id)
+   status_id UUID NOT NULL REFERENCES Status(id) DEFAULT '97469771-106a-4b3e-a2c6-ee0e0d8fa6d5'
 );

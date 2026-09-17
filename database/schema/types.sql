@@ -7,7 +7,8 @@ CREATE TYPE USER_PROFILE AS ENUM (
 
 CREATE TYPE SETTINGS_UNIT AS ENUM (
    'percentage',
-   'monetary'
+   'monetary',
+   'weeks'
 );
 
 CREATE TYPE LOAN_TYPE AS ENUM (
