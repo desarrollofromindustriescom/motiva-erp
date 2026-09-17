@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS Users (
    status_id UUID NOT NULL REFERENCES Status(id)
 );
 
-CREATE TABLE IF NOT EXISTS Authentication (
+CREATE TABLE IF NOT EXISTS Sessions (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    token CHARACTER(64) NOT NULL,
    token_exp TIMESTAMP NOT NULL,

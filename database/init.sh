@@ -10,6 +10,7 @@ FILES=(
    "schema/schema"
 
    "seeds/status"
+   "seeds/users"
 )
 
 # Iterate each sql file name and check if
