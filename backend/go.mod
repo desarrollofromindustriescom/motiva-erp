@@ -4,7 +4,11 @@ go 1.26.8
 
 tool github.com/air-verse/air
 
-require github.com/jackc/pgx/v5 v5.11.0
+require (
+	github.com/google/uuid v1.6.0
+	github.com/jackc/pgx/v5 v5.11.0
+	golang.org/x/crypto v0.57.0
+)
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
@@ -30,8 +34,8 @@ require (
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/tdewolff/parse/v2 v2.8.12 // indirect
-	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/text v0.38.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
