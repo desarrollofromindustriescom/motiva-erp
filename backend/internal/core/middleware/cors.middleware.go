@@ -4,6 +4,7 @@ import "net/http"
 
 var trustOrigins map[string]bool = map[string]bool {
 	"https://motiva-erp.pages.dev": true,
+	"https://app.apidog.com": true,
 	"http://localhost:4200": true,
 }
 

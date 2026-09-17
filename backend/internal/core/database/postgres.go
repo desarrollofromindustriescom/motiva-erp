@@ -20,7 +20,8 @@ func DBConnection() error {
 
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, dbPass, dbHost, dbPort, dbName)
 
-	pool, err := pgxpool.New(context.Background(), dbURL)
+	var err error
+	pool, err = pgxpool.New(context.Background(), dbURL)
 
 	if err != nil {
 		log.Printf("Error connecting to DB: %v", err)
