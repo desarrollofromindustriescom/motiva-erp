@@ -12,13 +12,21 @@ import (
 var pool *pgxpool.Pool = nil
 
 func DBConnection() error {
+	var dbLink string
+
 	dbName := os.Getenv("POSTGRES_DB")
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPass := os.Getenv("POSTGRES_PASSWORD")
 	dbPort := os.Getenv("DB_PORT")
 	dbHost := os.Getenv("DB_HOST")
 
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, dbPass, dbHost, dbPort, dbName)
+	if dbPort == "" {
+		dbLink = dbHost
+	} else {
+		dbLink = fmt.Sprintf("%s:%s", dbHost, dbPort)
+	}
+
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s/%s", dbUser, dbPass, dbLink, dbName)
 
 	var err error
 	pool, err = pgxpool.New(context.Background(), dbURL)
