@@ -22,5 +22,5 @@ type User struct {
 	AccountClabe *string
 	AccountBank *string
 	CreatedAt time.Time
-	Status Status
+	Status *Status
 }

@@ -75,12 +75,12 @@ func parseUserAgent(agent string) (string, error) {
 	return fmt.Sprintf("Navigator/(%s),%s,%s", navigator, os, device), nil
 }
 
-func CreateNewSession(user *models.User, agent string, ctx context.Context) (string, error) {
+func CreateNewSession(user *models.User, agent string, ctx context.Context) (*models.Session, error) {
 	device, err := parseUserAgent(agent)
 
 	if err != nil {
 		log.Printf("Error generating session: %v", err)
-		return "", err
+		return nil, err
 	}
 
 	session := &models.Session{
@@ -88,13 +88,63 @@ func CreateNewSession(user *models.User, agent string, ctx context.Context) (str
 		TokenExp: time.Now().AddDate(0, 0, 7),
 		DeviceAgent: device,
 		LastLogin: time.Now(),
-		UserID: user.ID,
-		StatusID: user.Status.ID,
+		User: &models.User{
+			ID:user.ID,
+		},
+		Status: &models.Status{
+			ID: user.Status.ID,
+		},
 	}
 
 	if err = saveNewSession(session, ctx); err != nil {
-		return "", err;
+		return nil, err;
 	}
 
-	return session.Token, nil
+	return session, nil
+}
+
+func updateTimeSession(session *models.Session, ctx context.Context) *models.Session {
+	update := false
+	threshold := time.Now().Add(-12 * time.Hour)
+
+	if session.LastLogin.Before(threshold) {
+		update = true
+		session.LastLogin = time.Now()
+	}
+
+	threshold = time.Now().Add(24 * time.Hour)
+
+	if session.TokenExp.Before(threshold) {
+		update = true
+		session.TokenExp = time.Now().AddDate(0, 0, 7)
+	}
+
+	if update {
+		updateSession(session, ctx)
+	}
+	
+	return session
+}
+
+func VerifySession(token string, agent string, ctx context.Context) (*models.Session, error) {
+	device, err := parseUserAgent(agent)
+
+	if err != nil {
+		log.Printf("Error parsing device agent: %v", err)
+		return nil, err
+	}
+
+	session, err := getActiveSession(token, device, ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if session.TokenExp.Before(time.Now()) {
+		updateExpireSession(session, ctx)
+		return nil, fmt.Errorf("Expired session")
+	}
+
+	session = updateTimeSession(session, ctx)
+	return session, nil
 }

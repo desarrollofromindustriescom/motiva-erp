@@ -6,5 +6,8 @@ import (
 )
 
 func Router(server *http.ServeMux) {
+	// server.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) {
+	// 	json.NewEncoder(w).Encode(r.URL.Path)
+	// })
 	server.HandleFunc("POST /api/login", handlers.Login)
 }

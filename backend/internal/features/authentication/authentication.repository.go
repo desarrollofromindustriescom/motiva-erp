@@ -9,7 +9,11 @@ import (
 
 func getUserData(username string, ctx context.Context) (*models.User, error) {
 	user := &models.User{}
-	err := database.GetPool().QueryRow(ctx, getUserDataByUsername, username).Scan(
+	err := database.GetPool().QueryRow(
+		ctx,
+		getUserDataByUsernameQuery,
+		username,
+	).Scan(
 		&user.ID,
 		&user.Fullname,
 		&user.Username,

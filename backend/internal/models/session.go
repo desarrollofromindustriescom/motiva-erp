@@ -13,8 +13,8 @@ type Session struct {
 	DeviceAgent string
 	LastLogin time.Time
 	CreatedAt time.Time
-	UserID uuid.UUID
-	StatusID uuid.UUID
+	User *User
+	Status *Status
 }
 
 type LoginDTOData struct {

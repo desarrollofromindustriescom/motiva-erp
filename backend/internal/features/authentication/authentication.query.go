@@ -1,6 +1,6 @@
 package authentication
 
-const getUserDataByUsername string = `--sql
+const getUserDataByUsernameQuery string = `--sql
 	SELECT
 		u.id,
 		u.fullname,
@@ -19,8 +19,8 @@ const getUserDataByUsername string = `--sql
 		s.id,
 		s.slug,
 		s.title
-	FROM Users as u
-	INNER JOIN Status as s
+	FROM Users AS u
+	INNER JOIN Status AS s
 	ON u.status_id = s.id
 	WHERE u.username = $1 AND s.slug = 'active'
 `

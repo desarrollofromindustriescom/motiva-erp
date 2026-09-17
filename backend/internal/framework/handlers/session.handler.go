@@ -36,7 +36,7 @@ func Login(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	token, err := session.CreateNewSession(user, request.Header.Get("User-Agent"), request.Context())
+	session, err := session.CreateNewSession(user, request.Header.Get("User-Agent"), request.Context())
 
 	if err != nil {
 		responseDTO.Error = &models.ErrorDetailDTO{ Message: messages.GenerateSessionError }
@@ -46,13 +46,14 @@ func Login(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	cookie := &http.Cookie{
+	http.SetCookie(response, &http.Cookie{
 		Name: "bearer",
-		Value: token,
+		Value: session.Token,
+		Expires: session.TokenExp,
 		Path: "/",
-	}
-
-	http.SetCookie(response, cookie)
+		Secure: true,
+		HttpOnly: true,
+	})
 
 	responseDTO.Success = true
 	responseDTO.Data = &models.LoginDTO{
