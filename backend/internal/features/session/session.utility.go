@@ -88,10 +88,10 @@ func CreateNewSession(user *models.User, agent string, ctx context.Context) (*mo
 		TokenExp: time.Now().AddDate(0, 0, 7),
 		DeviceAgent: device,
 		LastLogin: time.Now(),
-		User: &models.User{
+		User: models.User{
 			ID:user.ID,
 		},
-		Status: &models.Status{
+		Status: models.Status{
 			ID: user.Status.ID,
 		},
 	}

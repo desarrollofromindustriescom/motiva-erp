@@ -22,5 +22,7 @@ const getUserDataByUsernameQuery string = `--sql
 	FROM Users AS u
 	INNER JOIN Status AS s
 	ON u.status_id = s.id
-	WHERE u.username = $1 AND s.slug = 'active'
+	WHERE
+		u.username = $1 AND
+		s.slug = 'active'
 `
