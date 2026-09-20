@@ -1,0 +1,13 @@
+{
+   "dialec": "postgresql",
+   "tabWidth": 3,
+   "useTabs": false,
+   "keywordCase": "upper",
+   "dataTypeCase": "upper",
+   "functionCase": "upper",
+   "logicalOperatorNewline": "after",
+   "expressionWidth": 80,
+   "linesBetweenQueries": 1,
+   "denseOperators": false,
+   "newlineBeforeSemicolon": false
+}

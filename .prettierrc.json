@@ -21,7 +21,7 @@
    "singleAttributePerLine": true,
    "overrides": [
       {
-         "files": ["*.sh", ".*.sh", "*.bash", ".*.bash"],
+         "files": ["*.sh", ".*.sh", "*.bash", ".*.bash", "Dockerfile"],
          "options": {
             "parser": "sh",
             "keepComments": true,

@@ -1,6 +1,6 @@
 {
    "name": "motiva-erp",
-   "version": "1.0.0",
+   "version": "0.0.1",
    "description": "ERP para la financiera Motiva",
    "scripts": {
       "prepare": "husky"
@@ -11,11 +11,7 @@
       "lint-staged": "~17.5.1",
       "prettier": "~3.9.8",
       "prettier-plugin-sh": "~0.19.0",
-      "prettier-plugin-toml": "~2.0.6"
-   },
-   "pnpm": {
-      "overrides": {
-         "sql-formatter": "^14.0.0"
-      }
+      "prettier-plugin-toml": "~2.0.6",
+      "sql-formatter": "~15.8.2"
    }
 }
