@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"motiva-erp/backend/internal/features/session"
 	"net/http"
 )
@@ -10,12 +11,15 @@ func authMiddleware(next http.Handler) http.Handler {
 		const unauthorized string = "Unauthorized"
 
 		if request.Method == http.MethodPost && request.URL.Path == "/api/login" {
+			response.Header().Add("Content-type", "application/json")
 			next.ServeHTTP(response, request)
 			return
 		}
 
 		agent := request.Header.Get("User-Agent")
 		token, err := request.Cookie("bearer")
+
+		log.Printf("agent:%v, token: %v", agent, token.Value)
 
 		if err != nil {
 			http.SetCookie(response, &http.Cookie{
@@ -48,6 +52,7 @@ func authMiddleware(next http.Handler) http.Handler {
 			HttpOnly: true,
 		})
 
+		response.Header().Add("Content-type", "application/json")
 		next.ServeHTTP(response, request)
 	})
 }
