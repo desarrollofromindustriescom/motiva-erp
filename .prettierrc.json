@@ -1,4 +1,5 @@
 {
+   "plugins": ["prettier-plugin-sh", "prettier-plugin-toml"],
    "printWidth": 120,
    "tabWidth": 3,
    "useTabs": false,
@@ -17,5 +18,39 @@
    "htmlWhitespaceSensitivity": "css",
    "endOfLine": "lf",
    "embeddedLanguageFormatting": "auto",
-   "singleAttributePerLine": true
+   "singleAttributePerLine": true,
+   "overrides": [
+      {
+         "files": ["*.sh", ".*.sh", "*.bash", ".*.bash"],
+         "options": {
+            "parser": "sh",
+            "keepComments": true,
+            "variant": 1,
+            "indent": 3,
+            "binaryNextLine": true,
+            "switchCaseIndent": true,
+            "spaceRedirects": true,
+            "minify": false,
+            "singleLine": false,
+            "functionNextLine": false
+         }
+      },
+      {
+         "files": ["*.toml", ".*.toml"],
+         "options": {
+            "parser": "toml",
+            "alignEntries": false,
+            "alignComments": true,
+            "arrayAutoExpand": true,
+            "arrayAutoCollapse": true,
+            "compactArrays": false,
+            "compactInlineTables": false,
+            "compactEntries": false,
+            "indentTables": true,
+            "indentEntries": true,
+            "reorderKeys": true,
+            "allowedBlankLines": 1
+         }
+      }
+   ]
 }

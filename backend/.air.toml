@@ -2,10 +2,10 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-cmd = "go build -o ./tmp/main ./cmd/api/"
-entrypoint = "tmp/main"
-include_ext = ["go"]
-exclude_dir = ["tmp"]
+   cmd = "go build -o ./tmp/main ./cmd/api/"
+   entrypoint = "tmp/main"
+   exclude_dir = [ "tmp" ]
+   include_ext = [ "go" ]
 
 [log]
-time = true
+   time = true
