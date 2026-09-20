@@ -26,6 +26,16 @@ const (
 	disableAgreementValuesQuery string = `--sql
 		UPDATE Settings
 		SET status_id = (SELECT id FROM Status WHERE slug = 'deprecated')
-		WHERE slug LIKE 'agreement_%'			
+		WHERE slug LIKE 'agreement_%'
+	`
+	disableMonthlyValuesQuery string = `--sql
+		UPDATE Settings
+		SET status_id = (SELECT id FROM Status WHERE slug = 'deprecated')
+		WHERE slug LIKE 'monthly_loan_%'
+	`
+	disableWeeklyValuesQuery string = `--sql
+		UPDATE Settings
+		SET status_id = (SELECT id FROM Status WHERE slug = 'deprecated')
+		WHERE slug LIKE 'weekly_loan_%'
 	`
 )

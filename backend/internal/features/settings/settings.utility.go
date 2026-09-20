@@ -37,23 +37,28 @@ func formatRawSetting(value float64, unit string) int {
 }
 
 func SetNewSettings(values []models.StandardSettingsRaw, update string, ctx context.Context) error {
+	var length int
 	data := []models.StandardSettings{}
 
 	switch update {
 	case "extra":
-		if len(values) != 2 {
-			return fmt.Errorf("Error invalid keys length")
-		}
+		length = 2
 	case "agreement":
-		if len(values) != 3 {
-			return fmt.Errorf("Error invalid keys length")
-		}
+		length = 3
+	case "monthly":
+		length = 6
+	case "weekly":
+		length = 26
 
 	default:
 		return fmt.Errorf("Invalid update option")
 	}
 
-	for i := 0; i < len(values); i++ {
+	if len(values) != length {
+		return fmt.Errorf("Error invalid keys length")
+	}
+
+	for i := range len(values) {
 		data = append(data, models.StandardSettings{
 			Slug:  values[i].Slug,
 			Unit:  values[i].Unit,

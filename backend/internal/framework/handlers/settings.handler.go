@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"motiva-erp/backend/internal/features/settings"
 	"motiva-erp/backend/internal/framework/messages"
 	"motiva-erp/backend/internal/framework/validators"
@@ -28,7 +29,7 @@ func GetSettings(response http.ResponseWriter, request *http.Request) {
 
 	elements := []models.SettingsItemDTO{}
 
-	for i := 0; i < len(list); i++ {
+	for i := range len(list) {
 		setting := models.SettingsItemDTO{
 			Slug: list[i].Slug,
 			Unit: list[i].Unit,
@@ -198,6 +199,156 @@ func SetAgreementValues(response http.ResponseWriter, request *http.Request) {
 	}
 
 	err := settings.SetNewSettings(values, "agreement", request.Context())
+
+	if err != nil {
+		responseDTO.Error = &models.ErrorDetailDTO{Message: messages.UpdateSettingsError}
+
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	responseDTO.Success = true
+
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(responseDTO)
+}
+
+func SetMonthlyValues(response http.ResponseWriter, request *http.Request) {
+	monthlyValues := &models.RateValuesRequest{}
+	responseDTO := &models.ApiResponseDTO[struct{}]{Success: false}
+
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&monthlyValues); err != nil {
+		responseDTO.Error = &models.ErrorDetailDTO{Message: messages.RequestValidationError}
+
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	index, valid := validators.ValidateRate(monthlyValues.Investor, monthlyValues.General, 3)
+
+	if !valid {
+		details := []models.ErrorDetailsDTO{}
+
+		if index > -1 {
+			details = []models.ErrorDetailsDTO{
+				{
+					Field:   "investor",
+					Current: monthlyValues.Investor[index],
+				},
+				{
+					Field:   "general",
+					Current: monthlyValues.General[index],
+				},
+			}
+		}
+
+		responseDTO.Error = &models.ErrorDetailDTO{
+			Message: messages.DataValidationError,
+			Details: details,
+		}
+
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	values := []models.StandardSettingsRaw{}
+
+	for i := range 3 {
+		values = append(values, models.StandardSettingsRaw{
+			Slug:  fmt.Sprintf("monthly_loan_investor_%d", i+1),
+			Value: monthlyValues.Investor[i],
+			Unit:  "percentage",
+		})
+
+		values = append(values, models.StandardSettingsRaw{
+			Slug:  fmt.Sprintf("monthly_loan_rate_%d", i+1),
+			Value: monthlyValues.General[i],
+			Unit:  "percentage",
+		})
+	}
+
+	err := settings.SetNewSettings(values, "monthly", request.Context())
+
+	if err != nil {
+		responseDTO.Error = &models.ErrorDetailDTO{Message: messages.UpdateSettingsError}
+
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	responseDTO.Success = true
+
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(responseDTO)
+}
+
+func SetWeeklyValues(response http.ResponseWriter, request *http.Request) {
+	weeklyValues := &models.RateValuesRequest{}
+	responseDTO := &models.ApiResponseDTO[struct{}]{Success: false}
+
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&weeklyValues); err != nil {
+		responseDTO.Error = &models.ErrorDetailDTO{Message: messages.RequestValidationError}
+
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	index, valid := validators.ValidateRate(weeklyValues.Investor, weeklyValues.General, 13)
+
+	if !valid {
+		details := []models.ErrorDetailsDTO{}
+
+		if index > -1 {
+			details = []models.ErrorDetailsDTO{
+				{
+					Field:   "investor",
+					Current: weeklyValues.Investor[index],
+				},
+				{
+					Field:   "general",
+					Current: weeklyValues.General[index],
+				},
+			}
+		}
+
+		responseDTO.Error = &models.ErrorDetailDTO{
+			Message: messages.DataValidationError,
+			Details: details,
+		}
+
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	values := []models.StandardSettingsRaw{}
+
+	for i := range 13 {
+		values = append(values, models.StandardSettingsRaw{
+			Slug:  fmt.Sprintf("weekly_loan_investor_%d", i+1),
+			Value: weeklyValues.Investor[i],
+			Unit:  "percentage",
+		})
+
+		values = append(values, models.StandardSettingsRaw{
+			Slug:  fmt.Sprintf("weekly_loan_rate_%d", i+1),
+			Value: weeklyValues.General[i],
+			Unit:  "percentage",
+		})
+	}
+
+	err := settings.SetNewSettings(values, "weekly", request.Context())
 
 	if err != nil {
 		responseDTO.Error = &models.ErrorDetailDTO{Message: messages.UpdateSettingsError}

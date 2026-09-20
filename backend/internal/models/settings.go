@@ -26,6 +26,10 @@ type AgreementValuesRequest struct {
 	WeeksBefore int     `json:"weeks_before"`
 	WeeksAfter  int     `json:"weeks_after"`
 }
+type RateValuesRequest struct {
+	Investor []float64 `json:"investor"`
+	General  []float64 `json:"general"`
+}
 
 type StandardSettingsRaw struct {
 	Slug  string

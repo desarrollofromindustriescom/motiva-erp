@@ -52,6 +52,10 @@ func updateSettings(data []models.StandardSettings, update string, ctx context.C
 		query = disableExtraValuesQuery
 	case "agreement":
 		query = disableAgreementValuesQuery
+	case "monthly":
+		query = disableMonthlyValuesQuery
+	case "weekly":
+		query = disableWeeklyValuesQuery
 
 	default:
 		return fmt.Errorf("Invalid update option")

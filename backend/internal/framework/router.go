@@ -13,4 +13,6 @@ func Router(server *http.ServeMux) {
 	server.HandleFunc("GET /api/settings", handlers.GetSettings)
 	server.HandleFunc("PUT /api/settings/extra-values", handlers.SetExtraValues)
 	server.HandleFunc("PUT /api/settings/agreement-values", handlers.SetAgreementValues)
+	server.HandleFunc("PUT /api/settings/monthly-values", handlers.SetMonthlyValues)
+	server.HandleFunc("PUT /api/settings/weekly-values", handlers.SetWeeklyValues)
 }
