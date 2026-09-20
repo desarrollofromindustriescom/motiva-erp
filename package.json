@@ -1,0 +1,14 @@
+{
+   "name": "motiva-erp",
+   "version": "1.0.0",
+   "description": "ERP para la financiera Motiva",
+   "scripts": {
+      "prepare": "husky"
+   },
+   "author": "m2panda",
+   "devDependencies": {
+      "husky": "~9.1.7",
+      "lint-staged": "~17.5.1",
+      "prettier": "~3.9.8"
+   }
+}

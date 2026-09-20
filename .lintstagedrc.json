@@ -1,0 +1,5 @@
+{
+   "**/*": "pnpm exec prettier --write",
+   "**/*.*": "pnpm exec prettier --write",
+   "**/.*": "pnpm exec prettier --write"
+}
