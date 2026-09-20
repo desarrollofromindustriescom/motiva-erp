@@ -10,4 +10,5 @@ func Router(server *http.ServeMux) {
 	// 	json.NewEncoder(w).Encode(r.URL.Path)
 	// })
 	server.HandleFunc("POST /api/login", handlers.Login)
+	server.HandleFunc("GET /api/settings", handlers.GetSettings)
 }

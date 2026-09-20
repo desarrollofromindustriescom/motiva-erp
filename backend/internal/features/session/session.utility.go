@@ -17,7 +17,7 @@ func generateBearerToken() string {
 	rand.Read(bytes)
 
 	token := hex.EncodeToString(bytes)
-	
+
 	return token
 }
 
@@ -84,12 +84,12 @@ func CreateNewSession(user *models.User, agent string, ctx context.Context) (*mo
 	}
 
 	session := &models.Session{
-		Token: generateBearerToken(),
-		TokenExp: time.Now().AddDate(0, 0, 7),
+		Token:       generateBearerToken(),
+		TokenExp:    time.Now().AddDate(0, 0, 7),
 		DeviceAgent: device,
-		LastLogin: time.Now(),
+		LastLogin:   time.Now(),
 		User: models.User{
-			ID:user.ID,
+			ID: user.ID,
 		},
 		Status: models.Status{
 			ID: user.Status.ID,
@@ -97,7 +97,7 @@ func CreateNewSession(user *models.User, agent string, ctx context.Context) (*mo
 	}
 
 	if err = saveNewSession(session, ctx); err != nil {
-		return nil, err;
+		return nil, err
 	}
 
 	return session, nil
@@ -122,7 +122,7 @@ func updateTimeSession(session *models.Session, ctx context.Context) *models.Ses
 	if update {
 		updateSession(session, ctx)
 	}
-	
+
 	return session
 }
 

@@ -17,7 +17,7 @@ func saveNewSession(session *models.Session, ctx context.Context) error {
 		session.LastLogin,
 		session.User.ID,
 		session.Status.ID,
-	);
+	)
 
 	if err != nil {
 		log.Printf("Error saving user session: %v", err)
@@ -29,7 +29,7 @@ func saveNewSession(session *models.Session, ctx context.Context) error {
 
 func getActiveSession(token string, agent string, ctx context.Context) (*models.Session, error) {
 	session := &models.Session{
-		Token: token,
+		Token:       token,
 		DeviceAgent: agent,
 	}
 

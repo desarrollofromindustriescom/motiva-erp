@@ -19,9 +19,9 @@ func authMiddleware(next http.Handler) http.Handler {
 
 		if err != nil {
 			http.SetCookie(response, &http.Cookie{
-				Name: "bearer",
+				Name:  "bearer",
 				Value: "",
-				Path: "/",
+				Path:  "/",
 			})
 			http.Error(response, unauthorized, http.StatusUnauthorized)
 			return
@@ -31,20 +31,20 @@ func authMiddleware(next http.Handler) http.Handler {
 
 		if err != nil {
 			http.SetCookie(response, &http.Cookie{
-				Name: "bearer",
+				Name:  "bearer",
 				Value: "",
-				Path: "/",
+				Path:  "/",
 			})
 			http.Error(response, unauthorized, http.StatusUnauthorized)
 			return
 		}
 
 		http.SetCookie(response, &http.Cookie{
-			Name: "bearer",
-			Value: session.Token,
-			Expires: session.TokenExp,
-			Path: "/",
-			Secure: true,
+			Name:     "bearer",
+			Value:    session.Token,
+			Expires:  session.TokenExp,
+			Path:     "/",
+			Secure:   true,
 			HttpOnly: true,
 		})
 

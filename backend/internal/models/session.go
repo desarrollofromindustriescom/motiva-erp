@@ -7,24 +7,20 @@ import (
 )
 
 type Session struct {
-	ID uuid.UUID
-	Token string
-	TokenExp time.Time
+	ID          uuid.UUID
+	Token       string
+	TokenExp    time.Time
 	DeviceAgent string
-	LastLogin time.Time
-	CreatedAt time.Time
-	User User
-	Status Status
-}
-
-type LoginDTOData struct {
-	Fullname string `json:"fullname"`
-	Username string `json:"username"`
-	Profile string `json:"profile"`
+	LastLogin   time.Time
+	CreatedAt   time.Time
+	User        User
+	Status      Status
 }
 
 type LoginDTO struct {
-	User *LoginDTOData `json:"user"`
+	Fullname string `json:"fullname"`
+	Username string `json:"username"`
+	Profile  string `json:"profile"`
 }
 
 type LoginRequest struct {

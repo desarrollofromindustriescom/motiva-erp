@@ -40,7 +40,7 @@ func DBConnection() error {
 		log.Printf("Error verifying connection: %v", err)
 		return err
 	}
-	
+
 	return nil
 }
 
