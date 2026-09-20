@@ -11,4 +11,5 @@ func Router(server *http.ServeMux) {
 	// })
 	server.HandleFunc("POST /api/login", handlers.Login)
 	server.HandleFunc("GET /api/settings", handlers.GetSettings)
+	server.HandleFunc("PUT /api/settings/extra-values", handlers.SetExtraValues)
 }

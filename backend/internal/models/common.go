@@ -1,11 +1,16 @@
 package models
 
-type ErrorDetailDTO struct {
-	Message string                 `json:"message"`
-	Details map[string]interface{} `json:"details"`
+type ErrorDetailsDTO struct {
+	Field   string `json:"field"`
+	Current any    `json:"current"`
 }
 
-type ApiResponseDTO[T interface{}] struct {
+type ErrorDetailDTO struct {
+	Message string            `json:"message"`
+	Details []ErrorDetailsDTO `json:"details"`
+}
+
+type ApiResponseDTO[T any] struct {
 	Success bool            `json:"success"`
 	Error   *ErrorDetailDTO `json:"error"`
 	Data    *T              `json:"data"`

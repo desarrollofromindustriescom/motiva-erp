@@ -2,9 +2,12 @@ package settings
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"motiva-erp/backend/internal/core/database"
 	"motiva-erp/backend/internal/models"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func getActiveSettings(ctx context.Context) ([]models.Settings, error) {
@@ -24,7 +27,6 @@ func getActiveSettings(ctx context.Context) ([]models.Settings, error) {
 
 		if err = rows.Scan(
 			&setting.ID,
-			&setting.Title,
 			&setting.Slug,
 			&setting.Value,
 			&setting.Unit,
@@ -40,4 +42,39 @@ func getActiveSettings(ctx context.Context) ([]models.Settings, error) {
 	}
 
 	return settings, nil
+}
+
+func updateSettings(data []models.StandardSettings, update string, ctx context.Context) error {
+	var query string
+
+	switch update {
+	case "extra":
+		query = disableExtraValuesQuery
+
+	default:
+		return fmt.Errorf("Invalid update option")
+	}
+
+	_, err := database.GetPool().Exec(ctx, query)
+
+	if err != nil {
+		log.Printf("Error disabling current settings: %v", err)
+		return err
+	}
+
+	_, err = database.GetPool().CopyFrom(
+		ctx,
+		pgx.Identifier{"settings"},
+		[]string{"slug", "value", "unit"},
+		pgx.CopyFromSlice(len(data), func(i int) ([]any, error) {
+			return []any{data[i].Slug, data[i].Value, data[i].Unit}, nil
+		}),
+	)
+
+	if err != nil {
+		log.Printf("Error creating new settings: %v", err)
+		return err
+	}
+
+	return nil
 }

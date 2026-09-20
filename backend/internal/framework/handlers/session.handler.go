@@ -43,7 +43,7 @@ func Login(response http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		responseDTO.Error = &models.ErrorDetailDTO{Message: messages.GenerateSessionError}
 
-		response.WriteHeader(http.StatusBadRequest)
+		response.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(response).Encode(responseDTO)
 		return
 	}
@@ -68,5 +68,6 @@ func Login(response http.ResponseWriter, request *http.Request) {
 		},
 	}
 
+	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(responseDTO)
 }

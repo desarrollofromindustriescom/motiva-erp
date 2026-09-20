@@ -1,6 +1,9 @@
 package messages
 
-const RequestValidationError string = "request_validation_error"
-const DataValidationError string = "data_validation_error"
-const GenerateSessionError string = "generate_session_error"
-const RequestComleteSettingsError string = "request_complete_settings_error"
+const (
+	RequestValidationError      string = "request_validation_error"
+	DataValidationError         string = "data_validation_error"
+	GenerateSessionError        string = "generate_session_error"
+	RequestComleteSettingsError string = "request_complete_settings_error"
+	UpdateSettingsError         string = "update_settings_error"
+)

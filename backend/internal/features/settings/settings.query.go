@@ -4,7 +4,6 @@ const (
 	getActiveSettingsQuery string = `--sql
 		SELECT
 			si.id,
-			si.title,
 			si.slug,
 			si.value,
 			si.unit,
@@ -16,5 +15,12 @@ const (
 		ON si.status_id = st.id
 		WHERE
 			st.slug = 'active'
+	`
+	disableExtraValuesQuery string = `--sql
+		UPDATE Settings
+		SET status_id = (SELECT id FROM Status WHERE slug = 'deprecated')
+		WHERE
+			slug = 'mora' OR
+			slug = 'visit'
 	`
 )
