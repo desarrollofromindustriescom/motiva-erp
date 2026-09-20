@@ -9,7 +9,7 @@ func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		const unauthorized string = "Unauthorized"
 
-		if request.Method == http.MethodGet && request.URL.Path == "/api/login" {
+		if request.Method == http.MethodPost && request.URL.Path == "/api/login" {
 			next.ServeHTTP(response, request)
 			return
 		}
