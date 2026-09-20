@@ -4,7 +4,7 @@ services:
       image: postgres:18-alpine
       restart: unless-stopped
       expose:
-         - "${DB_PORT}"
+         - '${DB_PORT}'
       networks:
          - motiva_net
       environment:
@@ -15,15 +15,7 @@ services:
          - ./database:/docker-entrypoint-initdb.d:ro
          - pgdata:/var/lib/postgresql/18/docker
       healthcheck:
-         test:
-            [
-               "CMD",
-               "pg_isready",
-               "-U",
-               "${POSTGRES_USER}",
-               "-d",
-               "${POSTGRES_DB}",
-            ]
+         test: ['CMD', 'pg_isready', '-U', '${POSTGRES_USER}', '-d', '${POSTGRES_DB}']
          start_period: 15s
          interval: 5s
          timeout: 10s
@@ -35,7 +27,7 @@ services:
          context: ./backend/
          dockerfile: Dockerfile
       ports:
-         - "${API_PORT}:${API_PORT}"
+         - '${API_PORT}:${API_PORT}'
       volumes:
          - ./backend:/app
       networks:
