@@ -44,6 +44,10 @@ func SetNewSettings(values []models.StandardSettingsRaw, update string, ctx cont
 		if len(values) != 2 {
 			return fmt.Errorf("Error invalid keys length")
 		}
+	case "agreement":
+		if len(values) != 3 {
+			return fmt.Errorf("Error invalid keys length")
+		}
 
 	default:
 		return fmt.Errorf("Invalid update option")

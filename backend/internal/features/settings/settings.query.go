@@ -23,4 +23,9 @@ const (
 			slug = 'mora' OR
 			slug = 'visit'
 	`
+	disableAgreementValuesQuery string = `--sql
+		UPDATE Settings
+		SET status_id = (SELECT id FROM Status WHERE slug = 'deprecated')
+		WHERE slug LIKE 'agreement_%'			
+	`
 )

@@ -21,6 +21,12 @@ type ExtraValuesRequest struct {
 	Visit float64 `json:"visit"`
 }
 
+type AgreementValuesRequest struct {
+	Weekly      float64 `json:"weekly"`
+	WeeksBefore int     `json:"weeks_before"`
+	WeeksAfter  int     `json:"weeks_after"`
+}
+
 type StandardSettingsRaw struct {
 	Slug  string
 	Value float64

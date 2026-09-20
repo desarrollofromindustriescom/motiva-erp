@@ -125,3 +125,90 @@ func SetExtraValues(response http.ResponseWriter, request *http.Request) {
 	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(responseDTO)
 }
+
+func SetAgreementValues(response http.ResponseWriter, request *http.Request) {
+	agreementValues := &models.AgreementValuesRequest{}
+	responseDTO := &models.ApiResponseDTO[struct{}]{Success: false}
+
+	decoder := json.NewDecoder(request.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&agreementValues); err != nil {
+		responseDTO.Error = &models.ErrorDetailDTO{Message: messages.RequestValidationError}
+
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	errMora := !validators.ValidatePercentage(agreementValues.Weekly)
+	errBefore := !validators.ValidateWeeks(agreementValues.WeeksBefore)
+	errAfter := !validators.ValidateWeeks(agreementValues.WeeksAfter)
+
+	if errMora || errBefore || errAfter {
+		details := []models.ErrorDetailsDTO{}
+
+		if errMora {
+			details = append(details, models.ErrorDetailsDTO{
+				Field:   "weekly",
+				Current: agreementValues.Weekly,
+			})
+		}
+
+		if errBefore {
+			details = append(details, models.ErrorDetailsDTO{
+				Field:   "weeks_before",
+				Current: agreementValues.WeeksBefore,
+			})
+		}
+
+		if errAfter {
+			details = append(details, models.ErrorDetailsDTO{
+				Field:   "weeks_after",
+				Current: agreementValues.WeeksAfter,
+			})
+		}
+
+		responseDTO.Error = &models.ErrorDetailDTO{
+			Message: messages.DataValidationError,
+			Details: details,
+		}
+
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	values := []models.StandardSettingsRaw{
+		{
+			Slug:  "agreement_weekly",
+			Value: agreementValues.Weekly,
+			Unit:  "percentage",
+		},
+		{
+			Slug:  "agreement_weeks_before",
+			Value: float64(agreementValues.WeeksBefore),
+			Unit:  "weeks",
+		},
+		{
+			Slug:  "agreement_weeks_after",
+			Value: float64(agreementValues.WeeksAfter),
+			Unit:  "weeks",
+		},
+	}
+
+	err := settings.SetNewSettings(values, "agreement", request.Context())
+
+	if err != nil {
+		responseDTO.Error = &models.ErrorDetailDTO{Message: messages.UpdateSettingsError}
+
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(responseDTO)
+		return
+	}
+
+	responseDTO.Success = true
+
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(responseDTO)
+}
