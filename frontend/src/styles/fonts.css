@@ -1,0 +1,27 @@
+@font-face {
+   font-family: 'Inter';
+   font-style: normal;
+   font-weight: 400;
+   src: '../assets/fonts/Inter/static/Inter_24pt-Regular.ttf';
+}
+
+@font-face {
+   font-family: 'Inter';
+   font-style: normal;
+   font-weight: 300;
+   src: '../assets/fonts/Inter/static/Inter_24pt-Light.ttf';
+}
+
+@font-face {
+   font-family: 'Inter';
+   font-style: normal;
+   font-weight: 500;
+   src: '../assets/fonts/Inter/static/Inter_24pt-Medium.ttf';
+}
+
+@font-face {
+   font-family: 'Inter';
+   font-style: normal;
+   font-weight: 700;
+   src: '../assets/fonts/Inter/static/Inter_24pt-Bold.ttf';
+}

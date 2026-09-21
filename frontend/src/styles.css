@@ -2,3 +2,15 @@
 
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+@import './styles/fonts.css';
+
+@theme {
+   --color-main: #f27732;
+   --color-second: #0e2953;
+   --color-contrast: #319fa1;
+   --font-inter: 'Inter', sans-serif;
+}
+
+* {
+   @apply font-inter;
+}
