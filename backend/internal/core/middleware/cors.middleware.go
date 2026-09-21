@@ -4,7 +4,7 @@ import "net/http"
 
 var trustOrigins map[string]bool = map[string]bool{
 	"https://motiva-erp.pages.dev": true,
-	"http://localhost:4200":        true,
+	"https://localhost:4200":       true,
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
