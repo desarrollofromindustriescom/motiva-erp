@@ -48,21 +48,12 @@ func Login(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	http.SetCookie(response, &http.Cookie{
-		Name:     "bearer",
-		Value:    session.Token,
-		Expires:  session.TokenExp,
-		Path:     "/",
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-	})
-
 	responseDTO.Success = true
 	responseDTO.Data = &struct {
 		User models.LoginDTO `json:"user"`
 	}{
 		User: models.LoginDTO{
+			Token:    session.Token,
 			Fullname: user.Fullname,
 			Username: user.Username,
 			Profile:  user.Profile,

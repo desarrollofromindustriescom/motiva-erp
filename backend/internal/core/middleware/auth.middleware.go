@@ -17,39 +17,14 @@ func authMiddleware(next http.Handler) http.Handler {
 		}
 
 		agent := request.Header.Get("User-Agent")
-		token, err := request.Cookie("bearer")
+		token := request.Header.Get("Authorization")
+
+		session, err := session.VerifySession(token, agent, request.Context())
 
 		if err != nil {
-			http.SetCookie(response, &http.Cookie{
-				Name:  "bearer",
-				Value: "",
-				Path:  "/",
-			})
 			http.Error(response, unauthorized, http.StatusUnauthorized)
 			return
 		}
-
-		session, err := session.VerifySession(token.Value, agent, request.Context())
-
-		if err != nil {
-			http.SetCookie(response, &http.Cookie{
-				Name:  "bearer",
-				Value: "",
-				Path:  "/",
-			})
-			http.Error(response, unauthorized, http.StatusUnauthorized)
-			return
-		}
-
-		http.SetCookie(response, &http.Cookie{
-			Name:     "bearer",
-			Value:    session.Token,
-			Expires:  session.TokenExp,
-			Path:     "/",
-			Secure:   true,
-			HttpOnly: true,
-			SameSite: http.SameSiteNoneMode,
-		})
 
 		ctx := context.WithValue(request.Context(), "session", session)
 

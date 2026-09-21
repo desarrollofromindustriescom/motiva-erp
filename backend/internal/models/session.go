@@ -18,6 +18,7 @@ type Session struct {
 }
 
 type LoginDTO struct {
+	Token    string `json:"token"`
 	Fullname string `json:"fullname"`
 	Username string `json:"username"`
 	Profile  string `json:"profile"`

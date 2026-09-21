@@ -129,7 +129,7 @@ func updateTimeSession(session *models.Session, ctx context.Context) *models.Ses
 func VerifySession(token string, agent string, ctx context.Context) (*models.Session, error) {
 	device, err := parseUserAgent(agent)
 
-	if err != nil {
+	if err != nil || token == "" {
 		log.Printf("Error parsing device agent: %v", err)
 		return nil, err
 	}
