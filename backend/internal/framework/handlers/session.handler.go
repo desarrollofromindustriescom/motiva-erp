@@ -55,6 +55,7 @@ func Login(response http.ResponseWriter, request *http.Request) {
 		Path:     "/",
 		Secure:   true,
 		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
 	})
 
 	responseDTO.Success = true

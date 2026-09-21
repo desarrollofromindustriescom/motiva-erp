@@ -47,6 +47,7 @@ func authMiddleware(next http.Handler) http.Handler {
 			Path:     "/",
 			Secure:   true,
 			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
 		})
 
 		response.Header().Add("Content-type", "application/json")
