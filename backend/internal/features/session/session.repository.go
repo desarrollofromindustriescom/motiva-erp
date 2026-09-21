@@ -31,6 +31,8 @@ func getActiveSession(token string, agent string, ctx context.Context) (*models.
 	session := &models.Session{
 		Token:       token,
 		DeviceAgent: agent,
+		User:        models.User{},
+		Status:      models.Status{},
 	}
 
 	err := database.GetPool().QueryRow(
@@ -43,6 +45,13 @@ func getActiveSession(token string, agent string, ctx context.Context) (*models.
 		&session.TokenExp,
 		&session.LastLogin,
 		&session.CreatedAt,
+		&session.User.ID,
+		&session.User.Fullname,
+		&session.User.Username,
+		&session.User.Profile,
+		&session.Status.ID,
+		&session.Status.Slug,
+		&session.Status.Title,
 	)
 
 	if err != nil {

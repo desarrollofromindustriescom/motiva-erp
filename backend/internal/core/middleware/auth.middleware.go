@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"motiva-erp/backend/internal/features/session"
 	"net/http"
 )
@@ -50,7 +51,9 @@ func authMiddleware(next http.Handler) http.Handler {
 			SameSite: http.SameSiteNoneMode,
 		})
 
+		ctx := context.WithValue(request.Context(), "session", session)
+
 		response.Header().Add("Content-type", "application/json")
-		next.ServeHTTP(response, request)
+		next.ServeHTTP(response, request.WithContext(ctx))
 	})
 }

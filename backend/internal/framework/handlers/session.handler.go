@@ -72,3 +72,24 @@ func Login(response http.ResponseWriter, request *http.Request) {
 	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(responseDTO)
 }
+
+func Validation(response http.ResponseWriter, request *http.Request) {
+	session := request.Context().Value("session").(*models.Session)
+	responseDTO := &models.ApiResponseDTO[struct {
+		User models.LoginDTO `json:"user"`
+	}]{
+		Success: false,
+		Data: &struct {
+			User models.LoginDTO `json:"user"`
+		}{
+			User: models.LoginDTO{
+				Fullname: session.User.Fullname,
+				Username: session.User.Username,
+				Profile:  session.User.Profile,
+			},
+		},
+	}
+
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(responseDTO)
+}

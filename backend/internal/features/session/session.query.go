@@ -18,10 +18,17 @@ const (
 			ss.id,
 			ss.token_exp,
 			ss.last_login,
-			ss.created_at
+			ss.created_at,
+			us.id,
+			us.fullname,
+			us.username,
+			us.profile,
+			st.id,
+			st.slug,
+			st.title
 		FROM Sessions AS ss
-		INNER JOIN Status AS st
-		ON ss.status_id = st.id
+		INNER JOIN Status AS st ON ss.status_id = st.id
+		INNER JOIN Users AS us ON ss.user_id = us.id AND us.status_id = st.id
 		WHERE
 			ss.token = $1 AND
 			ss.device_agent = $2 AND
