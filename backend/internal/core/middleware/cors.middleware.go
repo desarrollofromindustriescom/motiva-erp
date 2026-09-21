@@ -13,6 +13,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		if valid := trustOrigins[origin]; valid {
 			response.Header().Set("Access-Control-Allow-Origin", origin)
+			response.Header().Set("Access-Control-Allow-Credentials", "true")
 			response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, QUERY, OPTIONS")
 			response.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
