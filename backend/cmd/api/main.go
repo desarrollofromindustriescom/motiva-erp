@@ -2,21 +2,22 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"motiva-erp/backend/src/features/data/database"
+	"motiva-erp/backend/src/features/data/log"
+	"motiva-erp/backend/src/features/web/middleware"
 	"net/http"
 	"os"
 	"time"
-
-	"motiva-erp/backend/internal/core/database"
-	"motiva-erp/backend/internal/core/middleware"
-	"motiva-erp/backend/internal/framework"
 )
 
 func main() {
+	log.SetStandardLogConfig()
+
 	err := database.DBConnection()
 
 	if err != nil {
-		log.Print("Error on database package")
+		slog.Error("Error on db connection", "event", "main.dbcoonnection")
 		return
 	}
 
@@ -24,20 +25,31 @@ func main() {
 
 	mux := http.NewServeMux()
 	apiPort := os.Getenv("API_PORT")
+
+	if apiPort == "" {
+		slog.Error("Environment vairable api is empty", "event", "main.osenvs")
+		return
+	}
+
 	serverPort := fmt.Sprintf(":%s", apiPort)
 
-	framework.Router(mux)
+	// framework.Router(mux)
 
 	server := &http.Server{
-		Addr:         serverPort,
-		Handler:      middleware.MiddlewarePipeline(mux),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Addr:              serverPort,
+		Handler:           middleware.Pipeline(mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      20 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Printf("Error launching server: %v", err)
+		slog.Error("Error launching server",
+			"event", "main.listenandserve",
+			"error", err,
+		)
+
 		return
 	}
 }
