@@ -1,8 +1,9 @@
 package router
 
 import (
-	"motiva-erp/backend/src/features/web/middleware"
 	"net/http"
+
+	"motiva-erp/backend/src/features/web/utilities/middleware"
 )
 
 func Router() *http.ServeMux {

@@ -3,9 +3,9 @@ package middleware
 import (
 	"net/http"
 	"time"
-)
 
-const timeoutDuration time.Duration = 15 * time.Second
+	"motiva-erp/backend/src/features/data/repository"
+)
 
 /**
  * Set handler context timeout to response service
@@ -13,7 +13,7 @@ const timeoutDuration time.Duration = 15 * time.Second
  */
 func timeoutMiddleware(handler http.Handler, duration time.Duration) http.Handler {
 	if duration <= 0 {
-		duration = timeoutDuration
+		duration = repository.MwTimeoutDuration
 	}
 
 	return http.TimeoutHandler(handler, duration, "Server timeout")

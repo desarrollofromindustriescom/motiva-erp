@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"motiva-erp/backend/src/interfaces/models"
 	"net/http"
 	"time"
+
+	"motiva-erp/backend/src/interfaces/models"
 )
 
 /**

@@ -3,18 +3,19 @@ package main
 import (
 	"fmt"
 	"log/slog"
-	"motiva-erp/backend/src/features/data/database"
-	"motiva-erp/backend/src/features/data/log"
-	"motiva-erp/backend/src/features/web/middleware"
-	"motiva-erp/backend/src/features/web/router"
 	"net/http"
 	"os"
 	"time"
+
+	"motiva-erp/backend/src/features/data/database"
+	"motiva-erp/backend/src/features/data/log"
+	"motiva-erp/backend/src/features/web/api/router"
+	"motiva-erp/backend/src/features/web/utilities/middleware"
 )
 
 /**
  * Main api function
- * - Initialize global api settings (log, database, middleware)
+ * - Initialize global api settings (log, middleware, database)
  * - Close all db connections of pool on server stops
  * - Create new server object with env api port value
  * - Time configurations for server api endpoint steps
@@ -23,14 +24,12 @@ import (
 func main() {
 	log.SetStandardLogConfig()
 
-	err := database.DBConnection()
+	middleware.Init()
 
-	if err != nil {
-		slog.Error("Error on db connection", "event", "main.dbcoonnection")
+	if err := database.DBConnection(); err != nil {
+		slog.Error("Error on db connection", "event", "main.DBCoonnection")
 		return
 	}
-
-	middleware.Init()
 
 	defer database.GetPool().Close()
 
@@ -55,7 +54,7 @@ func main() {
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		slog.Error("Error launching server",
-			"event", "main.listenandserve",
+			"event", "main.ListenAndServe",
 			"error", err,
 		)
 

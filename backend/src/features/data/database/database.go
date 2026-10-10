@@ -21,6 +21,10 @@ var pool *pgxpool.Pool = nil
  * - Create pool and make first ping connection
  */
 func DBConnection() error {
+	if pool != nil {
+		return nil
+	}
+
 	dbName := os.Getenv("POSTGRES_DB")
 	dbUser := os.Getenv("POSTGRES_USER")
 	dbPass := os.Getenv("POSTGRES_PASSWORD")
@@ -28,7 +32,7 @@ func DBConnection() error {
 	dbHost := os.Getenv("DB_HOST")
 
 	if dbName == "" || dbUser == "" || dbPass == "" || dbHost == "" {
-		slog.Error("Environment vairables for db are empty", "event", "database.dbconnection.osenvs")
+		slog.Error("Environment vairables for db are empty", "event", "database.DBConnection.osenvs")
 		return errors.New("Empty environment")
 	}
 
@@ -42,7 +46,7 @@ func DBConnection() error {
 
 	if err != nil {
 		slog.Error("Error createing db connection config",
-			"event", "database.dbconnection.parseconfig",
+			"event", "database.DBConnection.ParseConfig",
 			"error", err,
 		)
 
@@ -64,7 +68,7 @@ func DBConnection() error {
 
 	if err != nil {
 		slog.Error("Error creating connection pool",
-			"event", "database.dbconnnection.newwithconfig",
+			"event", "database.DBConnection.NewWithConfig",
 			"error", err,
 		)
 
@@ -73,7 +77,7 @@ func DBConnection() error {
 
 	if err = pool.Ping(ctx); err != nil {
 		slog.Error("Error verifying db connection",
-			"event", "database.dbconnnection.ping",
+			"event", "database.DBConnection.Ping",
 			"error", err,
 		)
 

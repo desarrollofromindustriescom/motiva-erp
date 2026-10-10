@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-)
 
-const deadlineDuration time.Duration = timeoutDuration + 30*time.Second
+	"motiva-erp/backend/src/features/data/repository"
+)
 
 /**
  * Set handler wrapper to extend server's expected time
@@ -14,7 +14,7 @@ const deadlineDuration time.Duration = timeoutDuration + 30*time.Second
  */
 func deadlineMiddleware(handler http.Handler, duration time.Duration) http.Handler {
 	if duration <= 0 {
-		duration = deadlineDuration
+		duration = repository.MwDeadlineDuration
 	}
 
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
@@ -22,7 +22,7 @@ func deadlineMiddleware(handler http.Handler, duration time.Duration) http.Handl
 
 		if err := controller.SetWriteDeadline(time.Now().Add(duration)); err != nil {
 			slog.Error("Error setting write extended deadline",
-				"event", "middleware.deadlinemiddleware.setwritedeadline",
+				"event", "middleware.deadlineMiddleware.SetWriteDeadline",
 				"error", err,
 			)
 		}
