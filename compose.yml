@@ -33,6 +33,7 @@ services:
       networks:
          - motiva_net
       environment:
+         - ENV=${ENV}
          - API_PORT=${API_PORT}
          - DB_HOST=${DB_HOST}
          - DB_PORT=${DB_PORT}

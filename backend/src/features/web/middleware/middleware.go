@@ -1,7 +1,29 @@
 package middleware
 
-import "net/http"
+import (
+	"motiva-erp/backend/src/interfaces/models"
+	"net/http"
+	"time"
+)
 
-func Pipeline(handler http.Handler) http.Handler {
+func Init() {
+	setTrustOrigins()
+}
+
+func Pipeline(handler http.Handler, config *models.MiddlewareConfig) http.Handler {
+	settings := config
+
+	if settings != nil {
+		settings = &models.MiddlewareConfig{}
+	}
+
+	handler = timeoutMiddleware(handler, settings.Timeout)
+
+	if settings.Timeout > 0 {
+		handler = deadlineMiddleware(handler, settings.Timeout+30*time.Second)
+	}
+
+	handler = corsMiddleware(handler)
+
 	return handler
 }

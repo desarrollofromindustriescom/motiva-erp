@@ -21,10 +21,8 @@ func DBConnection() error {
 	dbHost := os.Getenv("DB_HOST")
 
 	if dbName == "" || dbUser == "" || dbPass == "" || dbHost == "" {
-		err := errors.New("Empty environment")
 		slog.Error("Environment vairables for db are empty", "event", "database.dbconnection.osenvs")
-
-		return err
+		return errors.New("Empty environment")
 	}
 
 	if dbPort != "" {
