@@ -6,8 +6,12 @@ import (
 	"time"
 )
 
-const deadlineDuration time.Duration = 90 * time.Second
+const deadlineDuration time.Duration = timeoutDuration + 30*time.Second
 
+/**
+ * Set handler wrapper to extend server's expected time
+ * to write a response
+ */
 func deadlineMiddleware(handler http.Handler, duration time.Duration) http.Handler {
 	if duration <= 0 {
 		duration = deadlineDuration

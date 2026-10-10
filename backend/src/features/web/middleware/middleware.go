@@ -6,10 +6,18 @@ import (
 	"time"
 )
 
+/**
+ * Function to initialize middleware constant values
+ */
 func Init() {
 	setTrustOrigins()
 }
 
+/**
+ * Main package function to wrap handler with multiple
+ * middleware function, at first check configuration and
+ * wrap handler dynamically and return handler result
+ */
 func Pipeline(handler http.Handler, config *models.MiddlewareConfig) http.Handler {
 	settings := config
 

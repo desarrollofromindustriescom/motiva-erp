@@ -13,6 +13,13 @@ import (
 
 var pool *pgxpool.Pool = nil
 
+/**
+ * Main package function to start db connection
+ * - Get data environment and verify it
+ * - create connection string
+ * - Setup connection configuration for connections and timeouts
+ * - Create pool and make first ping connection
+ */
 func DBConnection() error {
 	dbName := os.Getenv("POSTGRES_DB")
 	dbUser := os.Getenv("POSTGRES_USER")
@@ -76,6 +83,9 @@ func DBConnection() error {
 	return nil
 }
 
+/**
+ * Access function to get db pool
+ */
 func GetPool() *pgxpool.Pool {
 	return pool
 }

@@ -7,6 +7,10 @@ import (
 
 const timeoutDuration time.Duration = 15 * time.Second
 
+/**
+ * Set handler context timeout to response service
+ * unavailable if time expire and verify into handler function
+ */
 func timeoutMiddleware(handler http.Handler, duration time.Duration) http.Handler {
 	if duration <= 0 {
 		duration = timeoutDuration
