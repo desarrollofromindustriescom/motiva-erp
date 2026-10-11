@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"motiva-erp/backend/src/features/data/repository"
 	"net/http"
 	"os"
 )
@@ -12,12 +13,12 @@ var trustOrigins map[string]bool = make(map[string]bool)
  * development environment to allow local server server
  */
 func setTrustOrigins() {
-	env := os.Getenv("ENV")
+	env := os.Getenv(repository.EnvEnv)
 
 	trustOrigins["https://motiva-erp.pages.dev"] = true
 	trustOrigins["https://www.motiva-erp.pages.dev"] = true
 
-	if env == "DEVELOPMENT" {
+	if env == repository.EnvValDevelopment {
 		trustOrigins["https://localhost:4200"] = true
 	}
 }
@@ -31,7 +32,7 @@ func corsMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		origin := request.Header.Get("Origin")
 
-		if allowed := trustOrigins[origin]; origin == "" || !allowed {
+		if origin == "" || !trustOrigins[origin] {
 			http.Error(response, "CORS Error", http.StatusUnauthorized)
 		}
 

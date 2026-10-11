@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"motiva-erp/backend/src/features/data/repository"
 	"os"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -25,42 +25,60 @@ func DBConnection() error {
 		return nil
 	}
 
-	dbName := os.Getenv("POSTGRES_DB")
-	dbUser := os.Getenv("POSTGRES_USER")
-	dbPass := os.Getenv("POSTGRES_PASSWORD")
-	dbPort := os.Getenv("DB_PORT")
-	dbHost := os.Getenv("DB_HOST")
+	dbName := os.Getenv(repository.EnvDBName)
+	dbUser := os.Getenv(repository.EnvDBUser)
+	dbPass := os.Getenv(repository.EnvDBPass)
+	dbPort := os.Getenv(repository.EnvDBPort)
+	dbHost := os.Getenv(repository.EnvDBHost)
 
 	if dbName == "" || dbUser == "" || dbPass == "" || dbHost == "" {
-		slog.Error("Environment vairables for db are empty", "event", "database.DBConnection.osenvs")
+		slog.Error("Environment vairables for db are empty",
+			"event", "database.DBConnection.osenvs",
+			"name", dbName == "",
+			"user", dbUser == "",
+			"pass", dbPass == "",
+			"port", dbPort == "",
+			"host", dbHost == "",
+		)
+
 		return errors.New("Empty environment")
 	}
 
-	if dbPort != "" {
+	env := os.Getenv(repository.EnvEnv)
+
+	if env == repository.EnvValDevelopment {
+		if dbPort == "" {
+			slog.Error("DB port is empty",
+				"event", "database.DBConnection.dbPort",
+				"port", dbPort,
+			)
+
+			return errors.New("DBPort missing")
+		}
+
 		dbHost = fmt.Sprintf("%s:%s", dbHost, dbPort)
 	}
 
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s/%s", dbUser, dbPass, dbHost, dbName)
+	dbURL := fmt.Sprintf(repository.DBConnectionStringTemplate, dbUser, dbPass, dbHost, dbName)
 
 	config, err := pgxpool.ParseConfig(dbURL)
 
 	if err != nil {
 		slog.Error("Error createing db connection config",
 			"event", "database.DBConnection.ParseConfig",
-			"error", err,
 		)
 
 		return err
 	}
 
-	config.MaxConns = 20
-	config.MinConns = 0
-	config.MaxConnLifetime = 30 * time.Minute
-	config.MaxConnIdleTime = 5 * time.Minute
-	config.HealthCheckPeriod = 1 * time.Minute
-	config.ConnConfig.ConnectTimeout = 10 * time.Second
+	config.MaxConns = repository.DBMaxConns
+	config.MinConns = repository.DBMinConns
+	config.MaxConnLifetime = repository.DBMaxConnLifetime
+	config.MaxConnIdleTime = repository.DBMaxConnIdleTime
+	config.HealthCheckPeriod = repository.DBHealthCheckPeriod
+	config.ConnConfig.ConnectTimeout = repository.DBConnConfigTimeout
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), repository.DBContextTimeout)
 
 	defer cancel()
 
@@ -69,7 +87,7 @@ func DBConnection() error {
 	if err != nil {
 		slog.Error("Error creating connection pool",
 			"event", "database.DBConnection.NewWithConfig",
-			"error", err,
+			"timeout", repository.DBContextTimeout,
 		)
 
 		return err
@@ -78,7 +96,6 @@ func DBConnection() error {
 	if err = pool.Ping(ctx); err != nil {
 		slog.Error("Error verifying db connection",
 			"event", "database.DBConnection.Ping",
-			"error", err,
 		)
 
 		return err
