@@ -1,7 +1,10 @@
 package validation
 
 import (
+	"errors"
 	"log/slog"
+	"mime"
+	"net/http"
 
 	"motiva-erp/backend/src/features/data/repository"
 
@@ -37,6 +40,35 @@ func Init() error {
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+/**
+ * Function to validate request body type
+ * taking content type header as source
+ */
+func ContextTypeValidation(request *http.Request, expected string) error {
+	media, _, err := mime.ParseMediaType(request.Header.Get("Content-Type"))
+
+	if err != nil {
+		slog.Error("Error on content type validation",
+			"event", "validation.ContentTypeValidation.ParseMediaType",
+			"header", request.Header.Get("Content-Type"),
+		)
+
+		return err
+	}
+
+	if media != expected {
+		slog.Error("Content type isn't the expected",
+			"event", "validation.ContentTypeValidation.contentTypeMismatch",
+			"media", media,
+			"expected", expected,
+		)
+
+		return errors.New("Content type mismatch")
 	}
 
 	return nil
