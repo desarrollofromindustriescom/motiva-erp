@@ -12,7 +12,7 @@ func Router() *http.ServeMux {
 	api := http.NewServeMux()
 
 	// TODO: Test endpoint to get render ip, remove after finish
-	api.HandleFunc("GET /debug/ip", func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("GET /api/debug/ip", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "RemoteAddr: %s\nXFF: %q\nCF-Connecting-IP: %q\nTrue-Client-IP: %q\n",
 			r.RemoteAddr,
 			r.Header.Values("X-Forwarded-For"),
