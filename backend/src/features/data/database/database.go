@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"motiva-erp/backend/src/features/data/repository"
@@ -41,7 +40,7 @@ func DBConnection() error {
 			"host", dbHost == "",
 		)
 
-		return errors.New("Empty environment")
+		return repository.DBErrEmptyEnv
 	}
 
 	env := os.Getenv(repository.EnvEnv)
@@ -53,7 +52,7 @@ func DBConnection() error {
 				"port", dbPort,
 			)
 
-			return errors.New("DBPort missing")
+			return repository.DBErrPortMissing
 		}
 
 		dbHost = fmt.Sprintf("%s:%s", dbHost, dbPort)

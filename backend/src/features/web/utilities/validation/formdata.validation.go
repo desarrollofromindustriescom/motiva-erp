@@ -18,7 +18,7 @@ var pdfMagic []byte = []byte("%PDF-")
  * Function to validate content in request form data
  * cheking keys in values and files
  */
-func DataStructValidation(form *multipart.Form, allowed *models.FormDataContent) bool {
+func DataStructValidation(form *multipart.Form, allowed *models.FormDataContent) error {
 	for key := range form.Value {
 		if !allowed.Values[key] {
 			slog.Error("Request form data has invalid values",
@@ -26,7 +26,7 @@ func DataStructValidation(form *multipart.Form, allowed *models.FormDataContent)
 				"key", key,
 			)
 
-			return false
+			return repository.ValErrUnexpectedFields
 		}
 	}
 
@@ -37,17 +37,17 @@ func DataStructValidation(form *multipart.Form, allowed *models.FormDataContent)
 				"key", key,
 			)
 
-			return false
+			return repository.ValErrUnexpectedFiles
 		}
 	}
 
-	return true
+	return nil
 }
 
 /**
  * Function to verify request form data max size isn't exceed
  */
-func RequestDataSize(response http.ResponseWriter, request *http.Request) {
+func RequestDataSize(response http.ResponseWriter, request *http.Request) error {
 	request.Body = http.MaxBytesReader(response, request.Body, repository.ValFormDataMaxRequestSize)
 
 	if err := request.ParseMultipartForm(repository.ValFormDataMaxFileSize); err != nil {
@@ -55,10 +55,12 @@ func RequestDataSize(response http.ResponseWriter, request *http.Request) {
 			"event", "validation.RequestDataSize.ParseMultipartForm",
 		)
 
-		return
+		return err
 	}
 
 	defer request.MultipartForm.RemoveAll()
+
+	return nil
 }
 
 /**
@@ -78,7 +80,7 @@ func ValidatePDF(form *multipart.Form, key string) error {
 			"length", len(files),
 		)
 
-		return errors.New("Files length mismatch")
+		return repository.ValErrFileLength
 	}
 
 	header := files[0]
@@ -89,7 +91,7 @@ func ValidatePDF(form *multipart.Form, key string) error {
 			"size", header.Size,
 		)
 
-		return errors.New("File too large")
+		return repository.ValErrFileSize
 	}
 
 	file, err := header.Open()
@@ -99,7 +101,7 @@ func ValidatePDF(form *multipart.Form, key string) error {
 			"event", "validation.ValidatePDF.Open",
 		)
 
-		return errors.New("Error opening file")
+		return repository.ValErrFileOpenTest
 	}
 
 	defer file.Close()
@@ -112,7 +114,7 @@ func ValidatePDF(form *multipart.Form, key string) error {
 		)
 
 		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-			return errors.New("Unsuported file type")
+			return repository.ValErrUnsupportedFile
 		}
 
 		return err
@@ -123,7 +125,7 @@ func ValidatePDF(form *multipart.Form, key string) error {
 			"event", "validation.ValidatePDF.Equal",
 		)
 
-		return errors.New("Unsuported file type")
+		return repository.ValErrUnsupportedFile
 	}
 
 	return nil

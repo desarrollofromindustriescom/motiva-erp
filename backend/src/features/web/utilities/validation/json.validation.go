@@ -2,7 +2,6 @@ package validation
 
 import (
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 	"reflect"
@@ -27,7 +26,7 @@ func FieldsTagsValidation[T any](payload *T) (*[]models.ValidationErrorDetail, e
 			"king", customType.Kind(),
 		)
 
-		return nil, errors.New("Data type invalid")
+		return nil, repository.ValErrInvalidDataType
 	}
 
 	if err := validate.Struct(payload); err != nil {
@@ -66,7 +65,7 @@ func RequestJsonDecode[T any](response http.ResponseWriter, request *http.Reques
 			"king", customType.Kind(),
 		)
 
-		return nil, errors.New("Data type invalid")
+		return nil, repository.ValErrInvalidDataType
 	}
 
 	var payload *T
@@ -81,7 +80,7 @@ func RequestJsonDecode[T any](response http.ResponseWriter, request *http.Reques
 			"event", "validation.RequestJsonValidation.Decode",
 		)
 
-		return nil, errors.New("Request payload decode error")
+		return nil, repository.ValErrPayloadDecode
 	}
 
 	return payload, nil

@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"errors"
 	"log/slog"
 	"mime"
 	"net/http"
@@ -68,7 +67,7 @@ func ContextTypeValidation(request *http.Request, expected string) error {
 			"expected", expected,
 		)
 
-		return errors.New("Content type mismatch")
+		return repository.ValErrContentTypeMismatch
 	}
 
 	return nil

@@ -25,17 +25,26 @@ func initUtilities() error {
 	middleware.Init()
 
 	if err := i18n.Init(); err != nil {
-		slog.Error("Error initializing i18n utility", "event", "main.initUtilities.Init")
+		slog.Error("Error initializing i18n utility",
+			"event", "main.initUtilities.Init",
+		)
+
 		return err
 	}
 
 	if err := validation.Init(); err != nil {
-		slog.Error("Error initializing validation utility", "event", "main.initUtilities.Init")
+		slog.Error("Error initializing validation utility",
+			"event", "main.initUtilities.Init",
+		)
+
 		return err
 	}
 
 	if err := database.DBConnection(); err != nil {
-		slog.Error("Error on db connection", "event", "main.initUtilities.DBCoonnection")
+		slog.Error("Error on db connection",
+			"event", "main.initUtilities.DBCoonnection",
+		)
+
 		return err
 	}
 

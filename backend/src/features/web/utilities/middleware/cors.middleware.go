@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"motiva-erp/backend/src/features/data/repository"
 	"net/http"
 	"os"
+
+	"motiva-erp/backend/src/features/data/repository"
 )
 
 var trustOrigins map[string]bool = make(map[string]bool)

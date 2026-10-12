@@ -1,6 +1,9 @@
 package repository
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 const (
 	DBConnectionStringTemplate string        = "postgres://%s:%s@%s/%s"
@@ -11,4 +14,9 @@ const (
 	DBHealthCheckPeriod        time.Duration = 1 * time.Second
 	DBConnConfigTimeout        time.Duration = 10 * time.Second
 	DBContextTimeout           time.Duration = 10 * time.Second
+)
+
+var (
+	DBErrEmptyEnv    error = errors.New("Empty environment")
+	DBErrPortMissing error = errors.New("Database port missing")
 )
