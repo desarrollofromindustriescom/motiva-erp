@@ -35,6 +35,7 @@ func corsMiddleware(handler http.Handler) http.Handler {
 
 		if origin == "" || !trustOrigins[origin] {
 			http.Error(response, "CORS Error", http.StatusUnauthorized)
+			return
 		}
 
 		response.Header().Set("Access-Control-Allow-Origin", origin)
