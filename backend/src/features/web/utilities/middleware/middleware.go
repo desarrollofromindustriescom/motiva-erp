@@ -22,7 +22,7 @@ func Init() {
 func Pipeline(handler http.Handler, config *models.MiddlewareConfig) http.Handler {
 	settings := config
 
-	if settings != nil {
+	if settings == nil {
 		settings = &models.MiddlewareConfig{}
 	}
 
