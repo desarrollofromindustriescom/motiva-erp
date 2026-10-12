@@ -33,6 +33,7 @@ func Pipeline(handler http.Handler, config *models.MiddlewareConfig) http.Handle
 	}
 
 	handler = corsMiddleware(handler)
+	handler = rateLimitMiddleware(handler)
 
 	return handler
 }
