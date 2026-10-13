@@ -48,8 +48,8 @@ func Init() error {
  * Function to validate request body type
  * taking content type header as source
  */
-func ContextTypeValidation(request *http.Request, expected string) error {
-	media, _, err := mime.ParseMediaType(request.Header.Get("Content-Type"))
+func contentTypeValidation(request *http.Request, expected string) error {
+	media, _, err := mime.ParseMediaType(request.Header.Get(repository.HeadContentType))
 
 	if err != nil {
 		slog.Error("Error on content type validation",

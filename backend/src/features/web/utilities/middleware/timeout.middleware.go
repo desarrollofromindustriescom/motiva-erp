@@ -16,5 +16,5 @@ func timeoutMiddleware(handler http.Handler, duration time.Duration) http.Handle
 		duration = repository.MwTimeoutDuration
 	}
 
-	return http.TimeoutHandler(handler, duration, "Server timeout")
+	return http.TimeoutHandler(handler, duration, repository.HttpServerTimeout)
 }

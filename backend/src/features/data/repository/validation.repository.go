@@ -1,14 +1,22 @@
 package repository
 
-import "errors"
+import (
+	"errors"
+	"motiva-erp/backend/src/interfaces/models"
+)
 
 const (
-	ValJsonMime               string = "application/json"
-	ValFormDataMime           string = "multipart/form-data"
-	ValKeySecurePassword      string = "securepassword"
-	ValJsonMaxSize            int64  = 1 << 20
-	ValFormDataMaxRequestSize int64  = 10 << 20
-	ValFormDataMaxFileSize    int64  = 9 << 20
+	ValJsonMaxSize            int64 = 1 << 20
+	ValFormDataMaxRequestSize int64 = 10 << 20
+	ValFormDataMaxFileSize    int64 = 9 << 20
+
+	ValKeySecurePassword string = "securepassword"
+
+	ValMimeJson     string = "application/json"
+	ValMimeFormData string = "multipart/form-data"
+
+	ValI18nKeyFailFieldsValidation models.I18nKey = "FAIL_FIELDS_VALIDATION"
+	ValI18nKeyFieldRequired        models.I18nKey = "FIELD_REQUIRED"
 )
 
 var (

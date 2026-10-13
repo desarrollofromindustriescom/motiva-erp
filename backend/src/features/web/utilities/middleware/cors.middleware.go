@@ -31,16 +31,16 @@ func setTrustOrigins() {
  */
 func corsMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		origin := request.Header.Get("Origin")
+		origin := request.Header.Get(repository.HeadOrigin)
 
 		if origin == "" || !trustOrigins[origin] {
-			http.Error(response, "CORS Error", http.StatusUnauthorized)
+			http.Error(response, repository.HttpCORSError, http.StatusUnauthorized)
 			return
 		}
 
-		response.Header().Set("Access-Control-Allow-Origin", origin)
-		response.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, QUERY, OPTIONS")
-		response.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		response.Header().Set(repository.HeadCORSOrigin, origin)
+		response.Header().Set(repository.HeadCORSMethods, repository.HeadValCORSMethods)
+		response.Header().Set(repository.HeadCORSHeaders, repository.HeadValCORSHeaders)
 
 		if request.Method == http.MethodOptions {
 			response.WriteHeader(http.StatusOK)

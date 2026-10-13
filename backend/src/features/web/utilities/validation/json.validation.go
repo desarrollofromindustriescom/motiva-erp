@@ -30,13 +30,15 @@ func FieldsTagsValidation[T any](payload *T) (*[]models.ValidationErrorDetail, e
 	}
 
 	if err := validate.Struct(payload); err != nil {
-		valErrors := &[]models.ValidationErrorDetail{}
+		var valErrors *[]models.ValidationErrorDetail = nil
 
 		slog.Error("Error on payload fields validation",
 			"event", "validation.RequestJsonValidation.Struct",
 		)
 
 		if details, ok := err.(validator.ValidationErrors); ok {
+			valErrors = &[]models.ValidationErrorDetail{}
+
 			for _, field := range details {
 				*valErrors = append(*valErrors, models.ValidationErrorDetail{
 					Field: field.Field(),
@@ -56,7 +58,7 @@ func FieldsTagsValidation[T any](payload *T) (*[]models.ValidationErrorDetail, e
  * Function to validate endpoint request payload,
  * seting value for max size & decoding it into object instance
  */
-func RequestJsonDecode[T any](response http.ResponseWriter, request *http.Request) (*T, error) {
+func requestJsonDecode[T any](response http.ResponseWriter, request *http.Request) (*T, error) {
 	customType := reflect.TypeFor[T]()
 
 	if customType.Kind() != reflect.Struct {
@@ -84,4 +86,38 @@ func RequestJsonDecode[T any](response http.ResponseWriter, request *http.Reques
 	}
 
 	return payload, nil
+}
+
+/**
+ * Broker function to validate handler request
+ * calling three helper functions
+ */
+func RequestPayloadValidation[T any](response http.ResponseWriter, request *http.Request) (*T, *[]models.ValidationErrorDetail, error) {
+	if err := contentTypeValidation(request, repository.ValMimeJson); err != nil {
+		slog.Error("Error verifying request content type",
+			"event", "validation.RequestPayloadValidation.contentTypeValidation",
+		)
+
+		return nil, nil, err
+	}
+
+	payload, err := requestJsonDecode[T](response, request)
+
+	if err != nil {
+		slog.Error("Error decoding user paylaod",
+			"event", "validation.RequestPayloadValidation.requestJsonDecode",
+		)
+
+		return nil, nil, err
+	}
+
+	if details, err := FieldsTagsValidation(payload); err != nil {
+		slog.Error("Error decoding user paylaod",
+			"event", "validation.RequestPayloadValidation.FieldsTagsValidation",
+		)
+
+		return nil, details, err
+	}
+
+	return payload, nil, nil
 }

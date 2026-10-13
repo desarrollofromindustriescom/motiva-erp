@@ -58,12 +58,12 @@ func clientIP(request *http.Request) (string, error) {
 		return "", repository.MwErrInvalidProxies
 	}
 
-	xff := strings.Join(request.Header.Values("X-Forwarded-For"), ",")
+	xff := strings.Join(request.Header.Values(repository.HeadXForwardedFor), ",")
 
 	if xff == "" {
-		cloudflareIP := request.Header.Get("CF-Connecting-IP")
+		cloudflareIP := request.Header.Get(repository.HeadCFConnectingIP)
 
-		if cloudflareIP == "" || cloudflareIP != request.Header.Get("True-Client-IP") || net.ParseIP(cloudflareIP) == nil {
+		if cloudflareIP == "" || cloudflareIP != request.Header.Get(repository.HeadTrueClientIP) || net.ParseIP(cloudflareIP) == nil {
 			slog.Error("Error on fallback option for client ip",
 				"event", "middleware.clientIP.ipsmismatch",
 				"cf-connecting-ip", cloudflareIP,
@@ -182,7 +182,7 @@ func rateLimitMiddleware(handler http.Handler) http.Handler {
 			if errors.Is(err, repository.MwErrUndefinedClientIP) || errors.Is(err, repository.MwErrProxiesLength) {
 				slog.Warn("Error verifying client real IP",
 					"event", "middleware.rateLimitMiddleware.clienIP",
-					"x-forwarded-for", request.Header.Values("X-Forwarded-For"),
+					"x-forwarded-for", request.Header.Values(repository.HeadXForwardedFor),
 					"error", err,
 				)
 
@@ -190,13 +190,13 @@ func rateLimitMiddleware(handler http.Handler) http.Handler {
 				return
 			}
 
-			http.Error(response, "Internal server error", http.StatusInternalServerError)
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
 			return
 		}
 
 		if allowed, wait := allow(ip, time.Now()); !allowed {
-			response.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(wait.Seconds()))))
-			http.Error(response, "Too many requests", http.StatusTooManyRequests)
+			response.Header().Set(repository.HeadRetryAfter, strconv.Itoa(int(math.Ceil(wait.Seconds()))))
+			http.Error(response, repository.HttpTooManyRequest, http.StatusTooManyRequests)
 			return
 		}
 

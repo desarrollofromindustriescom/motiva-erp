@@ -18,7 +18,7 @@ var pdfMagic []byte = []byte("%PDF-")
  * Function to validate content in request form data
  * cheking keys in values and files
  */
-func DataStructValidation(form *multipart.Form, allowed *models.FormDataContent) error {
+func dataStructValidation(form *multipart.Form, allowed *models.FormDataContent) error {
 	for key := range form.Value {
 		if !allowed.Values[key] {
 			slog.Error("Request form data has invalid values",
@@ -47,7 +47,7 @@ func DataStructValidation(form *multipart.Form, allowed *models.FormDataContent)
 /**
  * Function to verify request form data max size isn't exceed
  */
-func RequestDataSize(response http.ResponseWriter, request *http.Request) error {
+func requestDataSize(response http.ResponseWriter, request *http.Request) error {
 	request.Body = http.MaxBytesReader(response, request.Body, repository.ValFormDataMaxRequestSize)
 
 	if err := request.ParseMultipartForm(repository.ValFormDataMaxFileSize); err != nil {
@@ -59,6 +59,38 @@ func RequestDataSize(response http.ResponseWriter, request *http.Request) error 
 	}
 
 	defer request.MultipartForm.RemoveAll()
+
+	return nil
+}
+
+/**
+ * Broker function to validate form data format as multipart,
+ * size in request and content fields
+ */
+func RequestDataValidation(response http.ResponseWriter, request *http.Request, allowed *models.FormDataContent) error {
+	if err := contentTypeValidation(request, repository.ValMimeFormData); err != nil {
+		slog.Error("Error verifying request content type",
+			"event", "validation.RequestDataValidation.contentTypeValidation",
+		)
+
+		return err
+	}
+
+	if err := requestDataSize(response, request); err != nil {
+		slog.Error("Error verifying request form data size",
+			"event", "validation.RequestDataValidation.requestDataSize",
+		)
+
+		return err
+	}
+
+	if err := dataStructValidation(request.MultipartForm, allowed); err != nil {
+		slog.Error("Error on form data fields allowed",
+			"event", "validation.RequestDataValidation.dataStructValidation",
+		)
+
+		return err
+	}
 
 	return nil
 }
