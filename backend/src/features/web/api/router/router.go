@@ -3,12 +3,15 @@ package router
 import (
 	"net/http"
 
+	"motiva-erp/backend/src/features/web/api/handlers"
 	"motiva-erp/backend/src/features/web/utilities/middleware"
 )
 
 func Router() *http.ServeMux {
 	root := http.NewServeMux()
 	api := http.NewServeMux()
+
+	api.HandleFunc("POST /api/login", handlers.Login)
 
 	root.Handle("/api/", middleware.Pipeline(api, nil))
 
