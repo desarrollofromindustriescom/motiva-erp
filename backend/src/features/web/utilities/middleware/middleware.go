@@ -26,6 +26,7 @@ func Pipeline(handler http.Handler, config *models.MiddlewareConfig) http.Handle
 		settings = &models.MiddlewareConfig{}
 	}
 
+	handler = authenticationMiddleware(handler)
 	handler = timeoutMiddleware(handler, settings.Timeout)
 
 	if settings.Timeout > 0 {

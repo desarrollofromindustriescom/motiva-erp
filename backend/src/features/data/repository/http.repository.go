@@ -7,4 +7,5 @@ const (
 	HttpCORSError           string = "CORS Error"
 	HttpServerTimeout       string = "Server timeout"
 	HttpTooManyRequest      string = "Too many requests"
+	HttpUnauthorized        string = "Unauthorized"
 )

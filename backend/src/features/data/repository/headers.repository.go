@@ -12,6 +12,7 @@ const (
 	HeadRetryAfter     string = "Retry-After"
 	HeadUserAgent      string = "User-Agent"
 	HeadContentType    string = "Content-Type"
+	HeadAuthorization  string = "Authorization"
 
 	HeadValCORSMethods string = "GET, POST, PATCH, PUT, DELETE, QUERY, OPTIONS"
 	HeadValCORSHeaders string = "Content-Type, Authorization"

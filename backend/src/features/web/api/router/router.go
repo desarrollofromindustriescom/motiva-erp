@@ -1,8 +1,10 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 
+	"motiva-erp/backend/src/features/data/repository"
 	"motiva-erp/backend/src/features/web/api/handlers"
 	"motiva-erp/backend/src/features/web/utilities/middleware"
 )
@@ -11,9 +13,9 @@ func Router() *http.ServeMux {
 	root := http.NewServeMux()
 	api := http.NewServeMux()
 
-	api.HandleFunc("POST /api/login", handlers.Login)
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLogin), handlers.Login)
 
-	root.Handle("/api/", middleware.Pipeline(api, nil))
+	root.Handle(repository.RouteMain, middleware.Pipeline(api, nil))
 
 	// TODO: Config for endpoints to allow files
 	// streamConfig := &models.MiddlewareConfig{ Timeout: 1 * time.Minute }

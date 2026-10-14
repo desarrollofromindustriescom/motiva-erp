@@ -17,6 +17,8 @@ const (
 	MwBannDuration     time.Duration = 5 * time.Minute
 	MwLastIdle         time.Duration = 15 * time.Minute
 	MwMaxClients       int           = 10_000
+	MwAuthTokenKey     string        = "Bearer"
+	MwAuthTokenLength  int           = 64
 )
 
 var (

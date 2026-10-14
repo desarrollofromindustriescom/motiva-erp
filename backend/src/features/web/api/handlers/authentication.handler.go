@@ -12,6 +12,7 @@ import (
 	"motiva-erp/backend/src/features/web/utilities/i18n"
 	"motiva-erp/backend/src/features/web/utilities/validation"
 	"motiva-erp/backend/src/interfaces/controller"
+	"motiva-erp/backend/src/interfaces/models"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -96,6 +97,34 @@ func Login(response http.ResponseWriter, request *http.Request) {
 
 	preview.Success = true
 	preview.Data = &controller.LoginPreview{Token: session.Token}
+
+	response.WriteHeader(http.StatusOK)
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ *
+ */
+func Validate(response http.ResponseWriter, request *http.Request) {
+	session := request.Context().Value("session").(*models.Session)
+	preview := &controller.EpPreview[controller.ValidatePreview]{
+		Success: true,
+		Data: &controller.ValidatePreview{
+			ID:                   session.User.ID,
+			Fullname:             session.User.Fullname,
+			Username:             session.User.Username,
+			Profile:              session.User.Profile,
+			PhoneNumber:          session.User.PhoneNumber,
+			CURP:                 session.User.CURP,
+			Address:              session.User.Address,
+			GuaranteeFullname:    session.User.GuaranteeFullname,
+			GuaranteePhoneNumber: session.User.GuaranteePhoneNumber,
+			GuaranteeAddress:     session.User.GuaranteeAddress,
+			AccountClabe:         session.User.AccountClabe,
+			AccountBank:          session.User.AccountBank,
+		},
+	}
 
 	response.WriteHeader(http.StatusOK)
 	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
