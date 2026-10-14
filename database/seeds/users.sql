@@ -1,5 +1,5 @@
 INSERT INTO
-   Users (fullname, username, password, profile)
+   users (fullname, username, password, profile)
 VALUES
    (
       'admin',

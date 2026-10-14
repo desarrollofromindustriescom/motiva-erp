@@ -1,11 +1,11 @@
-CREATE TYPE USER_PROFILE AS ENUM ('superadmin', 'administrator', 'borrower', 'investor');
+CREATE TYPE user_profile AS ENUM ('superadmin', 'administrator', 'borrower', 'investor');
 
-CREATE TYPE SETTINGS_UNIT AS ENUM ('percentage', 'monetary', 'weeks');
+CREATE TYPE settings_unit AS ENUM ('percentage', 'monetary', 'weeks');
 
-CREATE TYPE LOAN_TYPE AS ENUM ('weekly', 'monthly');
+CREATE TYPE loan_type AS ENUM ('weekly', 'monthly');
 
-CREATE TYPE LOAN_PAYMENT_TYPE AS ENUM ('capital', 'regular', 'late');
+CREATE TYPE loan_payment_type AS ENUM ('capital', 'regular', 'late');
 
-CREATE TYPE PAYMENT_EXTRA_CONCEPT AS ENUM ('mora', 'visit');
+CREATE TYPE payment_extra_concept AS ENUM ('mora', 'visit');
 
-CREATE TYPE MOVEMENT_TYPE AS ENUM ('deposit', 'withdrawal');
+CREATE TYPE movement_type AS ENUM ('deposit', 'withdrawal');

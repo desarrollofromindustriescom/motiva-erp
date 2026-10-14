@@ -1,5 +1,5 @@
 INSERT INTO
-   Status (id, slug, title)
+   status (id, slug, title)
 VALUES
    ('9e150222-2e27-464d-9356-f4e2515d5755', 'active', 'Activo'),
    ('db1ef621-4005-486b-a7a8-ad13d6ef00a9', 'inactive', 'Inactivo'),

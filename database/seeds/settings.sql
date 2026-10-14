@@ -1,5 +1,5 @@
 INSERT INTO
-   Settings (slug, VALUE, unit)
+   settings (slug, VALUE, unit)
 VALUES
    ('mora', 10000, 'percentage'),
    ('visit', 10000, 'monetary'),
