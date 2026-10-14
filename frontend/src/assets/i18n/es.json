@@ -1,0 +1,13 @@
+{
+   "FROM_INDUSTRIES": "FromIndustries",
+   "LOGIN_BUILD_BY": "Hecho por",
+   "LOGIN_TITLE": "Bienvenido a Crédito Motiva",
+   "LOGIN_SUBTITLE": "Plataforma administrativa y acceso de clientes",
+   "LOGIN_FORM_TITLE": "Inicio de sesión",
+   "LOGIN_FORM_USERNAME": "Nombre de usuario",
+   "LOGIN_FORM_PASSWORD": "Contraseña",
+   "LOGIN_FORM_SIGNIN_BUTTON": "Entrar",
+   "FORM_ERROR_TITLE": "Error de formulario",
+   "FORM_ALL_FIELDS_REQUIRED": "Todos los campos deben tener un valor",
+   "LOADING-DOTS": "Cargando..."
+}
