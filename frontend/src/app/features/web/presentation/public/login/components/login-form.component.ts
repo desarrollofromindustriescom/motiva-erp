@@ -8,8 +8,8 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputPasswordModule } from 'primeng/inputpassword';
 import { InputTextModule } from 'primeng/inputtext';
 import { LabelModule } from 'primeng/label';
-import { FieldsLogin } from '../../../../../../interfaces/auth';
-import { AuthService } from '../../../../../data/services/auth.service';
+import { FieldsLogin } from '../../../../../../interfaces/authentication';
+import { AuthenticationService } from '../../../../../data/services/authentication.service';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
@@ -93,11 +93,11 @@ import { TranslatePipe } from '@ngx-translate/core';
    ],
 })
 export class LoginFormComponent {
-   private readonly _auth: AuthService = inject(AuthService);
+   private readonly _authentication: AuthenticationService = inject(AuthenticationService);
 
    public readonly $passwordVisibility: WritableSignal<boolean> = signal(true);
-   public readonly $form: FieldTree<FieldsLogin, string | number, 'writable'> = this._auth.forms.login;
-   public readonly $loading: Signal<boolean> = computed(() => this._auth.loading);
+   public readonly $form: FieldTree<FieldsLogin, string | number, 'writable'> = this._authentication.forms.login;
+   public readonly $loading: Signal<boolean> = computed(() => this._authentication.loading);
 
    constructor() {}
 
@@ -106,6 +106,6 @@ export class LoginFormComponent {
    }
 
    public login(): void {
-      this._auth.login();
+      this._authentication.login();
    }
 }

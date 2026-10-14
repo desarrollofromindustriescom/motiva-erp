@@ -5,8 +5,12 @@ export interface FieldsLogin {
    password: string;
 }
 
-export type AuthRoutes = 'verifyToken' | 'login';
+export interface LoginPreview {
+   token: string;
+}
 
-export interface AuthForms {
+export type AuthenticationRoutes = 'validate' | 'login';
+
+export interface AuthenticationForms {
    login: SignalForm<FieldsLogin>;
 }

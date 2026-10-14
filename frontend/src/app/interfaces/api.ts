@@ -1,22 +1,22 @@
-export type CustomHeaders = 'ignoreError' | 'resourceKey';
+export type CustomHeaders = 'ignoreError';
 
 export interface EndpointData {
    route: string;
    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'QUERY';
 }
 
-export interface ApiErrorDetail {
+export interface ErrorDetails {
    field: string;
    detail: string;
 }
 
-export interface ApiError {
+export interface EpError {
    message: string;
-   details: ApiErrorDetail[];
+   details: ErrorDetails[];
 }
 
-export interface PayloadResponse {
+export interface EpPreview {
    success: boolean;
    data: object | null;
-   error: ApiError | null;
+   error: EpError | null;
 }

@@ -5,20 +5,25 @@ import { providePrimeNG } from 'primeng/config';
 import Material from '@primeuix/themes/material';
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { authenticationInterceptorFn } from './features/data/interceptors/authentication.interceptor';
+import { SessionService } from './features/data/services/session.service';
+import { errorInterceptorFn } from './features/data/interceptors/error.interceptor';
+import { parseInterceptorFn } from './features/data/interceptors/parse.interceptor';
 
 export const appConfig: ApplicationConfig = {
    providers: [
       provideBrowserGlobalErrorListeners(),
       provideRouter(routes),
-      provideHttpClient(),
+      provideHttpClient(withInterceptors([authenticationInterceptorFn, errorInterceptorFn, parseInterceptorFn])),
       provideTranslateService({
          fallbackLang: 'es',
          loader: provideTranslateHttpLoader({
             prefix: '/assets/i18n/',
             suffix: '.json',
+            useHttpBackend: true,
          }),
       }),
       providePrimeNG({
@@ -30,6 +35,7 @@ export const appConfig: ApplicationConfig = {
          },
          license: '',
       }),
+      SessionService,
       DialogService,
       ConfirmationService,
    ],

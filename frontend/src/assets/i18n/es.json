@@ -9,5 +9,12 @@
    "LOGIN_FORM_SIGNIN_BUTTON": "Entrar",
    "FORM_ERROR_TITLE": "Error de formulario",
    "FORM_ALL_FIELDS_REQUIRED": "Todos los campos deben tener un valor",
+   "DEFAULT_ERR_MESSAGE": "Ocurrió un error",
+   "ERR_TITLE_BAD_REQUEST": "Error en los datos de la petición",
+   "ERR_TITLE_UNAUTHORIZED": "Sin autorización",
+   "ERR_TITLE_NOT_FOUND": "Recurso no encontrado",
+   "ERR_TITLE_CONTENT_TOO_LARGE": "Tamaño de la petición muy grande",
+   "ERR_TITLE_TOO_MANY_REQUEST": "Muchas peticiones hechas",
+   "ERR_TITLE_INTERNAL_SERVER_ERROR": "Error interno del servidor",
    "LOADING-DOTS": "Cargando..."
 }
