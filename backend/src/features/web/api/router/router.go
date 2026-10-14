@@ -14,6 +14,7 @@ func Router() *http.ServeMux {
 	api := http.NewServeMux()
 
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLogin), handlers.Login)
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteValidate), handlers.Validate)
 
 	root.Handle(repository.RouteMain, middleware.Pipeline(api, nil))
 

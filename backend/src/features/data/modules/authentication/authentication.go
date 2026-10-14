@@ -21,7 +21,7 @@ func VerifyUserData(payload *controller.LoginPayload, ctx context.Context) (*mod
 	err := database.GetPool().QueryRow(
 		ctx,
 		repository.AuthQryGetUserXUsername,
-		payload.Username,
+		(*payload).Username,
 	).Scan(
 		&user.ID,
 		&user.Fullname,

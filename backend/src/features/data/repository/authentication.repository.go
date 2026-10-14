@@ -10,28 +10,28 @@ const (
 
 	AuthQryGetUserXUsername string = `--sql
 		SELECT
-			user.id,
-			user.fullname,
-			user.username,
-			user.password,
-			user.profile,
-			user.phone_number,
-			user.curp,
-			user.address,
-			user.guarantee_fullname,
-			user.guarantee_phone_number,
-			user.guarantee_address,
-			user.account_clabe,
-			user.account_bank,
-			user.created_at,
+			users.id,
+			users.fullname,
+			users.username,
+			users.password,
+			users.profile,
+			users.phone_number,
+			users.curp,
+			users.address,
+			users.guarantee_fullname,
+			users.guarantee_phone_number,
+			users.guarantee_address,
+			users.account_clabe,
+			users.account_bank,
+			users.created_at,
 			status.id,
 			status.slug,
 			status.title
-		FROM Users AS user
-		INNER JOIN Status AS status
-		ON user.status_id = status.id
+		FROM users
+		INNER JOIN status
+		ON users.status_id = status.id
 		WHERE
-			user.username = $1 AND
+			users.username = $1 AND
 			status.slug = 'active'
 	`
 )

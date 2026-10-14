@@ -1,6 +1,6 @@
 {
    "FAIL_FIELDS_VALIDATION": "Error en los campos de la petición",
    "FIELD_REQUIRED": "El campo es requerido",
-   "USER_NOT_FOUND": "Usuario no encontrado",
+   "USER_NOT_FOUND": "Usuario no encontrado, verifica las credenciales de acceso",
    "ERROR_ON_SESSION_GENERATION": "Error al crear la sesión del usuario"
 }

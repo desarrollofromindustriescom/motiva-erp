@@ -8,7 +8,7 @@ import (
 const (
 	SsI18nKeyErrorOnSessionGeneration models.I18nKey = "ERROR_ON_SESSION_GENERATION"
 	SsQryNewSession                   string         = `--sql
-		INSERT INTO Sessions (
+		INSERT INTO sessions (
 			token,
 			token_exp,
 			device_agent,
@@ -20,40 +20,40 @@ const (
 	`
 	SsQryGetActiveSession string = `--sql
 		SELECT
-			session.id,
-			session.token_exp,
-			session.last_login,
-			session.created_at,
-			user.id,
-			user.fullname,
-			user.username,
-			user.profile,
-			user.phone_number,
-			user.curp,
-			user.address,
-			user.guarantee_fullname,
-			user.guarantee_phone_number,
-			user.guarantee_address,
-			user.account_clabe,
-			user.account_bank,
+			sessions.id,
+			sessions.token_exp,
+			sessions.last_login,
+			sessions.created_at,
+			users.id,
+			users.fullname,
+			users.username,
+			users.profile,
+			users.phone_number,
+			users.curp,
+			users.address,
+			users.guarantee_fullname,
+			users.guarantee_phone_number,
+			users.guarantee_address,
+			users.account_clabe,
+			users.account_bank,
 			status.id,
 			status.slug,
 			status.title
-		FROM Sessions AS session
-		INNER JOIN Status AS status ON session.status_id = status.id
-		INNER JOIN Users AS user ON session.user_id = user.id AND user.status_id = status.id
+		FROM sessions
+		INNER JOIN status ON sessions.status_id = status.id
+		INNER JOIN users ON sessions.user_id = users.id AND users.status_id = status.id
 		WHERE
-			session.token = $1 AND
-			session.device_agent = $2 AND
+			sessions.token = $1 AND
+			sessions.device_agent = $2 AND
 			status.slug = 'active'
 	`
 	SsQryUpdateExpired string = `--sql
-		UPDATE Sessions
-		SET status_id = (SELECT id FROM Status WHERE slug = 'expired')
+		UPDATE sessions
+		SET status_id = (SELECT id FROM status WHERE slug = 'expired')
 		WHERE id = $1
 	`
 	SsQryUpdateExpTime string = `--sql
-		UPDATE Sessions
+		UPDATE sessions
 		SET
 			token_exp = $1,
 			last_login = $2
