@@ -1,0 +1,4 @@
+export const FOOTER_I18N_KEYS = {
+   BUILD_BY: 'FOOTER_BUILD_BY',
+   BUSINESS: 'FOOTER_BUSINESS',
+};

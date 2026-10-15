@@ -1,8 +1,4 @@
 export const environment: Environment = {
-   dir: {
-      icons: '/assets/icons/',
-      pictures: '/assets/pictures/',
-   },
    apiUrl: 'https://motiva-erp.onrender.com/api',
    tokenKey: 'auth-token',
    primengLicence:

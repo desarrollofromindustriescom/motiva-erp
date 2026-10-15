@@ -1,8 +1,4 @@
 export const environment: Environment = {
-   dir: {
-      icons: '/assets/icons/',
-      pictures: '/assets/pictures/',
-   },
    apiUrl: 'http://localhost:8080/api',
    tokenKey: 'auth-token',
    primengLicence:

@@ -13,13 +13,13 @@ export class App {
    private readonly _session: SessionService = inject(SessionService);
 
    constructor() {
-      this._session.init();
-
       effect(() => {
          const token: string = this._session.token;
          const session: Session | null = this._session.session;
+         const initialized: boolean = this._session.initialized;
+         const url: string = this._router.url;
 
-         if (!token && !session) this._router.navigate(['/']);
+         if (!token && !session && initialized && url !== '/') this._router.navigate(['/']);
       });
    }
 }

@@ -2,8 +2,8 @@ import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpReq
 import { inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { SessionService } from '../services/session.service';
-import { customHeaders } from '../repository/custom-headers';
-import { errCodeTitles, defaultErrTitle } from '../repository/api.repository';
+import { CUSTOM_HEADERS } from '../repository/custom-headers';
+import { ERR_CODE_TITLES, DEFAULT_ERR_TITLE } from '../repository/api.repository';
 import Swal from 'sweetalert2';
 import { TranslateService } from '@ngx-translate/core';
 import { EpPreview } from '../../../interfaces/api';
@@ -22,7 +22,7 @@ export const errorInterceptorFn: HttpInterceptorFn = (
 
             if (event.status === 401) _session.clear();
 
-            if (request.headers.has(customHeaders.ignoreError)) return;
+            if (request.headers.has(CUSTOM_HEADERS.IGNORE_ERROR)) return;
 
             const preview = event.error as EpPreview | null;
             let text: string | undefined;
@@ -35,7 +35,7 @@ export const errorInterceptorFn: HttpInterceptorFn = (
                text,
                icon: 'error',
                timer: 5000,
-               title: _translate.instant(errCodeTitles[event.status] || defaultErrTitle),
+               title: _translate.instant(ERR_CODE_TITLES[event.status] || DEFAULT_ERR_TITLE),
             });
          },
       }),

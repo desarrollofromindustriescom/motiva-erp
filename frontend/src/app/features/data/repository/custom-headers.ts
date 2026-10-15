@@ -1,5 +1,5 @@
 import { CustomHeaders } from '../../../interfaces/api';
 
-export const customHeaders: Record<CustomHeaders, string> = {
-   ignoreError: 'X-IGNORE-ERROR',
+export const CUSTOM_HEADERS: Record<CustomHeaders, string> = {
+   IGNORE_ERROR: 'X-IGNORE-ERROR',
 };

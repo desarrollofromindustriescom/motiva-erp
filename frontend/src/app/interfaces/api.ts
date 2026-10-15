@@ -1,8 +1,10 @@
-export type CustomHeaders = 'ignoreError';
+export type CustomHeaders = 'IGNORE_ERROR';
+
+export type AllowedMethods = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'QUERY';
 
 export interface EndpointData {
    route: string;
-   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'QUERY';
+   method: AllowedMethods;
 }
 
 export interface ErrorDetails {

@@ -1,7 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { LoginPictureComponent } from './components/login-picture.component';
 import { LoginWelcomeComponent } from './components/login-welcome.component';
 import { TranslatePipe } from '@ngx-translate/core';
+import { AuthenticationService } from '../../../../data/services/authentication.service';
+import { SessionService } from '../../../../data/services/session.service';
+import { Router } from '@angular/router';
+import { PATHS } from '../../../../data/repository/paths.repository';
+import { FOOTER_I18N_KEYS } from '../../../../data/repository/layout.repository';
 
 @Component({
    selector: 'fi-login-page-component',
@@ -14,10 +19,26 @@ import { TranslatePipe } from '@ngx-translate/core';
             <fi-login-picture-component class="hidden xl:flex size-full" />
          </div>
          <p class="w-full flex items-center justify-center gap-1 text-main h-12 text-xs sm:text-base transition-all">
-            {{ 'LOGIN_BUILD_BY' | translate }} <b>{{ 'FROM_INDUSTRIES' | translate }}</b>
+            {{ I18N.BUILD_BY | translate }} <b>{{ I18N.BUSINESS | translate }}</b>
          </p>
       </section>
    `,
    imports: [LoginPictureComponent, LoginWelcomeComponent, TranslatePipe],
 })
-export class LoginPageComponent {}
+export class LoginPageComponent {
+   private readonly _router: Router = inject(Router);
+   private readonly _session: SessionService = inject(SessionService);
+   private readonly _authentication: AuthenticationService = inject(AuthenticationService);
+
+   public readonly I18N = FOOTER_I18N_KEYS;
+
+   constructor() {
+      this._authentication
+         .recoverSession({
+            hideError: true,
+         })
+         .then(() => {
+            if (this._session.token && this._session.session) this._router.navigate([PATHS.ROOT, PATHS.APP]);
+         });
+   }
+}

@@ -11,6 +11,8 @@ import { LabelModule } from 'primeng/label';
 import { FieldsLogin } from '../../../../../../interfaces/authentication';
 import { AuthenticationService } from '../../../../../data/services/authentication.service';
 import { TranslatePipe } from '@ngx-translate/core';
+import { LOGIN_I18N_KEYS } from '../../../../../data/repository/login.repository';
+import { FORMS_I18N_KEYS } from '../../../../../data/repository/forms.repository';
 
 @Component({
    selector: 'fi-login-form-component',
@@ -24,13 +26,13 @@ import { TranslatePipe } from '@ngx-translate/core';
       >
          <div class="flex items-end">
             <h2 class="w-full text-lg sm:text-xl md:text-2xl text-second transition-all">
-               {{ 'LOGIN_FORM_TITLE' | translate }}
+               {{ I18N.LOGIN.FORM_TITLE | translate }}
             </h2>
 
             @if (loading) {
-               <span class="italic text-main animate-pulse text-sm sm:text-base transition-all">{{
-                  'LOADING-DOTS' | translate
-               }}</span>
+               <span class="italic text-main animate-pulse text-sm sm:text-base transition-all">
+                  {{ I18N.FORMS.LOADING_DOTS | translate }}
+               </span>
             }
          </div>
 
@@ -44,7 +46,7 @@ import { TranslatePipe } from '@ngx-translate/core';
                [formField]="$form.username"
             />
 
-            <label for="username">{{ 'LOGIN_FORM_USERNAME' | translate }}</label>
+            <label for="username">{{ I18N.FORMS.FIELD_USERNAME | translate }}</label>
          </p-iftalabel>
 
          <p-iftalabel class="w-full">
@@ -66,7 +68,7 @@ import { TranslatePipe } from '@ngx-translate/core';
                   }"
                />
             </p-iconfield>
-            <label for="password">{{ 'LOGIN_FORM_PASSWORD' | translate }}</label>
+            <label for="password">{{ I18N.FORMS.FIELD_PASSWORD | translate }}</label>
          </p-iftalabel>
 
          <button
@@ -75,7 +77,7 @@ import { TranslatePipe } from '@ngx-translate/core';
             [disabled]="loading"
             (click)="login()"
          >
-            {{ 'LOGIN_FORM_SIGNIN_BUTTON' | translate }}
+            {{ I18N.FORMS.SIGNIN_BUTTON | translate }}
          </button>
       </form>
    `,
@@ -94,6 +96,11 @@ import { TranslatePipe } from '@ngx-translate/core';
 })
 export class LoginFormComponent {
    private readonly _authentication: AuthenticationService = inject(AuthenticationService);
+
+   public readonly I18N = {
+      LOGIN: LOGIN_I18N_KEYS,
+      FORMS: FORMS_I18N_KEYS,
+   };
 
    public readonly $passwordVisibility: WritableSignal<boolean> = signal(true);
    public readonly $form: FieldTree<FieldsLogin, string | number, 'writable'> = this._authentication.forms.login;

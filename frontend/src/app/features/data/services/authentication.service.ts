@@ -15,16 +15,22 @@ import { FormSchema, SignalForm } from '../../../interfaces/alias';
 import { firstValueFrom } from 'rxjs';
 import { SessionService } from './session.service';
 import { Session } from '../../../interfaces/session';
+import { CUSTOM_HEADERS } from '../repository/custom-headers';
+import { Router } from '@angular/router';
+import { API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
+import { PATHS } from '../repository/paths.repository';
+import { FORMS_I18N_KEYS } from '../repository/forms.repository';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
+   private readonly _router: Router = inject(Router);
+   private readonly _http: HttpClient = inject(HttpClient);
    private readonly _session: SessionService = inject(SessionService);
    private readonly _translate: TranslateService = inject(TranslateService);
-   private readonly _http: HttpClient = inject(HttpClient);
 
    private readonly routes: Record<AuthenticationRoutes, EndpointData> = {
-      validate: { route: '/validate', method: 'GET' },
-      login: { route: '/login', method: 'POST' },
+      validate: { route: API_ROUTES.VALIDATE, method: HTTP_METHODS.GET },
+      login: { route: API_ROUTES.LOGIN, method: HTTP_METHODS.POST },
    };
 
    private readonly $loading: WritableSignal<boolean> = signal(false);
@@ -53,14 +59,8 @@ export class AuthenticationService {
    });
 
    private readonly $formLogin: SignalForm<FieldsLogin> = form(this.$modelLogin, (schema: FormSchema<FieldsLogin>) => {
-      required(schema.username, {
-         message: 'FIELD_VALIDATION_REQUIRED',
-         when: ({ state }: ChildFieldContext<string>) => state.touched(),
-      });
-      required(schema.password, {
-         message: 'FIELD_VALIDATION_REQUIRED',
-         when: ({ state }: ChildFieldContext<string>) => state.touched(),
-      });
+      required(schema.username, { when: ({ state }: ChildFieldContext<string>) => state.touched() });
+      required(schema.password, { when: ({ state }: ChildFieldContext<string>) => state.touched() });
 
       disabled(schema.username, { when: () => this.$loading() });
       disabled(schema.password, { when: () => this.$loading() });
@@ -86,42 +86,80 @@ export class AuthenticationService {
    /**
     *
     */
-   public validate(): Promise<void> {
-      let { method, route } = this.routes.validate;
+   public validate(options?: { hideError?: boolean }): Promise<void> {
+      return new Promise((resolve, reject) => {
+         if (!this._session.token) return resolve();
 
-      this.$loading.set(true);
-      return firstValueFrom(this._http.request<Session>(method, `${environment.apiUrl}${route}`))
-         .then((session: Session) => {
-            console.log('session', session);
-            this._session.session = session;
-         })
-         .finally(() => this.$loading.set(false));
+         const headers: Record<string, string> = {};
+         let { method, route } = this.routes.validate;
+
+         if (options && options.hideError) headers[CUSTOM_HEADERS.IGNORE_ERROR] = '';
+
+         this.$loading.set(true);
+         firstValueFrom(this._http.request<Session>(method, `${environment.apiUrl}${route}`, { headers }))
+            .then((session: Session) => {
+               this._session.session = session;
+               resolve();
+            })
+            .catch(reject)
+            .finally(() => this.$loading.set(false));
+      });
    }
 
    /**
     *
     */
    public login(): void {
-      submit(this.$formLogin, async () => {
-         const body: FieldsLogin = this.$formLogin().value();
-         let { method, route } = this.routes.login;
+      submit(
+         this.$formLogin,
+         async () =>
+            new Promise<void>((resolve, reject) => {
+               const body: FieldsLogin = this.$formLogin().value();
+               let { method, route } = this.routes.login;
 
-         this.$loading.set(true);
-         return firstValueFrom(this._http.request<LoginPreview>(method, `${environment.apiUrl}${route}`, { body }))
-            .then(({ token }: LoginPreview) => {
-               this._session.token = token;
-               return this.validate();
-            })
-            .finally(() => this.$loading.set(false));
-      }).then((state: boolean) => {
+               this.$loading.set(true);
+               firstValueFrom(this._http.request<LoginPreview>(method, `${environment.apiUrl}${route}`, { body }))
+                  .then(({ token }: LoginPreview) => {
+                     this._session.updateToken({ token, store: true });
+                     return this.validate();
+                  })
+                  .then(() => {
+                     this._router.navigate([PATHS.ROOT, PATHS.APP]);
+                     resolve();
+                  })
+                  .catch(reject)
+                  .finally(() => this.$loading.set(false));
+            }),
+      ).then((state: boolean) => {
          if (state) return;
 
          Swal.fire({
-            title: this._translate.instant('FORM_ERROR_TITLE'),
-            text: this._translate.instant('FORM_ALL_FIELDS_REQUIRED'),
+            title: this._translate.instant(FORMS_I18N_KEYS.ERROR_TITLE),
+            text: this._translate.instant(FORMS_I18N_KEYS.VAL_ALL_FIELDS_REQUIRED),
             icon: 'error',
             timer: 3000,
          });
+      });
+   }
+
+   /**
+    *
+    */
+   public recoverSession(options?: { hideError?: boolean }): Promise<void> {
+      return new Promise((resolve, reject) => {
+         const token: string = this._session.token;
+         const session: Session | null = this._session.session;
+
+         if (token && session) return resolve();
+
+         let handler: () => Promise<void> = () => Promise.resolve();
+
+         if (!token) handler = () => this._session.getTokenCookie();
+
+         handler()
+            .then(() => this.validate(options))
+            .then(resolve)
+            .catch(reject);
       });
    }
 }

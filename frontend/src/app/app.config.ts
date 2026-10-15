@@ -12,6 +12,8 @@ import { authenticationInterceptorFn } from './features/data/interceptors/authen
 import { SessionService } from './features/data/services/session.service';
 import { errorInterceptorFn } from './features/data/interceptors/error.interceptor';
 import { parseInterceptorFn } from './features/data/interceptors/parse.interceptor';
+import { JSON_EXTENSION, LANGS } from './features/data/repository/i18n.repository';
+import { ASSETS_DIR } from './features/data/repository/assets.repository';
 
 export const appConfig: ApplicationConfig = {
    providers: [
@@ -19,10 +21,10 @@ export const appConfig: ApplicationConfig = {
       provideRouter(routes),
       provideHttpClient(withInterceptors([authenticationInterceptorFn, errorInterceptorFn, parseInterceptorFn])),
       provideTranslateService({
-         fallbackLang: 'es',
+         fallbackLang: LANGS.ES,
          loader: provideTranslateHttpLoader({
-            prefix: '/assets/i18n/',
-            suffix: '.json',
+            prefix: ASSETS_DIR.I18N,
+            suffix: JSON_EXTENSION,
             useHttpBackend: true,
          }),
       }),

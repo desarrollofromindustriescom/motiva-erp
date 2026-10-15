@@ -1,8 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { LoginFormComponent } from './login-form.component';
 import { TranslatePipe } from '@ngx-translate/core';
-import { contact } from '../../../../../data/repository/contact.repository';
+import { CONTACT } from '../../../../../data/repository/contact.repository';
 import { PhoneFormatPipe } from '../../../../utilities/pipes/phone-format.pipe';
+import { LOGIN_I18N_KEYS } from '../../../../../data/repository/login.repository';
 
 @Component({
    selector: 'fi-login-welcome-component',
@@ -12,9 +13,9 @@ import { PhoneFormatPipe } from '../../../../utilities/pipes/phone-format.pipe';
       >
          <div class="flex flex-col">
             <h1 class="text-xl sm:text-2xl md:text-4xl text-second font-bold transition-all">
-               {{ 'LOGIN_TITLE' | translate }}
+               {{ I18N.TITLE | translate }}
             </h1>
-            <span class="text-xs sm:text-sm text-main transition-all">{{ 'LOGIN_SUBTITLE' | translate }}</span>
+            <span class="text-xs sm:text-sm text-main transition-all">{{ I18N.SUBTITLE | translate }}</span>
          </div>
 
          <fi-login-form-component class="w-full" />
@@ -39,6 +40,8 @@ import { PhoneFormatPipe } from '../../../../utilities/pipes/phone-format.pipe';
 export class LoginWelcomeComponent {
    private pPhoneFormat: PhoneFormatPipe = inject(PhoneFormatPipe);
 
+   public readonly I18N = LOGIN_I18N_KEYS;
+
    public readonly contactMedia: {
       icon: string;
       link: string;
@@ -46,13 +49,13 @@ export class LoginWelcomeComponent {
    }[] = [
       {
          icon: 'bx-envelope-alt',
-         link: `mailto:${contact.EMAIL}`,
-         text: contact.EMAIL,
+         link: `mailto:${CONTACT.EMAIL}`,
+         text: CONTACT.EMAIL,
       },
       {
          icon: 'bx-phone',
-         link: `tel:${contact.PHONE_NUMBER}`,
-         text: this.pPhoneFormat.transform(contact.PHONE_NUMBER),
+         link: `tel:${CONTACT.PHONE_NUMBER}`,
+         text: this.pPhoneFormat.transform(CONTACT.PHONE_NUMBER),
       },
    ];
 }
