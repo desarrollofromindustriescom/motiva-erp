@@ -1,4 +1,4 @@
-CREATE TYPE user_profile AS ENUM ('superadmin', 'administrator', 'borrower', 'investor');
+CREATE TYPE user_profile AS ENUM ('superadmin', 'administrator', 'manager', 'borrower', 'investor');
 
 CREATE TYPE settings_unit AS ENUM ('percentage', 'monetary', 'weeks');
 

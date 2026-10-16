@@ -3,10 +3,11 @@ import { Component, computed, inject, Signal } from '@angular/core';
 import { NavigationService } from '../../../../../data/services/navigation.service';
 import { ApplicationModule, NavigationRoute } from '../../../../../../interfaces/navigation';
 import { TranslatePipe } from '@ngx-translate/core';
+import { AuthorizedDirective } from '../../../../utilities/directives/authorized.directive';
 
 @Component({
    selector: 'fi-sidebar-component',
-   imports: [NgClass, TranslatePipe],
+   imports: [NgClass, TranslatePipe, AuthorizedDirective],
    template: `
       @let currentModule = $currentModule();
 
@@ -14,7 +15,10 @@ import { TranslatePipe } from '@ngx-translate/core';
          <nav class="w-full flex flex-col border border-slate-500 rounded-2xl p-4">
             <ul class="flex flex-col w-full gap-1">
                @for (nav of navModules; track $index) {
-                  <li class="flex w-full">
+                  <li
+                     *fiAuthorized="nav.allowed"
+                     class="flex w-full"
+                  >
                      <button
                         class="w-full flex items-center justify-start py-3 pl-6 gap-3 rounded-xl transition-all cursor-pointer"
                         (click)="handleNavigate({ module: nav.slug })"

@@ -7,6 +7,7 @@ export const APPLICATION_MODULES: Record<Uppercase<ApplicationModule>, Applicati
    USERS: 'users',
    SETTINGS: 'settings',
    PROFILE: 'profile',
+   DASHBOARD: 'dashboard',
 };
 
 export const PATHS = {
@@ -18,5 +19,6 @@ export const PATHS = {
    USERS: 'users',
    SETTINGS: 'settings',
    PROFILE: 'profile',
+   DASHBOARD: 'dashboard',
    ALL_ROUTES: '**',
 };

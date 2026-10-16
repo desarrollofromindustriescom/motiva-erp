@@ -1,6 +1,6 @@
 import { Status } from './status';
 
-export type UserProfile = 'superadmin' | 'administrator' | 'borrower' | 'investor';
+export type UserProfile = 'superadmin' | 'administrator' | 'manager' | 'borrower' | 'investor';
 
 export type User = {
    id: string;

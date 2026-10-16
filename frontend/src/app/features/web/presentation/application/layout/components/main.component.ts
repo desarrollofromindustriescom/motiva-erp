@@ -9,10 +9,13 @@ import { FooterComponent } from './footer.component';
    template: `
       <main class="size-full flex flex-col max-h-full overflow-auto gap-2">
          <fi-header-component />
-         <section class="w-full flex-auto flex">
+
+         <section
+            class="w-full flex-auto flex flex-col [&>*:nth-child(2)]:flex-auto border rounded-2xl border-slate-500"
+         >
             <router-outlet />
+            <fi-footer-component />
          </section>
-         <fi-footer-component />
       </main>
    `,
 })
