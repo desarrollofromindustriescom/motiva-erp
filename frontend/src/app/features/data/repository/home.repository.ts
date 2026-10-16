@@ -1,0 +1,3 @@
+export const HOME_I18N_KEYS = {
+   MODULE_TITLE: 'HOME_MODULE_TITLE',
+};

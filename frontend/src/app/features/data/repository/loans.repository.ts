@@ -1,0 +1,3 @@
+export const LOANS_I18N_KEYS = {
+   MODULE_TITLE: 'LOANS_MODULE_TITLE',
+};

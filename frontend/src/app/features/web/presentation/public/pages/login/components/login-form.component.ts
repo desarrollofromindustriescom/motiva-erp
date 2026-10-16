@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, computed, inject, Signal, signal, WritableSignal } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 import { ButtonDirective } from 'primeng/button';
@@ -8,14 +8,26 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputPasswordModule } from 'primeng/inputpassword';
 import { InputTextModule } from 'primeng/inputtext';
 import { LabelModule } from 'primeng/label';
-import { FieldsLogin } from '../../../../../../interfaces/authentication';
-import { AuthenticationService } from '../../../../../data/services/authentication.service';
+import { FieldsLogin } from '../../../../../../../interfaces/authentication';
+import { AuthenticationService } from '../../../../../../data/services/authentication.service';
 import { TranslatePipe } from '@ngx-translate/core';
-import { LOGIN_I18N_KEYS } from '../../../../../data/repository/login.repository';
-import { FORMS_I18N_KEYS } from '../../../../../data/repository/forms.repository';
+import { LOGIN_I18N_KEYS } from '../../../../../../data/repository/login.repository';
+import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.repository';
 
 @Component({
    selector: 'fi-login-form-component',
+   imports: [
+      IftaLabelModule,
+      InputTextModule,
+      InputPasswordModule,
+      IconFieldModule,
+      InputIconModule,
+      NgClass,
+      LabelModule,
+      ButtonDirective,
+      TranslatePipe,
+      FormField,
+   ],
    template: `
       @let passwordVisibility = $passwordVisibility();
       @let loading = $loading();
@@ -61,7 +73,7 @@ import { FORMS_I18N_KEYS } from '../../../../../data/repository/forms.repository
                />
                <p-inputicon
                   class="cursor-pointer -translate-y-1/2 bx"
-                  (click)="passwordToggle()"
+                  (click)="handlePasswordToggle()"
                   [ngClass]="{
                      'bx-eye': passwordVisibility,
                      'bx-eye-slash': !passwordVisibility,
@@ -75,24 +87,12 @@ import { FORMS_I18N_KEYS } from '../../../../../data/repository/forms.repository
             pButton
             class="bg-contrast! w-full sm:w-fit px-6! ml-auto text-sm sm:text-base transition-all"
             [disabled]="loading"
-            (click)="login()"
+            (click)="handleLogin()"
          >
             {{ I18N.FORMS.SIGNIN_BUTTON | translate }}
          </button>
       </form>
    `,
-   imports: [
-      IftaLabelModule,
-      InputTextModule,
-      InputPasswordModule,
-      IconFieldModule,
-      InputIconModule,
-      CommonModule,
-      LabelModule,
-      ButtonDirective,
-      TranslatePipe,
-      FormField,
-   ],
 })
 export class LoginFormComponent {
    private readonly _authentication: AuthenticationService = inject(AuthenticationService);
@@ -108,11 +108,11 @@ export class LoginFormComponent {
 
    constructor() {}
 
-   public passwordToggle(): void {
+   public handlePasswordToggle(): void {
       this.$passwordVisibility.update((value: boolean) => !value);
    }
 
-   public login(): void {
+   public handleLogin(): void {
       this._authentication.login();
    }
 }

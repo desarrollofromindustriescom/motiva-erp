@@ -1,12 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { LoginFormComponent } from './login-form.component';
 import { TranslatePipe } from '@ngx-translate/core';
-import { CONTACT } from '../../../../../data/repository/contact.repository';
-import { PhoneFormatPipe } from '../../../../utilities/pipes/phone-format.pipe';
-import { LOGIN_I18N_KEYS } from '../../../../../data/repository/login.repository';
+import { CONTACT } from '../../../../../../data/repository/contact.repository';
+import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pipe';
+import { LOGIN_I18N_KEYS } from '../../../../../../data/repository/login.repository';
 
 @Component({
    selector: 'fi-login-welcome-component',
+   imports: [LoginFormComponent, TranslatePipe],
+   providers: [PhoneFormatPipe],
    template: `
       <div
          class="border border-black/30 rounded-xl py-4 sm:py-8 md:py-12 px-6 sm:px-12 md:px-24 flex flex-col items-start justify-between size-full transition-all"
@@ -34,8 +36,6 @@ import { LOGIN_I18N_KEYS } from '../../../../../data/repository/login.repository
          </ul>
       </div>
    `,
-   imports: [LoginFormComponent, TranslatePipe],
-   providers: [PhoneFormatPipe],
 })
 export class LoginWelcomeComponent {
    private pPhoneFormat: PhoneFormatPipe = inject(PhoneFormatPipe);

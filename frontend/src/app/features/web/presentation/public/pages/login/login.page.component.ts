@@ -2,14 +2,15 @@ import { Component, inject } from '@angular/core';
 import { LoginPictureComponent } from './components/login-picture.component';
 import { LoginWelcomeComponent } from './components/login-welcome.component';
 import { TranslatePipe } from '@ngx-translate/core';
-import { AuthenticationService } from '../../../../data/services/authentication.service';
-import { SessionService } from '../../../../data/services/session.service';
+import { AuthenticationService } from '../../../../../data/services/authentication.service';
+import { SessionService } from '../../../../../data/services/session.service';
 import { Router } from '@angular/router';
-import { PATHS } from '../../../../data/repository/paths.repository';
-import { FOOTER_I18N_KEYS } from '../../../../data/repository/layout.repository';
+import { PATHS } from '../../../../../data/repository/navigation.repository';
+import { FOOTER_I18N_KEYS } from '../../../../../data/repository/layout.repository';
 
 @Component({
    selector: 'fi-login-page-component',
+   imports: [LoginPictureComponent, LoginWelcomeComponent, TranslatePipe],
    template: `
       <section class="w-full h-dvh flex flex-col items-center justify-start">
          <div
@@ -23,7 +24,6 @@ import { FOOTER_I18N_KEYS } from '../../../../data/repository/layout.repository'
          </p>
       </section>
    `,
-   imports: [LoginPictureComponent, LoginWelcomeComponent, TranslatePipe],
 })
 export class LoginPageComponent {
    private readonly _router: Router = inject(Router);
@@ -33,6 +33,8 @@ export class LoginPageComponent {
    public readonly I18N = FOOTER_I18N_KEYS;
 
    constructor() {
+      if (this._authentication.loading) return;
+
       this._authentication
          .recoverSession({
             hideError: true,

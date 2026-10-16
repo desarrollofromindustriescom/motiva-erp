@@ -18,7 +18,7 @@ import { Session } from '../../../interfaces/session';
 import { CUSTOM_HEADERS } from '../repository/custom-headers';
 import { Router } from '@angular/router';
 import { API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
-import { PATHS } from '../repository/paths.repository';
+import { PATHS } from '../repository/navigation.repository';
 import { FORMS_I18N_KEYS } from '../repository/forms.repository';
 
 @Injectable({ providedIn: 'root' })

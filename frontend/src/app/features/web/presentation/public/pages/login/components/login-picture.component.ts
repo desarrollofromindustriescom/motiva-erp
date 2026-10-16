@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { PICTURES, ICONS, ASSETS_DIR } from '../../../../../data/repository/assets.repository';
+import { PICTURES, ICONS, ASSETS_DIR } from '../../../../../../data/repository/assets.repository';
 
 @Component({
    selector: 'fi-login-picture-component',

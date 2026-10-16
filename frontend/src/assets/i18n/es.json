@@ -16,5 +16,11 @@
    "ERR_TITLE_CONTENT_TOO_LARGE": "Tamaño de la petición muy grande",
    "ERR_TITLE_TOO_MANY_REQUEST": "Muchas peticiones hechas",
    "ERR_TITLE_INTERNAL_SERVER_ERROR": "Error interno del servidor",
-   "LOADING-DOTS": "Cargando..."
+   "LOADING-DOTS": "Cargando...",
+   "HOME_MODULE_TITLE": "Inicio",
+   "LOANS_MODULE_TITLE": "Préstamos",
+   "KPIS_MODULE_TITLE": "Métricas",
+   "USERS_MODULE_TITLE": "Usuarios",
+   "SETTINGS_MODULE_TITLE": "Configuración",
+   "PROFILE_MODULE_TITLE": "Perfil"
 }

@@ -1,0 +1,3 @@
+export const PROFILE_I18N_KEYS = {
+   MODULE_TITLE: 'PROFILE_MODULE_TITLE',
+};

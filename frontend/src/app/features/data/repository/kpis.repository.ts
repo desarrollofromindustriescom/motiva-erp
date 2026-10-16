@@ -1,0 +1,3 @@
+export const KPIS_I18N_KEYS = {
+   MODULE_TITLE: 'KPIS_MODULE_TITLE',
+};

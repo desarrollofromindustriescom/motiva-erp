@@ -1,0 +1,3 @@
+export const SETTINGS_I18N_KEYS = {
+   MODULE_TITLE: 'SETTINGS_MODULE_TITLE',
+};

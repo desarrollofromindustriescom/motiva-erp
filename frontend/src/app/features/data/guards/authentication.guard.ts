@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateChildFn, CanActivateFn, Router, UrlTree } from '@angular/router';
 import { SessionService } from '../services/session.service';
 import { AuthenticationService } from '../services/authentication.service';
-import { PATHS } from '../repository/paths.repository';
+import { PATHS } from '../repository/navigation.repository';
 
 export const authenticationGuard: CanActivateFn & CanActivateChildFn = (): Promise<boolean | UrlTree> => {
    const _router: Router = inject(Router);

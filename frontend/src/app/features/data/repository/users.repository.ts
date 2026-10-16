@@ -1,0 +1,3 @@
+export const USERS_I18N_KEYS = {
+   MODULE_TITLE: 'USERS_MODULE_TITLE',
+};
