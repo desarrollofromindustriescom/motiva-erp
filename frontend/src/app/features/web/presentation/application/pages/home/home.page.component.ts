@@ -5,10 +5,11 @@ import { SessionService } from '../../../../../data/services/session.service';
 import { HOME_I18N_KEYS } from '../../../../../data/repository/home.repository';
 import { ApplicationModule, NavigationRoute } from '../../../../../../interfaces/navigation';
 import { AuthorizedDirective } from '../../../../utilities/directives/authorized.directive';
+import { TitleCasePipe } from '@angular/common';
 
 @Component({
    selector: 'fi-home-page-component',
-   imports: [TranslatePipe, AuthorizedDirective],
+   imports: [TranslatePipe, AuthorizedDirective, TitleCasePipe],
    template: `
       @let fullname = $fullname();
 
@@ -17,7 +18,7 @@ import { AuthorizedDirective } from '../../../../utilities/directives/authorized
             <h2 class="text-xl">
                {{ HOME_I18N_KEYS.WELCOME_MESSAGE | translate }}
             </h2>
-            <span class="text-lg font-bold">{{ fullname }}</span>
+            <span class="text-lg font-bold">{{ fullname | titlecase }}</span>
          </div>
 
          <ul class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">

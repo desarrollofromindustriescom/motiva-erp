@@ -52,3 +52,26 @@ func VerifyUserData(payload *controller.LoginPayload, ctx context.Context) (*mod
 
 	return user, nil
 }
+
+/**
+ *
+ */
+func UpdatePassword(ctx context.Context, session *models.Session, payload *controller.ChangePasswordPayload) error {
+	if err := bcrypt.CompareHashAndPassword([]byte(session.User.Password), []byte(payload.CurrentPassword)); err != nil {
+		return repository.AuthErrPasswordMismatch
+	}
+
+	if payload.NewPassword != payload.ConfirmPassword {
+		return repository.AuthErrNewPasswordsMismatch
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), bcrypt.DefaultCost)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = database.GetPool().Exec(ctx, repository.AuthQryUpdatePassword, string(hash), session.User.ID)
+
+	return err
+}

@@ -10,5 +10,7 @@ const (
 )
 
 var I18nTagsKeys map[string]models.I18nKey = map[string]models.I18nKey{
-	"required": ValI18nKeyFieldRequired,
+	"required":           ValI18nKeyFieldRequired,
+	"min":                ValI18nKeyFieldMinLength,
+	ValKeySecurePassword: ValI18nKeyFieldSecurePassword,
 }

@@ -6,8 +6,15 @@ import (
 )
 
 const (
-	AuthI18nKeyUserNotFound models.I18nKey = "USER_NOT_FOUND"
+	AuthI18nKeyUserNotFound          models.I18nKey = "USER_NOT_FOUND"
+	AuthI18nKeyCurrentPasswordFailed models.I18nKey = "CURRENT_PASSWORD_MISMATCH"
+	AuthI18nKeyNewPasswordsFailed    models.I18nKey = "NEW_PASSWORDS_MISMATCH"
 
+	AuthQryUpdatePassword string = `--sql
+		UPDATE users
+		SET password = $1
+		WHERE id = $2
+	`
 	AuthQryGetUserXUsername string = `--sql
 		SELECT
 			users.id,
@@ -37,5 +44,6 @@ const (
 )
 
 var (
-	AuthErrPasswordMismatch error = errors.New("Password mismatch")
+	AuthErrPasswordMismatch     error = errors.New("Password mismatch")
+	AuthErrNewPasswordsMismatch error = errors.New("New passwords mismatch")
 )

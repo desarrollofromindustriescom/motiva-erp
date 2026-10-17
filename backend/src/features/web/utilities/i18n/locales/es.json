@@ -2,5 +2,9 @@
    "FAIL_FIELDS_VALIDATION": "Error en los campos de la petición",
    "FIELD_REQUIRED": "El campo es requerido",
    "USER_NOT_FOUND": "Usuario no encontrado, verifica las credenciales de acceso",
-   "ERROR_ON_SESSION_GENERATION": "Error al crear la sesión del usuario"
+   "ERROR_ON_SESSION_GENERATION": "Error al crear la sesión del usuario",
+   "FIELD_MIN_LENGTH": "El campo debe tener al menos {{.Param}} caracteres",
+   "FIELD_SECURE_PASSWORD": "La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales",
+   "CURRENT_PASSWORD_MISMATCH": "La contraseña actual no coincide con el valor proporcionado",
+   "NEW_PASSWORDS_MISMATCH": "La nueva contraseña y su confirmación no coinciden"
 }

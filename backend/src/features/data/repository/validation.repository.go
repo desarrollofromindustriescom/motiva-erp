@@ -17,6 +17,8 @@ const (
 
 	ValI18nKeyFailFieldsValidation models.I18nKey = "FAIL_FIELDS_VALIDATION"
 	ValI18nKeyFieldRequired        models.I18nKey = "FIELD_REQUIRED"
+	ValI18nKeyFieldMinLength       models.I18nKey = "FIELD_MIN_LENGTH"
+	ValI18nKeyFieldSecurePassword  models.I18nKey = "FIELD_SECURE_PASSWORD"
 )
 
 var (

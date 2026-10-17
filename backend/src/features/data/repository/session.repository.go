@@ -27,6 +27,7 @@ const (
 			users.id,
 			users.fullname,
 			users.username,
+			users.password,
 			users.profile,
 			users.phone_number,
 			users.curp,
@@ -51,6 +52,14 @@ const (
 		UPDATE sessions
 		SET status_id = (SELECT id FROM status WHERE slug = 'expired')
 		WHERE id = $1
+	`
+	SsQryRevokeOtherSessions string = `--sql
+		UPDATE sessions
+		SET status_id = (SELECT id FROM status WHERE slug = 'revoked')
+		WHERE
+			user_id = $1 AND
+			id <> $2 AND
+			status_id = (SELECT id FROM status WHERE slug = 'active')
 	`
 	SsQryUpdateExpTime string = `--sql
 		UPDATE sessions
