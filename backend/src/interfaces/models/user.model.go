@@ -12,6 +12,7 @@ type User struct {
 	Username             string
 	Password             string
 	Profile              string
+	PasswordChanged      bool
 	PhoneNumber          *string
 	CURP                 *string
 	Address              *string

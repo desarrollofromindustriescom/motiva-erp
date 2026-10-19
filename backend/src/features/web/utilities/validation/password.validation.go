@@ -5,7 +5,7 @@ import "github.com/go-playground/validator/v10"
 var allowedChars map[rune]bool = make(map[rune]bool)
 
 func setAllowedChars() {
-	list := "¡¿ªºçÇñÑ!@#$%^&*(),.?:{}|<>_+-=[]';/^~`\\\""
+	list := "¡¿ªºçÇñÑ!@#$%^&*(),.?:{}|<>_+-=[]';/~`\\\""
 
 	for _, char := range list {
 		allowedChars[char] = true

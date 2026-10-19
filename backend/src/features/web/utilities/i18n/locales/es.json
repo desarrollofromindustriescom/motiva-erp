@@ -6,5 +6,6 @@
    "FIELD_MIN_LENGTH": "El campo debe tener al menos {{.Param}} caracteres",
    "FIELD_SECURE_PASSWORD": "La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales",
    "CURRENT_PASSWORD_MISMATCH": "La contraseña actual no coincide con el valor proporcionado",
+   "NEW_PASSWORD_SAME_AS_CURRENT": "La nueva contraseña no puede ser la misma que la actual",
    "NEW_PASSWORDS_MISMATCH": "La nueva contraseña y su confirmación no coinciden"
 }

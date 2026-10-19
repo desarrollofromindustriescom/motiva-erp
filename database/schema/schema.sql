@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
    fullname VARCHAR(128) NOT NULL,
    username VARCHAR(128) NOT NULL UNIQUE,
    password VARCHAR(256) NOT NULL,
+   passwordChanged BOOLEAN NOT NULL DEFAULT FALSE,
    profile user_profile NOT NULL,
    phone_number VARCHAR(13),
    curp CHARACTER(18),

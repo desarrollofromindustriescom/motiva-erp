@@ -15,6 +15,7 @@ type ValidatePreview struct {
 	ID                   uuid.UUID `json:"id"`
 	Fullname             string    `json:"fullname"`
 	Username             string    `json:"username"`
+	PasswordChanged      bool      `json:"password_changed"`
 	Profile              string    `json:"profile"`
 	PhoneNumber          *string   `json:"phone_number"`
 	CURP                 *string   `json:"curp"`

@@ -114,6 +114,7 @@ func Validate(response http.ResponseWriter, request *http.Request) {
 			ID:                   session.User.ID,
 			Fullname:             session.User.Fullname,
 			Username:             session.User.Username,
+			PasswordChanged:      session.User.PasswordChanged,
 			Profile:              session.User.Profile,
 			PhoneNumber:          session.User.PhoneNumber,
 			CURP:                 session.User.CURP,

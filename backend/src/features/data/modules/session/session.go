@@ -198,6 +198,7 @@ func VerifySession(token string, request *http.Request) (*models.Session, error)
 		&session.User.Fullname,
 		&session.User.Username,
 		&session.User.Password,
+		&session.User.PasswordChanged,
 		&session.User.Profile,
 		&session.User.PhoneNumber,
 		&session.User.CURP,
@@ -234,8 +235,8 @@ func VerifySession(token string, request *http.Request) (*models.Session, error)
 /**
  *
  */
-func RevokeOtherSessions(ctx context.Context, currentSession *models.Session) error {
-	_, err := database.GetPool().Exec(ctx, repository.SsQryRevokeOtherSessions, currentSession.User.ID, currentSession.ID)
+func RevokeOtherSessions(ctx context.Context, exec models.Executor, currentSession *models.Session) error {
+	_, err := exec.Exec(ctx, repository.SsQryRevokeOtherSessions, currentSession.User.ID, currentSession.ID)
 
 	return err
 }

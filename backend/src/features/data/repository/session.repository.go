@@ -28,6 +28,7 @@ const (
 			users.fullname,
 			users.username,
 			users.password,
+			users.passwordChanged,
 			users.profile,
 			users.phone_number,
 			users.curp,

@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	AuthI18nKeyUserNotFound          models.I18nKey = "USER_NOT_FOUND"
-	AuthI18nKeyCurrentPasswordFailed models.I18nKey = "CURRENT_PASSWORD_MISMATCH"
-	AuthI18nKeyNewPasswordsFailed    models.I18nKey = "NEW_PASSWORDS_MISMATCH"
+	AuthI18nKeyUserNotFound             models.I18nKey = "USER_NOT_FOUND"
+	AuthI18nKeyCurrentPasswordFailed    models.I18nKey = "CURRENT_PASSWORD_MISMATCH"
+	AuthI18nKeyNewPasswordSameAsCurrent models.I18nKey = "NEW_PASSWORD_SAME_AS_CURRENT"
+	AuthI18nKeyNewPasswordsFailed       models.I18nKey = "NEW_PASSWORDS_MISMATCH"
 
 	AuthQryUpdatePassword string = `--sql
 		UPDATE users
@@ -21,6 +22,7 @@ const (
 			users.fullname,
 			users.username,
 			users.password,
+			users.passwordChanged,
 			users.profile,
 			users.phone_number,
 			users.curp,
@@ -44,6 +46,7 @@ const (
 )
 
 var (
-	AuthErrPasswordMismatch     error = errors.New("Password mismatch")
-	AuthErrNewPasswordsMismatch error = errors.New("New passwords mismatch")
+	AuthErrPasswordMismatch         error = errors.New("Password mismatch")
+	AuthErrNewPasswordSameAsCurrent error = errors.New("New password same as current password")
+	AuthErrNewPasswordsMismatch     error = errors.New("New passwords mismatch")
 )

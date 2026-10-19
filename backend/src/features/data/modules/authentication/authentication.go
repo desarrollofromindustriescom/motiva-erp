@@ -27,6 +27,7 @@ func VerifyUserData(payload *controller.LoginPayload, ctx context.Context) (*mod
 		&user.Fullname,
 		&user.Username,
 		&user.Password,
+		&user.PasswordChanged,
 		&user.Profile,
 		&user.PhoneNumber,
 		&user.CURP,
@@ -56,9 +57,13 @@ func VerifyUserData(payload *controller.LoginPayload, ctx context.Context) (*mod
 /**
  *
  */
-func UpdatePassword(ctx context.Context, session *models.Session, payload *controller.ChangePasswordPayload) error {
+func UpdatePassword(ctx context.Context, exec models.Executor, session *models.Session, payload *controller.ChangePasswordPayload) error {
 	if err := bcrypt.CompareHashAndPassword([]byte(session.User.Password), []byte(payload.CurrentPassword)); err != nil {
 		return repository.AuthErrPasswordMismatch
+	}
+
+	if payload.NewPassword == payload.CurrentPassword {
+		return repository.AuthErrNewPasswordSameAsCurrent
 	}
 
 	if payload.NewPassword != payload.ConfirmPassword {
@@ -71,7 +76,7 @@ func UpdatePassword(ctx context.Context, session *models.Session, payload *contr
 		return err
 	}
 
-	_, err = database.GetPool().Exec(ctx, repository.AuthQryUpdatePassword, string(hash), session.User.ID)
+	_, err = exec.Exec(ctx, repository.AuthQryUpdatePassword, string(hash), session.User.ID)
 
 	return err
 }
