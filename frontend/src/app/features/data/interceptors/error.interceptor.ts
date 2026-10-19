@@ -4,15 +4,16 @@ import { Observable, tap } from 'rxjs';
 import { SessionService } from '../services/session.service';
 import { CUSTOM_HEADERS } from '../repository/custom-headers';
 import { ERR_CODE_TITLES, DEFAULT_ERR_TITLE } from '../repository/api.repository';
-import Swal from 'sweetalert2';
 import { TranslateService } from '@ngx-translate/core';
 import { EpPreview } from '../../../interfaces/api';
+import { DialogsService } from '../services/dialogs.service';
 
 export const errorInterceptorFn: HttpInterceptorFn = (
    request: HttpRequest<unknown>,
    handler: HttpHandlerFn,
 ): Observable<HttpEvent<unknown>> => {
    const _session: SessionService = inject(SessionService);
+   const _dialogs: DialogsService = inject(DialogsService);
    const _translate: TranslateService = inject(TranslateService);
 
    return handler(request).pipe(
@@ -31,10 +32,10 @@ export const errorInterceptorFn: HttpInterceptorFn = (
                text = preview.error.message;
             }
 
-            Swal.fire({
-               text,
-               icon: 'error',
-               timer: 5000,
+            _dialogs.alert({
+               duration: 5000,
+               severity: 'error',
+               text: text || '',
                title: _translate.instant(ERR_CODE_TITLES[event.status] || DEFAULT_ERR_TITLE),
             });
          },

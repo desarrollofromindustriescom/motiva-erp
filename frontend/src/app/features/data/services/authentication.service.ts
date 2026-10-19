@@ -9,7 +9,6 @@ import { HttpClient } from '@angular/common/http';
 import { EndpointData } from '../../../interfaces/api';
 import { environment } from '../../../../environments/environment.development';
 import { ChildFieldContext, disabled, form, required, submit } from '@angular/forms/signals';
-import Swal from 'sweetalert2';
 import { TranslateService } from '@ngx-translate/core';
 import { FormSchema, SignalForm } from '../../../interfaces/alias';
 import { firstValueFrom } from 'rxjs';
@@ -20,11 +19,13 @@ import { Router } from '@angular/router';
 import { API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
 import { PATHS } from '../repository/navigation.repository';
 import { FORMS_I18N_KEYS } from '../repository/forms.repository';
+import { DialogsService } from './dialogs.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
    private readonly _router: Router = inject(Router);
    private readonly _http: HttpClient = inject(HttpClient);
+   private readonly _dialogs: DialogsService = inject(DialogsService);
    private readonly _session: SessionService = inject(SessionService);
    private readonly _translate: TranslateService = inject(TranslateService);
 
@@ -134,11 +135,10 @@ export class AuthenticationService {
       ).then((state: boolean) => {
          if (state) return;
 
-         Swal.fire({
+         this._dialogs.alert({
+            severity: 'error',
             title: this._translate.instant(FORMS_I18N_KEYS.ERROR_TITLE),
             text: this._translate.instant(FORMS_I18N_KEYS.VAL_ALL_FIELDS_REQUIRED),
-            icon: 'error',
-            timer: 3000,
          });
       });
    }

@@ -129,7 +129,7 @@ export class DialogsService {
    }): void {
       Swal.fire({
          icon: severity,
-         timer: duration || 30000,
+         timer: duration || 3000,
          text: this._translate.instant(text),
          title: title ? this._translate.instant(title) : undefined,
          confirmButtonText: this._translate.instant(FORMS_I18N_KEYS.BUTTON_CLOSE),
