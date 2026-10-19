@@ -5,6 +5,7 @@ export const ASSETS_DIR = {
 };
 export const PICTURES = {
    PICTURE_LOGIN: '65db98e5-af29-4e73-a85e-3903c1ac1d97.avif',
+   PROFILE_DECORATION: 'c56a8ea4-eabb-4161-a9cc-0213e03ee306.avif',
 };
 
 export const ICONS = {

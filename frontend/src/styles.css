@@ -7,10 +7,36 @@
 @theme {
    --color-main: #f27732;
    --color-second: #0e2953;
+   --color-second-light: #1a417e;
    --color-contrast: #319fa1;
    --font-inter: 'Inter', sans-serif;
 }
 
+@utility loader-clip-path {
+   clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 50%, 0 100%);
+}
+
 * {
    @apply font-inter;
+}
+
+div.swal2-container {
+   z-index: 1200;
+}
+
+div.swal2-container {
+   &:has(div.swal2-error) {
+      button.swal2-confirm {
+         @apply bg-red-500!;
+      }
+   }
+   &:not(:has(div.swal2-error)) {
+      button.swal2-confirm {
+         @apply bg-second!;
+      }
+   }
+}
+
+button.p-confirmdialog-accept-button {
+   @apply bg-contrast!;
 }

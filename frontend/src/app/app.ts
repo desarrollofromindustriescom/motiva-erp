@@ -2,11 +2,15 @@ import { Component, effect, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { SessionService } from './features/data/services/session.service';
 import { Session } from './interfaces/session';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 @Component({
    selector: 'fi-root',
-   imports: [RouterOutlet],
-   template: ` <router-outlet /> `,
+   imports: [RouterOutlet, ConfirmDialogModule],
+   template: `
+      <p-confirmdialog />
+      <router-outlet />
+   `,
 })
 export class App {
    private readonly _router: Router = inject(Router);

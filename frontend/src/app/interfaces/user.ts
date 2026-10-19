@@ -1,4 +1,17 @@
+import { SignalForm } from './alias';
 import { Status } from './status';
+
+export interface FieldsChangePassword {
+   current_password: string;
+   new_password: string;
+   confirm_password: string;
+}
+
+export type UsersRoutes = 'changePassword';
+
+export interface UsersForms {
+   changePassword: SignalForm<FieldsChangePassword>;
+}
 
 export type UserProfile = 'superadmin' | 'administrator' | 'manager' | 'borrower' | 'investor';
 

@@ -1,5 +1,6 @@
 import { AllowedMethods } from '../../../interfaces/api';
 import { AuthenticationRoutes } from '../../../interfaces/authentication';
+import { UsersRoutes } from '../../../interfaces/user';
 
 export const DEFAULT_ERR_TITLE: string = 'DEFAULT_ERR_MESSAGE';
 export const ERR_CODE_TITLES: Record<number, string> = {
@@ -10,9 +11,10 @@ export const ERR_CODE_TITLES: Record<number, string> = {
    429: 'ERR_TITLE_TOO_MANY_REQUEST',
    500: 'ERR_TITLE_INTERNAL_SERVER_ERROR',
 };
-export const API_ROUTES: Record<Uppercase<AuthenticationRoutes>, string> = {
+export const API_ROUTES: Record<Uppercase<AuthenticationRoutes | UsersRoutes>, string> = {
    LOGIN: '/login',
    VALIDATE: '/validate',
+   CHANGEPASSWORD: '/users/change-password',
 };
 export const HTTP_METHODS: Record<AllowedMethods, AllowedMethods> = {
    GET: 'GET',
