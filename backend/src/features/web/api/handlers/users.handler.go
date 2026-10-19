@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"motiva-erp/backend/src/features/data/database"
 	"motiva-erp/backend/src/features/data/modules/authentication"
 	"motiva-erp/backend/src/features/data/modules/session"
 	"motiva-erp/backend/src/features/data/repository"
@@ -66,37 +67,62 @@ func ChangePassword(response http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 	currentSession := ctx.Value("session").(*models.Session)
 
-	if err = authentication.UpdatePassword(ctx, currentSession, payload); err != nil {
-		slog.Error("Error updating user password",
-			"event", "handlers.ChangePassword.UpdatePassword",
+	tx, err := database.GetPool().Begin(ctx)
+
+	if err != nil {
+		slog.Error("Error starting transaction",
+			"event", "handlers.ChangePassword.Begin",
 			"error", err,
 		)
-
-		if errors.Is(err, repository.AuthErrPasswordMismatch) || errors.Is(err, repository.AuthErrNewPasswordsMismatch) {
-			message := ""
-
-			if errors.Is(err, repository.AuthErrPasswordMismatch) {
-				message = i18n.Translate(lang, repository.AuthI18nKeyCurrentPasswordFailed, nil)
-			}
-
-			if errors.Is(err, repository.AuthErrNewPasswordsMismatch) {
-				message = i18n.Translate(lang, repository.AuthI18nKeyNewPasswordsFailed, nil)
-			}
-
-			preview.Error = &controller.EpError{Message: message}
-
-			response.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(response).Encode(preview)
-			return
-		}
 
 		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
 		return
 	}
 
-	if err = session.RevokeOtherSessions(ctx, currentSession); err != nil {
+	defer tx.Rollback(ctx)
+
+	if err = authentication.UpdatePassword(ctx, tx, currentSession, payload); err != nil {
+		switch {
+		case errors.Is(err, repository.AuthErrPasswordMismatch):
+			preview.Error = &controller.EpError{
+				Message: i18n.Translate(lang, repository.AuthI18nKeyCurrentPasswordFailed, nil),
+			}
+		case errors.Is(err, repository.AuthErrNewPasswordSameAsCurrent):
+			preview.Error = &controller.EpError{
+				Message: i18n.Translate(lang, repository.AuthI18nKeyNewPasswordSameAsCurrent, nil),
+			}
+		case errors.Is(err, repository.AuthErrNewPasswordsMismatch):
+			preview.Error = &controller.EpError{
+				Message: i18n.Translate(lang, repository.AuthI18nKeyNewPasswordsFailed, nil),
+			}
+		default:
+			slog.Error("Error updating user password",
+				"event", "handlers.ChangePassword.UpdatePassword",
+				"error", err,
+			)
+
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+			return
+		}
+
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(preview)
+		return
+	}
+
+	if err = session.RevokeOtherSessions(ctx, tx, currentSession); err != nil {
 		slog.Error("Error revoking user sessions",
 			"event", "handlers.ChangePassword.RevokeOtherSessions",
+			"error", err,
+		)
+
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		slog.Error("Error committing transaction",
+			"event", "handlers.ChangePassword.Commit",
 			"error", err,
 		)
 
