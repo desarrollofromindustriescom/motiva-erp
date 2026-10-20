@@ -1,4 +1,4 @@
-export type CustomHeaders = 'IGNORE_ERROR';
+export type ApiContext = 'IGNORE_SUCCESS' | 'IGNORE_ERROR';
 
 export type AllowedMethods = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'QUERY';
 

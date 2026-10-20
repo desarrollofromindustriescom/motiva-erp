@@ -29,7 +29,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
       LoaderComponent,
    ],
    template: `
-      @let passwordVisibility = $passwordVisibility();
+      @let passwordHidden = $passwordHidden();
       @let loading = $loading();
 
       <form
@@ -67,14 +67,14 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                   class="transition-all"
                   [fluid]="true"
                   [formField]="$form.password"
-                  [mask]="passwordVisibility"
+                  [mask]="passwordHidden"
                />
                <p-inputicon
                   class="cursor-pointer -translate-y-1/2 bx"
                   (click)="handlePasswordToggle()"
                   [ngClass]="{
-                     'bx-eye': passwordVisibility,
-                     'bx-eye-slash': !passwordVisibility,
+                     'bx-eye': passwordHidden,
+                     'bx-eye-slash': !passwordHidden,
                   }"
                />
             </p-iconfield>
@@ -99,14 +99,14 @@ export class LoginFormComponent {
       FORMS: FORMS_I18N_KEYS,
    };
 
-   public readonly $passwordVisibility: WritableSignal<boolean> = signal(true);
+   public readonly $passwordHidden: WritableSignal<boolean> = signal(true);
    public readonly $form: FieldTree<FieldsLogin, string | number, 'writable'> = this._authentication.forms.login;
    public readonly $loading: Signal<boolean> = computed(() => this._authentication.loading);
 
    constructor() {}
 
    public handlePasswordToggle(): void {
-      this.$passwordVisibility.update((value: boolean) => !value);
+      this.$passwordHidden.update((value: boolean) => !value);
    }
 
    public handleLogin(): void {

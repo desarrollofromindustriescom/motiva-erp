@@ -1,8 +1,11 @@
-import { AllowedMethods } from '../../../interfaces/api';
+import { HttpContextToken } from '@angular/common/http';
+import { AllowedMethods, ApiContext } from '../../../interfaces/api';
 import { AuthenticationRoutes } from '../../../interfaces/authentication';
 import { UsersRoutes } from '../../../interfaces/user';
 
 export const DEFAULT_ERR_TITLE: string = 'DEFAULT_ERR_MESSAGE';
+export const DEFAULT_SUCCESS_TITLE: string = 'DEFAULT_SUCCESS_TITLE';
+export const DEFAULT_SUCCESS_MESSAGE: string = 'DEFAULT_SUCCESS_MESSAGE';
 export const ERR_CODE_TITLES: Record<number, string> = {
    400: 'ERR_TITLE_BAD_REQUEST',
    401: 'ERR_TITLE_UNAUTHORIZED',
@@ -24,4 +27,8 @@ export const HTTP_METHODS: Record<AllowedMethods, AllowedMethods> = {
    PATCH: 'PATCH',
    DELETE: 'DELETE',
    QUERY: 'QUERY',
+};
+export const API_CONTEXT: Record<ApiContext, HttpContextToken<boolean>> = {
+   IGNORE_ERROR: new HttpContextToken<boolean>(() => false),
+   IGNORE_SUCCESS: new HttpContextToken<boolean>(() => false),
 };

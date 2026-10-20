@@ -5,7 +5,7 @@ import {
    FieldsLogin,
    LoginPreview,
 } from '../../../interfaces/authentication';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { EndpointData } from '../../../interfaces/api';
 import { environment } from '../../../../environments/environment.development';
 import { ChildFieldContext, disabled, form, required, submit } from '@angular/forms/signals';
@@ -14,9 +14,8 @@ import { FormSchema, SignalForm } from '../../../interfaces/alias';
 import { firstValueFrom } from 'rxjs';
 import { SessionService } from './session.service';
 import { Session } from '../../../interfaces/session';
-import { CUSTOM_HEADERS } from '../repository/custom-headers';
 import { Router } from '@angular/router';
-import { API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
+import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
 import { PATHS } from '../repository/navigation.repository';
 import { FORMS_I18N_KEYS } from '../repository/forms.repository';
 import { DialogsService } from './dialogs.service';
@@ -91,13 +90,15 @@ export class AuthenticationService {
       return new Promise((resolve, reject) => {
          if (!this._session.token) return resolve();
 
-         const headers: Record<string, string> = {};
+         const context: HttpContext = new HttpContext();
          let { method, route } = this.routes.validate;
 
-         if (options && options.hideError) headers[CUSTOM_HEADERS.IGNORE_ERROR] = '';
+         context.set(API_CONTEXT.IGNORE_SUCCESS, true);
+
+         if (options && options.hideError) context.set(API_CONTEXT.IGNORE_ERROR, true);
 
          this.$loading.set(true);
-         firstValueFrom(this._http.request<Session>(method, `${environment.apiUrl}${route}`, { headers }))
+         firstValueFrom(this._http.request<Session>(method, `${environment.apiUrl}${route}`, { context }))
             .then((session: Session) => {
                this._session.session = session;
                resolve();
@@ -116,10 +117,13 @@ export class AuthenticationService {
          async () =>
             new Promise<void>((resolve, reject) => {
                const body: FieldsLogin = this.$formLogin().value();
+               const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
                let { method, route } = this.routes.login;
 
                this.$loading.set(true);
-               firstValueFrom(this._http.request<LoginPreview>(method, `${environment.apiUrl}${route}`, { body }))
+               firstValueFrom(
+                  this._http.request<LoginPreview>(method, `${environment.apiUrl}${route}`, { body, context }),
+               )
                   .then(({ token }: LoginPreview) => {
                      this.$formLogin().reset(this.$modelLogin());
                      this._session.updateToken({ token, store: true });

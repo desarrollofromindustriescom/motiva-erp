@@ -38,9 +38,9 @@ import { DialogsService } from '../../../../../data/services/dialogs.service';
    ],
    template: `
       @let loading = $loading();
-      @let currentVisibility = $passwordsVisibility().current;
-      @let newVisibility = $passwordsVisibility().new;
-      @let confirmVisibility = $passwordsVisibility().confirm;
+      @let currentHidden = $passwordsHidden().current;
+      @let newHidden = $passwordsHidden().new;
+      @let confirmHidden = $passwordsHidden().confirm;
 
       <form
          class="w-full flex flex-col gap-2"
@@ -59,14 +59,14 @@ import { DialogsService } from '../../../../../data/services/dialogs.service';
                      class="transition-all"
                      [fluid]="true"
                      [formField]="$form.current_password"
-                     [mask]="currentVisibility"
+                     [mask]="currentHidden"
                   />
                   <p-inputicon
                      class="cursor-pointer -translate-y-1/2 bx"
                      (click)="handlePasswordToggle({ field: 'current' })"
                      [ngClass]="{
-                        'bx-eye': currentVisibility,
-                        'bx-eye-slash': !currentVisibility,
+                        'bx-eye': currentHidden,
+                        'bx-eye-slash': !currentHidden,
                      }"
                   />
                </p-iconfield>
@@ -85,14 +85,14 @@ import { DialogsService } from '../../../../../data/services/dialogs.service';
                      class="transition-all"
                      [fluid]="true"
                      [formField]="$form.new_password"
-                     [mask]="newVisibility"
+                     [mask]="newHidden"
                   />
                   <p-inputicon
                      class="cursor-pointer -translate-y-1/2 bx"
                      (click)="handlePasswordToggle({ field: 'new' })"
                      [ngClass]="{
-                        'bx-eye': newVisibility,
-                        'bx-eye-slash': !newVisibility,
+                        'bx-eye': newHidden,
+                        'bx-eye-slash': !newHidden,
                      }"
                   />
                </p-iconfield>
@@ -111,14 +111,14 @@ import { DialogsService } from '../../../../../data/services/dialogs.service';
                      class="transition-all"
                      [fluid]="true"
                      [formField]="$form.confirm_password"
-                     [mask]="confirmVisibility"
+                     [mask]="confirmHidden"
                   />
                   <p-inputicon
                      class="cursor-pointer -translate-y-1/2 bx"
                      (click)="handlePasswordToggle({ field: 'confirm' })"
                      [ngClass]="{
-                        'bx-eye': confirmVisibility,
-                        'bx-eye-slash': !confirmVisibility,
+                        'bx-eye': confirmHidden,
+                        'bx-eye-slash': !confirmHidden,
                      }"
                   />
                </p-iconfield>
@@ -153,16 +153,16 @@ export class ChangePasswordDialogComponent {
    public readonly $loading: Signal<boolean> = computed(() => this._users.loading);
    public readonly $form: FieldTree<FieldsChangePassword, string | number, 'writable'> =
       this._users.forms.changePassword;
-   public readonly $passwordsVisibility: WritableSignal<{ current: boolean; new: boolean; confirm: boolean }> = signal({
-      current: false,
-      new: false,
-      confirm: false,
+   public readonly $passwordsHidden: WritableSignal<{ current: boolean; new: boolean; confirm: boolean }> = signal({
+      current: true,
+      new: true,
+      confirm: true,
    });
 
    public $currentPasswordTag: Signal<ElementRef<HTMLInputElement> | undefined> = viewChild('currentPassword');
 
    public handlePasswordToggle({ field }: { field: 'current' | 'new' | 'confirm' }): void {
-      this.$passwordsVisibility.update((previous: Record<typeof field, boolean>) => {
+      this.$passwordsHidden.update((previous: Record<typeof field, boolean>) => {
          const state: Partial<typeof previous> = {};
 
          state[field] = !previous[field];

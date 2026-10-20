@@ -2,8 +2,7 @@ import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpReq
 import { inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { SessionService } from '../services/session.service';
-import { CUSTOM_HEADERS } from '../repository/custom-headers';
-import { ERR_CODE_TITLES, DEFAULT_ERR_TITLE } from '../repository/api.repository';
+import { ERR_CODE_TITLES, DEFAULT_ERR_TITLE, API_CONTEXT } from '../repository/api.repository';
 import { TranslateService } from '@ngx-translate/core';
 import { EpPreview } from '../../../interfaces/api';
 import { DialogsService } from '../services/dialogs.service';
@@ -23,7 +22,7 @@ export const errorInterceptorFn: HttpInterceptorFn = (
 
             if (event.status === 401) _session.clear();
 
-            if (request.headers.has(CUSTOM_HEADERS.IGNORE_ERROR)) return;
+            if (request.context.get(API_CONTEXT.IGNORE_ERROR)) return;
 
             const preview = event.error as EpPreview | null;
             let text: string | undefined;

@@ -1,7 +1,7 @@
 import { inject, Injectable, signal, WritableSignal } from '@angular/core';
 import { EndpointData } from '../../../interfaces/api';
 import { FieldsChangePassword, UsersForms, UsersRoutes } from '../../../interfaces/user';
-import { API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
+import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
 import { FormSchema, SignalForm } from '../../../interfaces/alias';
 import {
    ChildFieldContext,
@@ -15,7 +15,7 @@ import {
 } from '@angular/forms/signals';
 import { REGEX } from '../repository/regex.repository';
 import { FORMS_CUSTOM_VALIDATIONS, FORMS_I18N_KEYS } from '../repository/forms.repository';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { DialogsService } from './dialogs.service';
@@ -159,10 +159,11 @@ export class UsersService {
     */
    public logout(): void {
       const { method, route } = this.routes.logout;
+      const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
 
       this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_LOGOUT }).then(() => {
          this.$loading.set(true);
-         firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`))
+         firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`, { context }))
             .then(() => this._session.clear())
             .finally(() => this.$loading.set(false));
       });

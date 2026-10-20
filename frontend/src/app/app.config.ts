@@ -11,6 +11,7 @@ import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { authenticationInterceptorFn } from './features/data/interceptors/authentication.interceptor';
 import { SessionService } from './features/data/services/session.service';
 import { errorInterceptorFn } from './features/data/interceptors/error.interceptor';
+import { successInterceptorFn } from './features/data/interceptors/success.interceptor';
 import { parseInterceptorFn } from './features/data/interceptors/parse.interceptor';
 import { JSON_EXTENSION, LANGS } from './features/data/repository/i18n.repository';
 import { ASSETS_DIR } from './features/data/repository/assets.repository';
@@ -19,7 +20,9 @@ export const appConfig: ApplicationConfig = {
    providers: [
       provideBrowserGlobalErrorListeners(),
       provideRouter(routes),
-      provideHttpClient(withInterceptors([authenticationInterceptorFn, errorInterceptorFn, parseInterceptorFn])),
+      provideHttpClient(
+         withInterceptors([authenticationInterceptorFn, errorInterceptorFn, successInterceptorFn, parseInterceptorFn]),
+      ),
       provideTranslateService({
          fallbackLang: LANGS.ES,
          loader: provideTranslateHttpLoader({

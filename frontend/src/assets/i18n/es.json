@@ -25,6 +25,8 @@
    "FORM_VAL_PASSWORD_PATTERN": "La contraseña debe incluir al menos una letra minúscula, una letra mayúscula, un número y un caracter especial",
    "FORM_VAL_SAME_AS_CURRENT": "La nueva contraseña debe ser diferente a la anterior",
    "FORM_VAL_PASSWORD_MISMATCH": "El campo de confirmación de contraseña debe ser igual al de la nueva contraseña",
+   "DEFAULT_SUCCESS_TITLE": "Acción exitosa",
+   "DEFAULT_SUCCESS_MESSAGE": "Acción realizada sin errores",
    "DEFAULT_ERR_MESSAGE": "Ocurrió un error",
    "ERR_TITLE_BAD_REQUEST": "Error en los datos de la petición",
    "ERR_TITLE_UNAUTHORIZED": "Sin autorización",

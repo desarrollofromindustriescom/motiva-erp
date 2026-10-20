@@ -14,7 +14,6 @@ const (
 	HeadContentType    string = "Content-Type"
 	HeadAuthorization  string = "Authorization"
 
-	HeadValCORSMethods   string = "GET, POST, PATCH, PUT, DELETE, QUERY, OPTIONS"
-	HeadValCustomHeaders string = "X-IGNORE-ERROR"
-	HeadValCORSHeaders   string = "Content-Type, Authorization"
+	HeadValCORSMethods string = "GET, POST, PATCH, PUT, DELETE, QUERY, OPTIONS"
+	HeadValCORSHeaders string = "Content-Type, Authorization"
 )

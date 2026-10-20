@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -41,7 +40,7 @@ func corsMiddleware(handler http.Handler) http.Handler {
 
 		response.Header().Set(repository.HeadCORSOrigin, origin)
 		response.Header().Set(repository.HeadCORSMethods, repository.HeadValCORSMethods)
-		response.Header().Set(repository.HeadCORSHeaders, fmt.Sprintf("%s, %s", repository.HeadValCORSHeaders, repository.HeadValCustomHeaders))
+		response.Header().Set(repository.HeadCORSHeaders, repository.HeadValCORSHeaders)
 
 		if request.Method == http.MethodOptions {
 			response.WriteHeader(http.StatusOK)
