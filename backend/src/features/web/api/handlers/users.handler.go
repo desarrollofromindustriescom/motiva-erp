@@ -136,3 +136,29 @@ func ChangePassword(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
 	json.NewEncoder(response).Encode(preview)
 }
+
+/**
+ *
+ */
+func Logout(response http.ResponseWriter, request *http.Request) {
+	preview := &controller.EpPreview[struct{}]{}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	if err := session.RevokeSessionByToken(ctx, currentSession.Token); err != nil {
+		slog.Error("Error revoking session",
+			"event", "handlers.Logout.RevokeSessionByToken",
+			"error", err,
+		)
+
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	preview.Success = true
+
+	response.WriteHeader(http.StatusOK)
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	json.NewEncoder(response).Encode(preview)
+}

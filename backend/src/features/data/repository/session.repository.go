@@ -62,6 +62,11 @@ const (
 			id <> $2 AND
 			status_id = (SELECT id FROM status WHERE slug = 'active')
 	`
+	SsQryRevokeSessionByToken string = `--sql
+		UPDATE sessions
+		SET status_id = (SELECT id FROM status WHERE slug = 'revoked')
+		WHERE token = $1
+	`
 	SsQryUpdateExpTime string = `--sql
 		UPDATE sessions
 		SET

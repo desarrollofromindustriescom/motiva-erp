@@ -7,7 +7,7 @@ export interface FieldsChangePassword {
    confirm_password: string;
 }
 
-export type UsersRoutes = 'changePassword';
+export type UsersRoutes = 'changePassword' | 'logout';
 
 export interface UsersForms {
    changePassword: SignalForm<FieldsChangePassword>;

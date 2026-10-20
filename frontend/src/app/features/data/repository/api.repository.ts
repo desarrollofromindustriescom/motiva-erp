@@ -15,6 +15,7 @@ export const API_ROUTES: Record<Uppercase<AuthenticationRoutes | UsersRoutes>, s
    LOGIN: '/login',
    VALIDATE: '/validate',
    CHANGEPASSWORD: '/users/change-password',
+   LOGOUT: '/users/logout',
 };
 export const HTTP_METHODS: Record<AllowedMethods, AllowedMethods> = {
    GET: 'GET',

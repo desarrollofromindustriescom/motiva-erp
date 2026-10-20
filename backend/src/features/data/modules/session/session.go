@@ -240,3 +240,12 @@ func RevokeOtherSessions(ctx context.Context, exec models.Executor, currentSessi
 
 	return err
 }
+
+/**
+ *
+ */
+func RevokeSessionByToken(ctx context.Context, token string) error {
+	_, err := database.GetPool().Exec(ctx, repository.SsQryRevokeSessionByToken, token)
+
+	return err
+}

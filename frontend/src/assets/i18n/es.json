@@ -13,6 +13,7 @@
    "FORM_BUTTON_CHANGE_PASSWORD": "Cambiar contraseña",
    "FORM_BUTTON_CLOSE_ALL_SESSIONS": "Cerrar todas las sessiones",
    "FORM_BUTTON_CLOSE": "Cerrar",
+   "FORM_BUTTON_LOGOUT": "Cerrar sesión",
    "FORM_BUTTON_CONTINUE": "Continuar",
    "FORM_BUTTON_CANCEL": "Cancelar",
    "FORM_BUTTON_CHANGE": "Cambiar",
@@ -53,5 +54,6 @@
    "DIALOG_ERR_OPEN_BACK_DIALOG": "Error al abrir la ventana anterior",
    "DIALOG_CHANGE_PASSWORD_TITLE": "Cambiar contraseña",
    "DIALOG_CONFIRM_TITLE": "¿Continuar con la acción?",
-   "DIALOG_CONFIRM_CHANGE_PASSWORD": "Al cambiar la contraseña se cerrarán todas las sesiones exceptuando la de este dispositivo"
+   "DIALOG_CONFIRM_CHANGE_PASSWORD": "Al cambiar la contraseña se cerrarán todas las sesiones exceptuando la de este dispositivo",
+   "DIALOG_CONFIRM_LOGOUT": "¿Seguro que deseas cerrar sesión?"
 }

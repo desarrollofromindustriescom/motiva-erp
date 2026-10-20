@@ -20,14 +20,17 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { DialogsService } from './dialogs.service';
 import { DIALOG_I18N_KEYS } from '../repository/dialog.repository';
+import { SessionService } from './session.service';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService {
    private readonly _http: HttpClient = inject(HttpClient);
    private readonly _dialogs: DialogsService = inject(DialogsService);
+   private readonly _session: SessionService = inject(SessionService);
 
    private readonly routes: Record<UsersRoutes, EndpointData> = {
       changePassword: { route: API_ROUTES.CHANGEPASSWORD, method: HTTP_METHODS.PATCH },
+      logout: { route: API_ROUTES.LOGOUT, method: HTTP_METHODS.POST },
    };
 
    private readonly $loading: WritableSignal<boolean> = signal(false);
@@ -149,5 +152,19 @@ export class UsersService {
             });
          }),
       );
+   }
+
+   /**
+    *
+    */
+   public logout(): void {
+      const { method, route } = this.routes.logout;
+
+      this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_LOGOUT }).then(() => {
+         this.$loading.set(true);
+         firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`))
+            .then(() => this._session.clear())
+            .finally(() => this.$loading.set(false));
+      });
    }
 }
