@@ -125,7 +125,10 @@ export class AuthenticationService {
                   this._http.request<LoginPreview>(method, `${environment.apiUrl}${route}`, { body, context }),
                )
                   .then(({ token }: LoginPreview) => {
-                     this.$formLogin().reset(this.$modelLogin());
+                     this.$formLogin().reset({
+                        username: '',
+                        password: '',
+                     });
                      this._session.updateToken({ token, store: true });
                      return this.validate();
                   })
