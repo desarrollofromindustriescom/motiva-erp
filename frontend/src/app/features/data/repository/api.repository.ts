@@ -32,3 +32,12 @@ export const API_CONTEXT: Record<ApiContext, HttpContextToken<boolean>> = {
    IGNORE_ERROR: new HttpContextToken<boolean>(() => false),
    IGNORE_SUCCESS: new HttpContextToken<boolean>(() => false),
 };
+export const HEADERS = {
+   KEYS: {
+      AUTHORIZATION: 'Authorization',
+      ACCEPT_LANGUAGE: 'Accept-Language',
+   },
+   VALUES: {
+      AUTHORIZATION: 'Bearer',
+   },
+};

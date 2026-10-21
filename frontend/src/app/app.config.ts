@@ -10,6 +10,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { authenticationInterceptorFn } from './features/data/interceptors/authentication.interceptor';
 import { SessionService } from './features/data/services/session.service';
+import { languageInterceptorFn } from './features/data/interceptors/language.interceptor';
 import { errorInterceptorFn } from './features/data/interceptors/error.interceptor';
 import { successInterceptorFn } from './features/data/interceptors/success.interceptor';
 import { parseInterceptorFn } from './features/data/interceptors/parse.interceptor';
@@ -21,7 +22,13 @@ export const appConfig: ApplicationConfig = {
       provideBrowserGlobalErrorListeners(),
       provideRouter(routes),
       provideHttpClient(
-         withInterceptors([authenticationInterceptorFn, errorInterceptorFn, successInterceptorFn, parseInterceptorFn]),
+         withInterceptors([
+            languageInterceptorFn,
+            authenticationInterceptorFn,
+            errorInterceptorFn,
+            successInterceptorFn,
+            parseInterceptorFn,
+         ]),
       ),
       provideTranslateService({
          fallbackLang: LANGS.ES,

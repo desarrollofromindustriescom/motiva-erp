@@ -15,5 +15,5 @@ const (
 	HeadAuthorization  string = "Authorization"
 
 	HeadValCORSMethods string = "GET, POST, PATCH, PUT, DELETE, QUERY, OPTIONS"
-	HeadValCORSHeaders string = "Content-Type, Authorization"
+	HeadValCORSHeaders string = "Content-Type, Authorization, Accept-Language"
 )
