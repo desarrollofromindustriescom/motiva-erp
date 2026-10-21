@@ -2,23 +2,23 @@ import { Component, effect, inject, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
-import { SidebarComponent } from './components/sidebar.component';
-import { MainComponent } from './components/main.component';
+import { PrivateSidebarComponent } from './components/private-sidebar.component';
+import { PrivateMainComponent } from './components/private-main.component';
 import { NavigationService } from '../../../../../data/services/navigation.service';
 import { APPLICATION_MODULES, PATHS } from '../../../../../data/repository/navigation.repository';
 import { ApplicationModule } from '../../../../../../interfaces/navigation';
 
 @Component({
-   selector: 'fi-layout-component',
-   imports: [SidebarComponent, MainComponent],
+   selector: 'fi-private-layout-component',
+   imports: [PrivateSidebarComponent, PrivateMainComponent],
    template: `
       <section class="w-full h-dvh flex bg-white">
-         <fi-sidebar-component class="w-xs h-full flex flex-col py-4 pl-4 pr-2" />
-         <fi-main-component class="flex-auto h-full flex flex-col py-4 pr-4 pl-2" />
+         <fi-private-sidebar-component class="w-xs h-full flex flex-col py-4 pl-4 pr-2" />
+         <fi-private-main-component class="flex-auto h-full flex flex-col py-4 pr-4 pl-2" />
       </section>
    `,
 })
-export class LayoutComponent {
+export class PrivateLayoutComponent {
    private readonly _router: Router = inject(Router);
    private readonly _navigation: NavigationService = inject(NavigationService);
 

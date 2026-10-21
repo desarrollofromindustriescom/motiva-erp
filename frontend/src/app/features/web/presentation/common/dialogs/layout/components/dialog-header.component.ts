@@ -4,7 +4,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { LoaderComponent } from '../../../forms/loader/loader.component';
 
 @Component({
-   selector: 'fi-template-header-component',
+   selector: 'fi-dialog-header-component',
    imports: [TranslatePipe, NgClass, LoaderComponent],
    template: `
       @let title = $title();
@@ -42,7 +42,7 @@ import { LoaderComponent } from '../../../forms/loader/loader.component';
       </header>
    `,
 })
-export class TemplateHeaderComponent {
+export class DialogHeaderComponent {
    public $title: InputSignal<string> = input('', { alias: 'title' });
    public $loading: InputSignal<boolean> = input(false, { alias: 'loading' });
    public $hasHistory: InputSignal<boolean> = input(false, { alias: 'hasHistory' });

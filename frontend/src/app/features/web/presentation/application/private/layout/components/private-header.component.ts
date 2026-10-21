@@ -8,7 +8,7 @@ import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.reposit
 import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
-   selector: 'fi-header-component',
+   selector: 'fi-private-header-component',
    imports: [TranslatePipe, TooltipModule],
    template: `
       @let logo = ASSETS_DIR.ICONS + ICONS.MOTIVA_LOGO;
@@ -40,7 +40,7 @@ import { TooltipModule } from 'primeng/tooltip';
       </header>
    `,
 })
-export class HeaderComponent {
+export class PrivateHeaderComponent {
    private readonly _navigation: NavigationService = inject(NavigationService);
    private readonly _users: UsersService = inject(UsersService);
 

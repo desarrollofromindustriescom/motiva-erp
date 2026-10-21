@@ -1,7 +1,7 @@
 import { inject, Injectable, signal, Type, WritableSignal } from '@angular/core';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DialogData } from '../../../interfaces/dialogs';
-import { TemplateDialogComponent } from '../../web/presentation/common/dialogs/template/template.dialog.component';
+import { DialogLayoutComponent } from '../../web/presentation/common/dialogs/layout/dialog-layout.component';
 import Swal, { SweetAlertIcon } from 'sweetalert2';
 import { DIALOG_I18N_KEYS } from '../repository/dialog.repository';
 import { TranslateService } from '@ngx-translate/core';
@@ -32,7 +32,7 @@ export class DialogsService {
    }
 
    private openTemplate(): DynamicDialogRef<any> | null {
-      return this._dialog.open(TemplateDialogComponent, {
+      return this._dialog.open(DialogLayoutComponent, {
          closeOnEscape: false,
          showHeader: false,
          modal: true,

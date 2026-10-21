@@ -36,8 +36,6 @@ export class FieldErrorsComponent {
          params[errors[i].kind] = (errors[i] as any)[errors[i].kind];
       }
 
-      console.log('ex');
-
       return params;
    });
 }

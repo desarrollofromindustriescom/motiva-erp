@@ -11,18 +11,18 @@ import {
    viewChild,
    WritableSignal,
 } from '@angular/core';
-import { FieldErrorsComponent } from '../../forms/field-errors/field-errors.component';
+import { FieldErrorsComponent } from '../../../forms/field-errors/field-errors.component';
 import { IftaLabelModule } from 'primeng/iftalabel';
 import { InputPasswordModule } from 'primeng/inputpassword';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-import { UsersService } from '../../../../../data/services/users.service';
+import { UsersService } from '../../../../../../data/services/users.service';
 import { FieldTree, FormField } from '@angular/forms/signals';
-import { FieldsChangePassword } from '../../../../../../interfaces/user';
+import { FieldsChangePassword } from '../../../../../../../interfaces/user';
 import { NgClass } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
-import { FORMS_I18N_KEYS } from '../../../../../data/repository/forms.repository';
-import { DialogsService } from '../../../../../data/services/dialogs.service';
+import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.repository';
+import { DialogsService } from '../../../../../../data/services/dialogs.service';
 
 @Component({
    selector: 'fi-change-password-dialog-component',

@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authorizationGuard } from '../../../../data/guards/authorization.guard';
 import { PATHS } from '../../../../data/repository/navigation.repository';
-import { LayoutComponent } from './layout/layout.component';
+import { PrivateLayoutComponent } from './layout/private-layout.component';
 import { HomePageComponent } from './pages/home/home.page.component';
 import { DashboardPageComponent } from './pages/dashboard/dashboard.page.component';
 import { LoansPageComponent } from './pages/loans/loans.page.component';
@@ -13,7 +13,7 @@ import { ProfilePageComponent } from './pages/profile/profile.page.component';
 export const privateRoutes: Routes = [
    {
       path: PATHS.ROOT_RELATIVE,
-      component: LayoutComponent,
+      component: PrivateLayoutComponent,
       children: [
          { path: PATHS.ROOT_RELATIVE, component: HomePageComponent, canActivate: [authorizationGuard] },
          { path: PATHS.DASHBOARD, component: DashboardPageComponent, canActivate: [authorizationGuard] },

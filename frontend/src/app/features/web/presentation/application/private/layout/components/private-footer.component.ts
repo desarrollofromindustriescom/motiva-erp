@@ -3,7 +3,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { FOOTER_I18N_KEYS } from '../../../../../../data/repository/layout.repository';
 
 @Component({
-   selector: 'fi-footer-component',
+   selector: 'fi-private-footer-component',
    imports: [TranslatePipe],
    template: `
       <footer class="w-full flex items-center justify-center gap-1 text-main h-10 text-xs sm:text-base transition-all">
@@ -11,6 +11,6 @@ import { FOOTER_I18N_KEYS } from '../../../../../../data/repository/layout.repos
       </footer>
    `,
 })
-export class FooterComponent {
+export class PrivateFooterComponent {
    public readonly I18N = FOOTER_I18N_KEYS;
 }

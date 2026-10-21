@@ -3,7 +3,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { PROFILE_I18N_KEYS } from '../../../../../../../data/repository/profile.repository';
 import { FORMS_I18N_KEYS } from '../../../../../../../data/repository/forms.repository';
 import { DialogsService } from '../../../../../../../data/services/dialogs.service';
-import { ChangePasswordDialogComponent } from '../../../../../common/dialogs/change-password/change-password.dialog.component';
+import { ChangePasswordDialogComponent } from '../../../../../common/dialogs/views/change-password/change-password.dialog.component';
 import { DIALOG_I18N_KEYS } from '../../../../../../../data/repository/dialog.repository';
 
 @Component({

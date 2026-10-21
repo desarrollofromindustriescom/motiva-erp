@@ -1,19 +1,19 @@
 import { Component, computed, inject, Signal } from '@angular/core';
 import { NgComponentOutlet } from '@angular/common';
 import { DialogsService } from '../../../../../data/services/dialogs.service';
-import { TemplateHeaderComponent } from './components/template-header.component';
+import { DialogHeaderComponent } from './components/dialog-header.component';
 import { DialogData } from '../../../../../../interfaces/dialogs';
 
 @Component({
-   selector: 'fi-template-dialog-component',
-   imports: [NgComponentOutlet, TemplateHeaderComponent],
+   selector: 'fi-dialog-layout-component',
+   imports: [NgComponentOutlet, DialogHeaderComponent],
    template: `
       @let loading = $loading();
       @let dialogData = $dialogData();
       @let hasHistory = $hasHistory();
 
       <section class="w-3xl flex flex-col items-start justify-start pt-4.5 gap-4">
-         <fi-template-header-component
+         <fi-dialog-header-component
             class="w-full flex"
             [title]="dialogData ? dialogData.title : ''"
             [loading]="loading"
@@ -30,7 +30,7 @@ import { DialogData } from '../../../../../../interfaces/dialogs';
       </section>
    `,
 })
-export class TemplateDialogComponent {
+export class DialogLayoutComponent {
    private readonly _dialogs: DialogsService = inject(DialogsService);
 
    public $loading: Signal<boolean> = computed(() => this._dialogs.loading);

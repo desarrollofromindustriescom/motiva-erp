@@ -6,7 +6,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { AuthorizedDirective } from '../../../../../utilities/directives/authorized.directive';
 
 @Component({
-   selector: 'fi-sidebar-component',
+   selector: 'fi-private-sidebar-component',
    imports: [NgClass, TranslatePipe, AuthorizedDirective],
    template: `
       @let currentModule = $currentModule();
@@ -37,7 +37,7 @@ import { AuthorizedDirective } from '../../../../../utilities/directives/authori
       </aside>
    `,
 })
-export class SidebarComponent {
+export class PrivateSidebarComponent {
    private readonly _navigation: NavigationService = inject(NavigationService);
 
    public readonly navModules: NavigationRoute[] = this._navigation.navModules;
