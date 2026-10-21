@@ -31,9 +31,9 @@ import { UserProfile } from '../../../../../../../../interfaces/user';
    `,
 })
 export class ProfileInfoComponent {
-   public $session: InputSignal<Session> = input.required<Session>({ alias: 'session' });
-
    public readonly PICTURES_DIR: string = ASSETS_DIR.PICTURES;
    public readonly PROFILE_DECORATION: string = PICTURES.PROFILE_DECORATION;
    public readonly USER_PROFILE_I18N: Record<UserProfile, string> = USER_PROFILE_I18N_KEYS;
+
+   public $session: InputSignal<Session> = input.required<Session>({ alias: 'session' });
 }

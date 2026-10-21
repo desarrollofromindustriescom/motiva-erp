@@ -1,5 +1,4 @@
 import { Component, inject } from '@angular/core';
-import { LoginFormComponent } from './login-form.component';
 import { TranslatePipe } from '@ngx-translate/core';
 import { CONTACT } from '../../../../../../../data/repository/contact.repository';
 import { PhoneFormatPipe } from '../../../../../../utilities/pipes/phone-format.pipe';
@@ -7,7 +6,7 @@ import { LOGIN_I18N_KEYS } from '../../../../../../../data/repository/login.repo
 
 @Component({
    selector: 'fi-login-welcome-component',
-   imports: [LoginFormComponent, TranslatePipe],
+   imports: [TranslatePipe],
    providers: [PhoneFormatPipe],
    template: `
       <div
@@ -20,7 +19,7 @@ import { LOGIN_I18N_KEYS } from '../../../../../../../data/repository/login.repo
             <span class="text-xs sm:text-sm text-main transition-all">{{ I18N.SUBTITLE | translate }}</span>
          </div>
 
-         <fi-login-form-component class="w-full" />
+         <ng-content />
 
          <ul class="flex flex-col gap-1">
             @for (contact of contactMedia; track $index) {

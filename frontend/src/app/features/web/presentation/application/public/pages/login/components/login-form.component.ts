@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, computed, inject, Signal, signal, WritableSignal } from '@angular/core';
+import { Component, input, InputSignal, output, OutputEmitterRef, signal, WritableSignal } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 import { IconFieldModule } from 'primeng/iconfield';
 import { IftaLabelModule } from 'primeng/iftalabel';
@@ -8,7 +8,6 @@ import { InputPasswordModule } from 'primeng/inputpassword';
 import { InputTextModule } from 'primeng/inputtext';
 import { LabelModule } from 'primeng/label';
 import { FieldsLogin } from '../../../../../../../../interfaces/authentication';
-import { AuthenticationService } from '../../../../../../../data/services/authentication.service';
 import { TranslatePipe } from '@ngx-translate/core';
 import { LOGIN_I18N_KEYS } from '../../../../../../../data/repository/login.repository';
 import { FORMS_I18N_KEYS } from '../../../../../../../data/repository/forms.repository';
@@ -31,6 +30,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
    template: `
       @let passwordHidden = $passwordHidden();
       @let loading = $loading();
+      @let $formTree = $form();
 
       <form
          class="flex flex-col w-full gap-3"
@@ -53,7 +53,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                type="text"
                autocomplete="off"
                [fluid]="true"
-               [formField]="$form.username"
+               [formField]="$formTree.username"
             />
 
             <label for="username">{{ I18N.FORMS.FIELD_USERNAME | translate }}</label>
@@ -66,7 +66,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                   id="password"
                   class="transition-all"
                   [fluid]="true"
-                  [formField]="$form.password"
+                  [formField]="$formTree.password"
                   [mask]="passwordHidden"
                />
                <p-inputicon
@@ -84,7 +84,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
          <button
             class="bg-contrast text-white cursor-pointer disabled:opacity-60 disabled:cursor-auto py-2 px-6 rounded-lg w-full sm:w-fit ml-auto text-sm sm:text-base transition-all"
             [disabled]="loading"
-            (click)="handleLogin()"
+            (click)="$login.emit()"
          >
             {{ I18N.FORMS.BUTTON_SIGNIN | translate }}
          </button>
@@ -92,24 +92,20 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
    `,
 })
 export class LoginFormComponent {
-   private readonly _authentication: AuthenticationService = inject(AuthenticationService);
-
    public readonly I18N = {
       LOGIN: LOGIN_I18N_KEYS,
       FORMS: FORMS_I18N_KEYS,
    };
 
+   public $loading: InputSignal<boolean> = input(false, { alias: 'loading' });
+   public $form: InputSignal<FieldTree<FieldsLogin, string | number, 'writable'>> = input.required({ alias: 'form' });
+   public $login: OutputEmitterRef<void> = output({ alias: 'login' });
+
    public readonly $passwordHidden: WritableSignal<boolean> = signal(true);
-   public readonly $form: FieldTree<FieldsLogin, string | number, 'writable'> = this._authentication.forms.login;
-   public readonly $loading: Signal<boolean> = computed(() => this._authentication.loading);
 
    constructor() {}
 
    public handlePasswordToggle(): void {
       this.$passwordHidden.update((value: boolean) => !value);
-   }
-
-   public handleLogin(): void {
-      this._authentication.login();
    }
 }
