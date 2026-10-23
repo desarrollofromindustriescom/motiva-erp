@@ -16,6 +16,7 @@ import { successInterceptorFn } from './features/data/interceptors/success.inter
 import { parseInterceptorFn } from './features/data/interceptors/parse.interceptor';
 import { JSON_EXTENSION, LANGS } from './features/data/repository/i18n.repository';
 import { ASSETS_DIR } from './features/data/repository/assets.repository';
+import { environment } from '../environments/environment.development';
 
 export const appConfig: ApplicationConfig = {
    providers: [
@@ -45,7 +46,7 @@ export const appConfig: ApplicationConfig = {
                darkModeSelector: false || 'none',
             },
          },
-         license: '',
+         license: environment.primengLicence,
       }),
       SessionService,
       DialogService,

@@ -11,7 +11,7 @@
    "FORM_FIELD_CONFIRM_PASSWORD": "Confirmar contraseña",
    "FORM_BUTTON_SIGNIN": "Entrar",
    "FORM_BUTTON_CHANGE_PASSWORD": "Cambiar contraseña",
-   "FORM_BUTTON_CLOSE_ALL_SESSIONS": "Cerrar todas las sessiones",
+   "FORM_BUTTON_CLOSE_ALL_SESSIONS": "Cerrar todas las sesiones",
    "FORM_BUTTON_CLOSE": "Cerrar",
    "FORM_BUTTON_LOGOUT": "Cerrar sesión",
    "FORM_BUTTON_CONTINUE": "Continuar",
@@ -34,6 +34,7 @@
    "ERR_TITLE_CONTENT_TOO_LARGE": "Tamaño de la petición muy grande",
    "ERR_TITLE_TOO_MANY_REQUEST": "Muchas peticiones hechas",
    "ERR_TITLE_INTERNAL_SERVER_ERROR": "Error interno del servidor",
+   "TABLE_HEAD_DEVICE": "Dispositivo",
    "TABLE_HEAD_SYSTEM": "Sistema",
    "TABLE_HEAD_NAVIGATOR": "Navegador",
    "TABLE_HEAD_FIRST_SESSION": "Primer inicio",
@@ -57,5 +58,7 @@
    "DIALOG_CHANGE_PASSWORD_TITLE": "Cambiar contraseña",
    "DIALOG_CONFIRM_TITLE": "¿Continuar con la acción?",
    "DIALOG_CONFIRM_CHANGE_PASSWORD": "Al cambiar la contraseña se cerrarán todas las sesiones exceptuando la de este dispositivo",
-   "DIALOG_CONFIRM_LOGOUT": "¿Seguro que deseas cerrar sesión?"
+   "DIALOG_CONFIRM_LOGOUT": "¿Seguro que deseas cerrar sesión?",
+   "DIALOG_CONFIRM_CLOSE_SESSION": "Se cerrará la sesión seleccionada",
+   "DIALOG_CONFIRM_CLOSE_ALL_SESSIONS": "Se cerrarán todas las sesiones exceptuando la de este dispositivo"
 }

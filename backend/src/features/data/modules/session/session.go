@@ -6,13 +6,17 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
 	"motiva-erp/backend/src/features/data/database"
 	"motiva-erp/backend/src/features/data/modules/async"
 	"motiva-erp/backend/src/features/data/repository"
+	"motiva-erp/backend/src/interfaces/controller"
 	"motiva-erp/backend/src/interfaces/models"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -24,6 +28,14 @@ var (
 		"Edg",
 	}
 )
+
+var navigatorNames = []struct{ token, name string }{
+	{"OPR", "Opera"},
+	{"Edg", "Edge"},
+	{"Firefox", "Firefox"},
+	{"Chrome", "Chrome"},
+	{"Safari", "Safari"},
+}
 
 /**
  *
@@ -84,6 +96,89 @@ func parseUserAgent(agent string) (string, error) {
 	}
 
 	return fmt.Sprintf("Navigator/(%s),%s,%s", navigator, os, device), nil
+}
+
+/**
+ *
+ */
+func parseDeviceAgent(deviceAgent string) (*controller.ActiveSessionPreview, error) {
+	active := &controller.ActiveSessionPreview{}
+
+	rest, found := strings.CutPrefix(deviceAgent, "Navigator/(")
+
+	if !found {
+		return nil, repository.SsErrInvalidDeviceAgent
+	}
+
+	rawNavigators, rest, found := strings.Cut(rest, "),")
+
+	if !found {
+		return nil, repository.SsErrInvalidDeviceAgent
+	}
+
+	system, device, found := strings.Cut(rest, ",")
+
+	if !found {
+		return nil, repository.SsErrInvalidDeviceAgent
+	}
+
+	active.Device = device
+	listNavigators := strings.Split(rawNavigators, ";")
+
+	for _, candidate := range navigatorNames {
+		if slices.Contains(listNavigators, candidate.token) {
+			active.Navigator = candidate.name
+			break
+		}
+	}
+
+	active.System = strings.TrimSpace(strings.ReplaceAll(system, "_", " "))
+
+	return active, nil
+}
+
+/**
+ *
+ */
+func GetActiveSessions(ctx context.Context, userID uuid.UUID, sessionID uuid.UUID) ([]*controller.ActiveSessionPreview, error) {
+	rows, err := database.GetPool().Query(ctx, repository.SsQryGetUserActiveSessions, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	sessions := []*controller.ActiveSessionPreview{}
+	session := &models.Session{}
+
+	for rows.Next() {
+		err = rows.Scan(
+			&session.ID,
+			&session.DeviceAgent,
+			&session.LastLogin,
+			&session.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		active, err := parseDeviceAgent(session.DeviceAgent)
+
+		if err != nil {
+			return nil, err
+		}
+
+		active.ID = session.ID
+		active.Current = session.ID == sessionID
+		active.LastLogin = session.LastLogin
+		active.FirstLogin = session.CreatedAt
+
+		sessions = append(sessions, active)
+	}
+
+	return sessions, rows.Err()
 }
 
 /**
@@ -239,6 +334,23 @@ func RevokeOtherSessions(ctx context.Context, exec models.Executor, currentSessi
 	_, err := exec.Exec(ctx, repository.SsQryRevokeOtherSessions, currentSession.User.ID, currentSession.ID)
 
 	return err
+}
+
+/**
+ * Revokes a session only if it belongs to the given user
+ */
+func RevokeSessionByID(ctx context.Context, sessionID uuid.UUID, userID uuid.UUID) error {
+	tag, err := database.GetPool().Exec(ctx, repository.SsQryRevokeSessionByID, sessionID, userID)
+
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return repository.SsErrNotFound
+	}
+
+	return nil
 }
 
 /**

@@ -23,6 +23,8 @@ import { LoaderComponent } from '../../../../common/forms/loader/loader.componen
             <button
                class="group flex items-center justify-center size-10 rounded-full cursor-pointer border-2 border-white focus:bg-white hover:bg-white disabled:opacity-80 disabled:bg-white transition-all"
                [pTooltip]="I18N.BUTTON_LOGOUT | translate"
+               [tooltipDisabled]="loading"
+               [showDelay]="1500"
                [disabled]="loading"
                (click)="$logout.emit()"
             >

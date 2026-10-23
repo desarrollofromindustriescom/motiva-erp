@@ -7,7 +7,7 @@ export interface FieldsChangePassword {
    confirm_password: string;
 }
 
-export type UsersRoutes = 'changePassword' | 'logout';
+export type UsersRoutes = 'changePassword' | 'logout' | 'sessions' | 'revokeSessions' | 'revokeSession';
 
 export interface UsersForms {
    changePassword: SignalForm<FieldsChangePassword>;
@@ -31,3 +31,15 @@ export type User = {
    createdAt: string;
    status: Status;
 };
+
+export type ActiveSessionDevice = 'Desktop' | 'Mobile';
+
+export interface ActiveSession {
+   id: string;
+   system: string;
+   navigator: string;
+   device: ActiveSessionDevice;
+   first_login: string;
+   last_login: string;
+   current: boolean;
+}

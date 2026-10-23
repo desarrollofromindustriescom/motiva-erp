@@ -67,6 +67,27 @@ const (
 		SET status_id = (SELECT id FROM status WHERE slug = 'revoked')
 		WHERE token = $1
 	`
+	SsQryGetUserActiveSessions string = `--sql
+		SELECT
+			sessions.id,
+			sessions.device_agent,
+			sessions.last_login,
+			sessions.created_at
+		FROM sessions
+		INNER JOIN status ON sessions.status_id = status.id
+		WHERE
+			sessions.user_id = $1 AND
+			sessions.token_exp > NOW() AND
+			status.slug = 'active'
+		ORDER BY sessions.last_login DESC
+	`
+	SsQryRevokeSessionByID string = `--sql
+		UPDATE sessions
+		SET status_id = (SELECT id FROM status WHERE slug = 'revoked')
+		WHERE
+			id = $1 AND
+			user_id = $2
+	`
 	SsQryUpdateExpTime string = `--sql
 		UPDATE sessions
 		SET
@@ -77,6 +98,8 @@ const (
 )
 
 var (
-	SsErrUserAgentRequired error = errors.New("User agent required")
-	SsErrExpired           error = errors.New("Session expired")
+	SsErrUserAgentRequired  error = errors.New("User agent required")
+	SsErrInvalidDeviceAgent error = errors.New("Invalid device agent")
+	SsErrNotFound           error = errors.New("Session not found")
+	SsErrExpired            error = errors.New("Session expired")
 )

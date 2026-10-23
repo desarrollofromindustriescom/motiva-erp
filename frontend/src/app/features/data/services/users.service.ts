@@ -1,6 +1,6 @@
-import { inject, Injectable, signal, WritableSignal } from '@angular/core';
+import { effect, inject, Injectable, signal, untracked, WritableSignal } from '@angular/core';
 import { EndpointData } from '../../../interfaces/api';
-import { FieldsChangePassword, UsersForms, UsersRoutes } from '../../../interfaces/user';
+import { ActiveSession, FieldsChangePassword, UsersForms, UsersRoutes } from '../../../interfaces/user';
 import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
 import { FormSchema, SignalForm } from '../../../interfaces/alias';
 import {
@@ -15,7 +15,7 @@ import {
 } from '@angular/forms/signals';
 import { REGEX } from '../repository/regex.repository';
 import { FORMS_CUSTOM_VALIDATIONS, FORMS_I18N_KEYS } from '../repository/forms.repository';
-import { HttpClient, HttpContext } from '@angular/common/http';
+import { HttpClient, HttpContext, httpResource, HttpResourceRef, HttpResourceRequest } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { DialogsService } from './dialogs.service';
@@ -31,9 +31,23 @@ export class UsersService {
    private readonly routes: Record<UsersRoutes, EndpointData> = {
       changePassword: { route: API_ROUTES.CHANGEPASSWORD, method: HTTP_METHODS.PATCH },
       logout: { route: API_ROUTES.LOGOUT, method: HTTP_METHODS.POST },
+      sessions: { route: API_ROUTES.SESSIONS, method: HTTP_METHODS.GET },
+      revokeSessions: { route: API_ROUTES.REVOKESESSIONS, method: HTTP_METHODS.DELETE },
+      revokeSession: { route: API_ROUTES.REVOKESESSION, method: HTTP_METHODS.DELETE },
    };
 
    private readonly $loading: WritableSignal<boolean> = signal(false);
+   private readonly $activeSessions: HttpResourceRef<ActiveSession[]> = httpResource<ActiveSession[]>(
+      (): HttpResourceRequest | undefined => {
+         if (!this._session.token) return undefined;
+
+         const { route, method } = this.routes.sessions;
+         const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
+
+         return { url: `${environment.apiUrl}${route}`, method, context };
+      },
+      { defaultValue: [] },
+   );
 
    private readonly $modelChangePassword: WritableSignal<FieldsChangePassword> = signal({
       current_password: '',
@@ -94,10 +108,19 @@ export class UsersService {
       },
    );
 
-   constructor() {}
+   constructor() {
+      effect(() => {
+         const loading: boolean = this.$activeSessions.isLoading();
+         untracked(() => this.$loading.set(loading));
+      });
+   }
 
    public get loading(): boolean {
       return this.$loading();
+   }
+
+   public get activeSessions(): ActiveSession[] {
+      return this.$activeSessions.value();
    }
 
    public get forms(): UsersForms {
@@ -135,6 +158,7 @@ export class UsersService {
                   this.$loading.set(true);
                   firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`, { body }))
                      .then(() => {
+                        this.activeSessionsClear();
                         this.resetForm({ form: 'changePassword' });
                         this._dialogs.closeDialogs();
                         resolve();
@@ -167,5 +191,62 @@ export class UsersService {
             .then(() => this._session.clear())
             .finally(() => this.$loading.set(false));
       });
+   }
+
+   /**
+    *
+    */
+   public revokeSessions(): void {
+      const { method, route } = this.routes.revokeSessions;
+
+      this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_CLOSE_ALL_SESSIONS }).then(() => {
+         this.$loading.set(true);
+         firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`))
+            .then(() => this.activeSessionsClear())
+            .finally(() => this.$loading.set(false));
+      });
+   }
+
+   /**
+    *
+    */
+   public revokeSession(id: string): void {
+      const { method, route } = this.routes.revokeSession;
+
+      this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_CLOSE_SESSION }).then(() => {
+         this.$loading.set(true);
+         firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}${id}`))
+            .then(() => this.activeSessionsRemove(id))
+            .finally(() => this.$loading.set(false));
+      });
+   }
+
+   /**
+    *
+    */
+   public activeSessionsReload(): void {
+      this.$activeSessions.reload();
+   }
+
+   /**
+    *
+    */
+   public activeSessionsClear(): void {
+      const activeSessions: ActiveSession[] = this.$activeSessions.value();
+
+      if (activeSessions.length < 2) return;
+
+      const current: ActiveSession | undefined = activeSessions.find((session: ActiveSession) => session.current);
+
+      if (!current) return;
+
+      this.$activeSessions.set([{ ...current }]);
+   }
+
+   /**
+    *
+    */
+   public activeSessionsRemove(id: string): void {
+      this.$activeSessions.set(this.$activeSessions.value().filter((session: ActiveSession) => session.id !== id));
    }
 }

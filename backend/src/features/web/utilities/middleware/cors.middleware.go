@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	"motiva-erp/backend/src/features/data/repository"
 )
@@ -14,13 +15,20 @@ var trustOrigins map[string]bool = make(map[string]bool)
  * development environment to allow local server server
  */
 func setTrustOrigins() {
-	env := os.Getenv(repository.EnvEnv)
+	origins := os.Getenv(repository.EnvAllowOrigins)
 
-	trustOrigins["https://motiva-erp.pages.dev"] = true
-	trustOrigins["https://www.motiva-erp.pages.dev"] = true
+	if origins == "" {
+		return
+	}
 
-	if env == repository.EnvValDevelopment {
-		trustOrigins["https://localhost:4200"] = true
+	for _, origin := range strings.Split(origins, ";") {
+		origin = strings.TrimSpace(origin)
+
+		if origin == "" {
+			continue
+		}
+
+		trustOrigins[origin] = true
 	}
 }
 
