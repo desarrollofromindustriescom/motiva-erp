@@ -57,7 +57,8 @@
    "DIALOG_ERR_OPEN_BACK_DIALOG": "Error al abrir la ventana anterior",
    "DIALOG_CHANGE_PASSWORD_TITLE": "Cambiar contraseña",
    "DIALOG_CONFIRM_TITLE": "¿Continuar con la acción?",
-   "DIALOG_CONFIRM_CHANGE_PASSWORD": "Al cambiar la contraseña se cerrarán todas las sesiones exceptuando la de este dispositivo",
+   "DIALOG_CONFIRM_CHANGE_PASSWORD": "Al continuar tu acceso cambiará para futuros inicios de sesión",
+   "DIALOG_CONFIRM_CHANGE_PASSWORD_SESSIONS": "Al cambiar la contraseña se cerrarán todas las sesiones exceptuando la de este dispositivo",
    "DIALOG_CONFIRM_LOGOUT": "¿Seguro que deseas cerrar sesión?",
    "DIALOG_CONFIRM_CLOSE_SESSION": "Se cerrará la sesión seleccionada",
    "DIALOG_CONFIRM_CLOSE_ALL_SESSIONS": "Se cerrarán todas las sesiones exceptuando la de este dispositivo"

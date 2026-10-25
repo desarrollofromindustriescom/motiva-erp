@@ -14,6 +14,7 @@ import { ChangePasswordDialogComponent } from '../../../../common/dialogs/views/
    selector: 'fi-profile-page-component',
    imports: [ProfileInfoComponent, ProfileSecutiryComponent, ProfileSessionsComponent],
    template: `
+      @let loading = $loading();
       @let session = $session();
       @let activeSessions = $activeSessions();
       @if (session) {
@@ -21,6 +22,7 @@ import { ChangePasswordDialogComponent } from '../../../../common/dialogs/views/
             <fi-profile-info-component [session]="session" />
             <fi-profile-secutiry-component (changePassword)="handleChangePassword()" />
             <fi-profile-sessions-component
+               [loading]="loading"
                [sessions]="activeSessions"
                (close)="handleCloseSession($event)"
                (closeAll)="handleCloseAllSessions()"
@@ -34,6 +36,7 @@ export class ProfilePageComponent {
    private readonly _dialogs: DialogsService = inject(DialogsService);
    private readonly _users: UsersService = inject(UsersService);
 
+   public readonly $loading: Signal<boolean> = computed(() => this._users.loading);
    public readonly $session: Signal<Session | null> = computed(() => this._session.session);
    public readonly $activeSessions: Signal<ActiveSession[]> = computed(() => this._users.activeSessions);
 
@@ -41,8 +44,8 @@ export class ProfilePageComponent {
       this._users.activeSessionsReload();
    }
 
-   public handleCloseSession(id: string): void {
-      this._users.revokeSession(id);
+   public handleCloseSession(params: { sessionID: string }): void {
+      this._users.revokeSession(params);
    }
 
    public handleCloseAllSessions(): void {

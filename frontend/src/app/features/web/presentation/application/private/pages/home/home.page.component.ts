@@ -47,8 +47,8 @@ import { TitleCasePipe } from '@angular/common';
    `,
 })
 export class HomePageComponent {
-   private readonly _navigation: NavigationService = inject(NavigationService);
    private readonly _session: SessionService = inject(SessionService);
+   private readonly _navigation: NavigationService = inject(NavigationService);
 
    public readonly HOME_I18N_KEYS = HOME_I18N_KEYS;
    public readonly navModules: NavigationRoute[] = this._navigation.navModules;

@@ -147,7 +147,12 @@ export class UsersService {
     *
     */
    public changePassword(): void {
-      this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_CHANGE_PASSWORD }).then(() =>
+      const message: string =
+         this.$activeSessions.value().length > 1
+            ? DIALOG_I18N_KEYS.CONFIRM_CHANGE_PASSWORD_SESSIONS
+            : DIALOG_I18N_KEYS.CONFIRM_CHANGE_PASSWORD;
+
+      this._dialogs.confirmation({ message }).then(() =>
          submit(
             this.$formChangePassword,
             async () =>
@@ -210,13 +215,13 @@ export class UsersService {
    /**
     *
     */
-   public revokeSession(id: string): void {
+   public revokeSession({ sessionID }: { sessionID: string }): void {
       const { method, route } = this.routes.revokeSession;
 
       this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_CLOSE_SESSION }).then(() => {
          this.$loading.set(true);
-         firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}${id}`))
-            .then(() => this.activeSessionsRemove(id))
+         firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}${sessionID}`))
+            .then(() => this.activeSessionsRemove({ sessionID }))
             .finally(() => this.$loading.set(false));
       });
    }
@@ -246,7 +251,9 @@ export class UsersService {
    /**
     *
     */
-   public activeSessionsRemove(id: string): void {
-      this.$activeSessions.set(this.$activeSessions.value().filter((session: ActiveSession) => session.id !== id));
+   public activeSessionsRemove({ sessionID }: { sessionID: string }): void {
+      this.$activeSessions.set(
+         this.$activeSessions.value().filter((session: ActiveSession) => session.id !== sessionID),
+      );
    }
 }

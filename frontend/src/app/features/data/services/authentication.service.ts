@@ -34,25 +34,6 @@ export class AuthenticationService {
    };
 
    private readonly $loading: WritableSignal<boolean> = signal(false);
-   // private readonly $token: WritableSignal<string> = signal('');
-   // private readonly $user: HttpResourceRef<User | null> = httpResource(
-   //    (): HttpResourceRequest | undefined => {
-   //       const token: string = this.$token();
-
-   //       if (!token) return undefined;
-
-   //       const { route, method } = this.routes.verifyToken;
-   //       const { ignoreError } = apiHeaders;
-   //       const url: string = `${environment.apiUrl}${route}`;
-   //       const headers: Record<string, string> = { [ignoreError]: '' };
-
-   //       return { url, method, headers };
-   //    },
-   //    {
-   //       defaultValue: null,
-   //    },
-   // );
-
    private readonly $modelLogin: WritableSignal<FieldsLogin> = signal({
       username: '',
       password: '',
@@ -66,12 +47,7 @@ export class AuthenticationService {
       disabled(schema.password, { when: () => this.$loading() });
    });
 
-   constructor() {
-      // effect(() => {
-      //    const loading: boolean = this.$user.isLoading();
-      //    untracked(() => this.$loading.set(loading));
-      // });
-   }
+   constructor() {}
 
    public get loading(): boolean {
       return this.$loading();

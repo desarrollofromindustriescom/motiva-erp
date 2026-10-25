@@ -21,12 +21,13 @@ import { LoaderComponent } from '../../../forms/loader/loader.component';
          >
             @for (action of headerActions; track $index) {
                <button
-                  class="group cursor-pointer flex items-center justify-center size-10 rounded-full bg-white hover:bg-slate-200 focus:bg-slate-200 transition-all"
+                  class="group cursor-pointer flex items-center justify-center size-10 rounded-full bg-white hover:bg-slate-200 focus:bg-slate-200 transition-all disabled:opacity-60 disabled:cursor-auto disabled:hover:bg-white disabled:focus:bg-white"
+                  [disabled]="loading"
                   (click)="action.handle()"
                >
                   <i
                      [class]="
-                        'text-slate-400 bx text-2xl group-hover:text-slate-900 group-focus:text-slate-900 transition-all ' +
+                        'text-slate-400 bx text-2xl group-disabled:group-hover:text-slate-400 group-disabled:group-focus:text-slate-400 group-hover:text-slate-900 group-focus:text-slate-900 transition-all ' +
                         action.icon
                      "
                   ></i>
