@@ -188,13 +188,14 @@ export class UsersService {
     */
    public logout(): void {
       const { method, route } = this.routes.logout;
-      const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
+      const context: HttpContext = new HttpContext();
+
+      context.set(API_CONTEXT.IGNORE_SUCCESS, true);
+      context.set(API_CONTEXT.IGNORE_ERROR, true);
 
       this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_LOGOUT }).then(() => {
-         this.$loading.set(true);
-         firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`, { context }))
-            .then(() => this._session.clear())
-            .finally(() => this.$loading.set(false));
+         this._session.clear();
+         this._http.request(method, `${environment.apiUrl}${route}`, { context });
       });
    }
 

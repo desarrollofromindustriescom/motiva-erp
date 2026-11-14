@@ -14,6 +14,7 @@ import { DASHBOARD_I18N_KEYS } from '../repository/dashboard.repository';
 export class NavigationService {
    private readonly _router: Router = inject(Router);
 
+   private readonly $sidebarOpen: WritableSignal<boolean> = signal(false);
    private readonly $currentModule: WritableSignal<ApplicationModule> = signal(APPLICATION_MODULES.HOME);
 
    public readonly navModules: NavigationRoute[] = [
@@ -113,6 +114,14 @@ export class NavigationService {
    }, {});
 
    constructor() {}
+
+   public get sidebarOpen(): boolean {
+      return this.$sidebarOpen();
+   }
+
+   public set sidebarOpen(value: boolean) {
+      this.$sidebarOpen.set(value);
+   }
 
    public get currentModule(): ApplicationModule {
       return this.$currentModule();

@@ -1,5 +1,7 @@
 import { UserProfile } from './user';
 
+export type SessionLoader = 'logout' | 'token';
+
 export interface Session {
    id: string;
    fullname: string;

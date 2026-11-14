@@ -5,13 +5,13 @@ import { RouterOutlet } from '@angular/router';
    selector: 'fi-private-main-component',
    imports: [RouterOutlet],
    template: `
-      <main class="size-full flex flex-col max-h-full overflow-auto gap-2">
-         <ng-content select="fi-private-header-component" />
+      <main class="flex size-full max-h-full flex-col gap-2 overflow-auto">
+         <ng-content select="[header]" />
 
-         <section class="w-full flex-auto flex flex-col [&>*:nth-child(2)]:flex-auto">
+         <section class="flex w-full flex-auto flex-col [&>*:nth-child(2)]:flex-auto">
             <router-outlet />
          </section>
-         <ng-content select="fi-private-footer-component" />
+         <ng-content select="[footer]" />
       </main>
    `,
 })

@@ -1,6 +1,7 @@
 import { inject, Injectable, signal, WritableSignal } from '@angular/core';
 import {
    AuthenticationForms,
+   AuthenticationLoader,
    AuthenticationRoutes,
    FieldsLogin,
    LoginPreview,
@@ -33,7 +34,10 @@ export class AuthenticationService {
       login: { route: API_ROUTES.LOGIN, method: HTTP_METHODS.POST },
    };
 
-   private readonly $loading: WritableSignal<boolean> = signal(false);
+   private readonly $loader: WritableSignal<Record<AuthenticationLoader, boolean>> = signal({
+      login: false,
+      validate: false,
+   });
    private readonly $modelLogin: WritableSignal<FieldsLogin> = signal({
       username: '',
       password: '',
@@ -43,14 +47,24 @@ export class AuthenticationService {
       required(schema.username, { when: ({ state }: ChildFieldContext<string>) => state.touched() });
       required(schema.password, { when: ({ state }: ChildFieldContext<string>) => state.touched() });
 
-      disabled(schema.username, { when: () => this.$loading() });
-      disabled(schema.password, { when: () => this.$loading() });
+      disabled(schema.username, {
+         when: () => {
+            const { login, validate } = this.$loader();
+            return login || validate;
+         },
+      });
+      disabled(schema.password, {
+         when: () => {
+            const { login, validate } = this.$loader();
+            return login || validate;
+         },
+      });
    });
 
    constructor() {}
 
-   public get loading(): boolean {
-      return this.$loading();
+   public get loader(): Record<AuthenticationLoader, boolean> {
+      return this.$loader();
    }
 
    public get forms(): AuthenticationForms {
@@ -73,14 +87,16 @@ export class AuthenticationService {
 
          if (options && options.hideError) context.set(API_CONTEXT.IGNORE_ERROR, true);
 
-         this.$loading.set(true);
+         this.$loader.update((prev: Record<AuthenticationLoader, boolean>) => ({ ...prev, validate: true }));
          firstValueFrom(this._http.request<Session>(method, `${environment.apiUrl}${route}`, { context }))
             .then((session: Session) => {
                this._session.session = session;
                resolve();
             })
             .catch(reject)
-            .finally(() => this.$loading.set(false));
+            .finally(() =>
+               this.$loader.update((prev: Record<AuthenticationLoader, boolean>) => ({ ...prev, validate: false })),
+            );
       });
    }
 
@@ -96,7 +112,7 @@ export class AuthenticationService {
                const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
                let { method, route } = this.routes.login;
 
-               this.$loading.set(true);
+               this.$loader.update((prev: Record<AuthenticationLoader, boolean>) => ({ ...prev, login: true }));
                firstValueFrom(
                   this._http.request<LoginPreview>(method, `${environment.apiUrl}${route}`, { body, context }),
                )
@@ -113,7 +129,9 @@ export class AuthenticationService {
                      resolve();
                   })
                   .catch(reject)
-                  .finally(() => this.$loading.set(false));
+                  .finally(() =>
+                     this.$loader.update((prev: Record<AuthenticationLoader, boolean>) => ({ ...prev, login: false })),
+                  );
             }),
       ).then((state: boolean) => {
          if (state) return;

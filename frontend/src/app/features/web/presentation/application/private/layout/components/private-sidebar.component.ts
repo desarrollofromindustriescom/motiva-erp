@@ -3,6 +3,7 @@ import { Component, input, InputSignal, output, OutputEmitterRef } from '@angula
 import { ApplicationModule, NavigationRoute } from '../../../../../../../interfaces/navigation';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthorizedDirective } from '../../../../../utilities/directives/authorized.directive';
+import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.repository';
 
 @Component({
    selector: 'fi-private-sidebar-component',
@@ -11,20 +12,20 @@ import { AuthorizedDirective } from '../../../../../utilities/directives/authori
       @let navModules = $navModules();
       @let currentModule = $currentModule();
 
-      <aside class="size-full flex flex-col max-h-full overflow-auto gap-2">
-         <nav class="w-full flex flex-col border border-slate-500 rounded-2xl p-4">
-            <ul class="flex flex-col w-full gap-1">
+      <aside class="flex size-full max-h-full flex-col gap-2 overflow-auto">
+         <nav class="flex w-full flex-col rounded-2xl border border-slate-500 p-4">
+            <ul class="flex w-full flex-col gap-1">
                @for (nav of navModules; track $index) {
                   <li
                      class="flex w-full"
                      *fiAuthorized="nav.allowed"
                   >
                      <button
-                        class="w-full flex items-center justify-start py-3 pl-6 gap-3 rounded-xl transition-all cursor-pointer"
+                        class="flex w-full cursor-pointer items-center justify-start gap-3 rounded-xl py-3 pl-6 transition-all"
                         (click)="$navigate.emit({ module: nav.slug })"
                         [ngClass]="{
                            'text-second/80 hover:bg-slate-200': currentModule !== nav.slug,
-                           'text-white bg-second': currentModule === nav.slug,
+                           'bg-second text-white': currentModule === nav.slug,
                         }"
                      >
                         <i [class]="'bx text-2xl ' + nav.icon"></i>
@@ -34,11 +35,29 @@ import { AuthorizedDirective } from '../../../../../utilities/directives/authori
                }
             </ul>
          </nav>
+
+         <div class="flex w-full flex-col gap-2 rounded-2xl border border-slate-500 p-4">
+            <span class="text-lg font-medium">Sesion</span>
+            <button
+               class="group border-contrast hover:bg-contrast focus:bg-contrast flex w-full cursor-pointer items-center justify-start gap-3 rounded-xl border-2 py-3 pl-6 transition-all"
+               (click)="$logout.emit()"
+            >
+               <i
+                  class="bx bx-arrow-from-left-stroke text-contrast rotate-180 text-xl transition-all group-hover:text-white group-focus:text-white"
+               ></i>
+               <span class="text-contrast text-base transition-all group-hover:text-white group-focus:text-white">{{
+                  I18N.BUTTON_LOGOUT | translate
+               }}</span>
+            </button>
+         </div>
       </aside>
    `,
 })
 export class PrivateSidebarComponent {
+   public readonly I18N = FORMS_I18N_KEYS;
+
    public $navModules: InputSignal<NavigationRoute[]> = input([] as NavigationRoute[], { alias: 'navModules' });
    public $currentModule: InputSignal<ApplicationModule> = input.required({ alias: 'currentModule' });
    public $navigate: OutputEmitterRef<{ module: ApplicationModule }> = output({ alias: 'navigate' });
+   public $logout: OutputEmitterRef<void> = output({ alias: 'logout' });
 }

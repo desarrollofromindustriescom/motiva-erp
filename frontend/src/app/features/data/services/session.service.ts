@@ -1,9 +1,12 @@
 import { signal, WritableSignal } from '@angular/core';
-import { Session } from '../../../interfaces/session';
+import { Session, SessionLoader } from '../../../interfaces/session';
 import { environment } from '../../../../environments/environment.development';
 
 export class SessionService {
-   private readonly $loading: WritableSignal<boolean> = signal(false);
+   private readonly $loader: WritableSignal<Record<SessionLoader, boolean>> = signal({
+      logout: false,
+      token: false,
+   });
    private readonly $token: WritableSignal<string> = signal('');
    private readonly $session: WritableSignal<Session | null> = signal(null);
 
@@ -11,8 +14,8 @@ export class SessionService {
 
    constructor() {}
 
-   public get loading(): boolean {
-      return this.$loading();
+   public get loader(): Record<SessionLoader, boolean> {
+      return this.$loader();
    }
 
    public get token(): string {
@@ -36,7 +39,7 @@ export class SessionService {
     */
    public getTokenCookie(): Promise<void> {
       return new Promise<void>((resolve, reject) => {
-         this.$loading.set(true);
+         this.$loader.update((prev: Record<SessionLoader, boolean>) => ({ ...prev, token: true }));
          cookieStore
             .get(environment.tokenKey)
             .then((item: CookieListItem | null) => {
@@ -44,7 +47,7 @@ export class SessionService {
                resolve();
             })
             .catch(reject)
-            .finally(() => this.$loading.set(false));
+            .finally(() => this.$loader.update((prev: Record<SessionLoader, boolean>) => ({ ...prev, token: false })));
       });
    }
 
@@ -52,10 +55,14 @@ export class SessionService {
     *
     */
    public clear(): void {
-      this.$loading.set(true);
+      this.$loader.update((prev: Record<SessionLoader, boolean>) => ({ ...prev, logout: true }));
       this.$token.set('');
       this.$session.set(null);
-      cookieStore.delete(environment.tokenKey).finally((): void => this.$loading.set(false));
+      cookieStore
+         .delete(environment.tokenKey)
+         .finally((): void =>
+            this.$loader.update((prev: Record<SessionLoader, boolean>) => ({ ...prev, logout: false })),
+         );
    }
 
    /**

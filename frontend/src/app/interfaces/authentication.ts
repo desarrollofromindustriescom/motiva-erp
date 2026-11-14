@@ -1,5 +1,7 @@
 import { SignalForm } from './alias';
 
+export type AuthenticationLoader = 'login' | 'validate';
+
 export interface FieldsLogin {
    username: string;
    password: string;

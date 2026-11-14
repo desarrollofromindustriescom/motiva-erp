@@ -9,29 +9,29 @@ import { PATHS } from '../../../../../../data/repository/navigation.repository';
 import { FOOTER_I18N_KEYS } from '../../../../../../data/repository/layout.repository';
 import { LoginFormComponent } from './components/login-form.component';
 import { FieldTree } from '@angular/forms/signals';
-import { FieldsLogin } from '../../../../../../../interfaces/authentication';
+import { AuthenticationLoader, FieldsLogin } from '../../../../../../../interfaces/authentication';
 
 @Component({
    selector: 'fi-login-page-component',
    imports: [LoginPictureComponent, LoginWelcomeComponent, TranslatePipe, LoginFormComponent],
    template: `
-      @let loading = $loading();
+      @let loader = $loader();
 
-      <section class="w-full h-dvh flex flex-col items-center justify-start">
+      <section class="flex h-dvh w-full flex-col items-center justify-start">
          <div
-            class="w-full gap-4 grid grid-cols-1 xl:grid-cols-2 grid-rows-1 flex-auto px-8 pt-8 items-center justify-items-center"
+            class="grid w-full flex-auto grid-cols-1 grid-rows-1 items-center justify-items-center gap-4 px-8 pt-8 xl:grid-cols-2"
          >
-            <fi-login-welcome-component class="h-full flex w-full md:w-5/6 lg:w-3/4 xl:w-full transition-all">
+            <fi-login-welcome-component class="flex h-full w-full transition-all md:w-5/6 lg:w-3/4 xl:w-full">
                <fi-login-form-component
                   class="w-full"
                   [form]="$form"
-                  [loading]="loading"
+                  [loading]="loader.login || loader.validate"
                   (login)="handleLogin()"
                />
             </fi-login-welcome-component>
-            <fi-login-picture-component class="hidden xl:flex size-full" />
+            <fi-login-picture-component class="hidden size-full xl:flex" />
          </div>
-         <p class="w-full flex items-center justify-center gap-1 text-main h-12 text-xs sm:text-base transition-all">
+         <p class="text-main flex h-12 w-full items-center justify-center gap-1 text-xs transition-all sm:text-base">
             {{ I18N.BUILD_BY | translate }} <b>{{ I18N.BUSINESS | translate }}</b>
          </p>
       </section>
@@ -44,11 +44,13 @@ export class LoginPageComponent {
 
    public readonly I18N = FOOTER_I18N_KEYS;
 
-   public readonly $loading: Signal<boolean> = computed(() => this._authentication.loading);
+   public readonly $loader: Signal<Record<AuthenticationLoader, boolean>> = computed(() => this._authentication.loader);
    public readonly $form: FieldTree<FieldsLogin, string | number, 'writable'> = this._authentication.forms.login;
 
    constructor() {
-      if (this._authentication.loading) return;
+      const { validate } = this.$loader();
+
+      if (validate) return;
 
       this._authentication
          .recoverSession({

@@ -10,29 +10,34 @@ import { ApplicationModule, NavigationRoute } from '../../../../../../interfaces
 import { PrivateHeaderComponent } from './components/private-header.component';
 import { PrivateFooterComponent } from './components/private-footer.component';
 import { UsersService } from '../../../../../data/services/users.service';
+import { NgClass } from '@angular/common';
 
 @Component({
    selector: 'fi-private-layout-component',
-   imports: [PrivateSidebarComponent, PrivateMainComponent, PrivateHeaderComponent, PrivateFooterComponent],
+   imports: [PrivateSidebarComponent, PrivateMainComponent, PrivateHeaderComponent, PrivateFooterComponent, NgClass],
    template: `
-      @let loading = $loading();
+      @let sidebarOpen = $sidebarOpen();
       @let currentModule = $currentModule();
 
-      <section class="w-full h-dvh flex bg-white">
+      <section class="flex h-dvh w-full bg-white">
          <fi-private-sidebar-component
-            class="w-xs h-full flex flex-col py-4 pl-4 pr-2"
+            class="fixed top-0 flex h-full w-full flex-col bg-white py-4 pr-4 pl-4 transition-all xl:static xl:w-xs xl:pr-2"
             [navModules]="navModules"
             [currentModule]="currentModule"
             (navigate)="handleNavigate($event)"
+            (logout)="handleLogout()"
+            [ngClass]="{
+               'left-0': sidebarOpen,
+               '-left-full': !sidebarOpen,
+            }"
          />
-         <fi-private-main-component class="flex-auto h-full flex flex-col py-4 pr-4 pl-2">
+         <fi-private-main-component class="flex h-full flex-auto flex-col py-4 pr-4 pl-2">
             <fi-private-header-component
-               [loading]="loading"
+               header
                [currentModule]="currentModule"
                [navModulesBuffer]="navModulesBuffer"
-               (logout)="handleLogout()"
             />
-            <fi-private-footer-component />
+            <fi-private-footer-component footer />
          </fi-private-main-component>
       </section>
    `,
@@ -49,7 +54,7 @@ export class PrivateLayoutComponent {
 
    public readonly navModules: NavigationRoute[] = this._navigation.navModules;
    public readonly navModulesBuffer: Record<ApplicationModule, NavigationRoute> = this._navigation.navModulesBuffer;
-   public readonly $loading: Signal<boolean> = computed(() => this._users.loading);
+   public readonly $sidebarOpen: Signal<boolean> = computed(() => this._navigation.sidebarOpen);
    public readonly $currentModule: Signal<ApplicationModule> = computed(() => this._navigation.currentModule);
 
    constructor() {
