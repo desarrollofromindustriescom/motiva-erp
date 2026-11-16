@@ -7,10 +7,12 @@ import { FORMS_I18N_KEYS } from '../../../../../../../data/repository/forms.repo
    selector: 'fi-profile-secutiry-component',
    imports: [TranslatePipe],
    template: `
-      <section class="w-full flex items-center justify-between p-6 rounded-2xl border border-slate-500">
-         <h2 class="font-medium text-second text-lg">{{ I18N.SECTION_TITLE_SECUTIRY | translate }}</h2>
+      <section
+         class="flex w-full flex-col gap-3 rounded-2xl border border-slate-500 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+      >
+         <h2 class="text-second text-lg font-medium">{{ I18N.SECTION_TITLE_SECUTIRY | translate }}</h2>
          <button
-            class="bg-second rounded-xl flex items-center justify-center gap-2 text-white px-5 py-3 cursor-pointer hover:bg-second-light focus:bg-second-light transition-all"
+            class="bg-second hover:bg-second-light focus:bg-second-light flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-5 py-3 text-white transition-all sm:w-auto"
             (click)="$changePassword.emit()"
          >
             <i class="bx bx-lock-keyhole text-2xl"></i>

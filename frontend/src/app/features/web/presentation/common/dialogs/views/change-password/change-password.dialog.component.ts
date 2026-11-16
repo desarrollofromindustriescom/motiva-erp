@@ -43,7 +43,7 @@ import { DialogsService } from '../../../../../../data/services/dialogs.service'
       @let confirmHidden = $passwordsHidden().confirm;
 
       <form
-         class="w-full flex flex-col gap-2"
+         class="flex w-full flex-col gap-2"
          (submit)="$event.preventDefault()"
       >
          <fi-field-errors-component
@@ -62,7 +62,7 @@ import { DialogsService } from '../../../../../../data/services/dialogs.service'
                      [mask]="currentHidden"
                   />
                   <p-inputicon
-                     class="cursor-pointer -translate-y-1/2 bx"
+                     class="bx -translate-y-1/2 cursor-pointer"
                      (click)="handlePasswordToggle({ field: 'current' })"
                      [ngClass]="{
                         'bx-eye': currentHidden,
@@ -88,7 +88,7 @@ import { DialogsService } from '../../../../../../data/services/dialogs.service'
                      [mask]="newHidden"
                   />
                   <p-inputicon
-                     class="cursor-pointer -translate-y-1/2 bx"
+                     class="bx -translate-y-1/2 cursor-pointer"
                      (click)="handlePasswordToggle({ field: 'new' })"
                      [ngClass]="{
                         'bx-eye': newHidden,
@@ -114,7 +114,7 @@ import { DialogsService } from '../../../../../../data/services/dialogs.service'
                      [mask]="confirmHidden"
                   />
                   <p-inputicon
-                     class="cursor-pointer -translate-y-1/2 bx"
+                     class="bx -translate-y-1/2 cursor-pointer"
                      (click)="handlePasswordToggle({ field: 'confirm' })"
                      [ngClass]="{
                         'bx-eye': confirmHidden,
@@ -125,16 +125,16 @@ import { DialogsService } from '../../../../../../data/services/dialogs.service'
                <label for="confirm_password">{{ I18N.FIELD_CONFIRM_PASSWORD | translate }} *</label>
             </p-iftalabel>
          </fi-field-errors-component>
-         <div class="w-full flex flex-row-reverse items-center justify-start gap-2">
+         <div class="flex w-full flex-row-reverse items-center justify-start gap-2">
             <button
-               class="rounded-lg bg-contrast text-white py-2 px-6 disabled:opacity-60 cursor-pointer disabled:cursor-auto transition-all"
+               class="bg-contrast cursor-pointer rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60"
                [disabled]="loading"
                (click)="handleContinue()"
             >
                {{ I18N.BUTTON_CHANGE | translate }}
             </button>
             <button
-               class="rounded-lg bg-red-500 text-white py-2 px-6 disabled:opacity-60 cursor-pointer disabled:cursor-auto transition-all"
+               class="cursor-pointer rounded-lg bg-red-500 px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60"
                [disabled]="loading"
                (click)="handleCancel()"
             >
@@ -150,7 +150,7 @@ export class ChangePasswordDialogComponent {
 
    public readonly I18N = FORMS_I18N_KEYS;
 
-   public readonly $loading: Signal<boolean> = computed(() => this._users.loading);
+   public readonly $loading: Signal<boolean> = computed(() => this._users.loader.changePassword);
    public readonly $form: FieldTree<FieldsChangePassword, string | number, 'writable'> =
       this._users.forms.changePassword;
    public readonly $passwordsHidden: WritableSignal<{ current: boolean; new: boolean; confirm: boolean }> = signal({

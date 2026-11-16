@@ -21,21 +21,23 @@ import { NgClass } from '@angular/common';
 
       <section class="flex h-dvh w-full bg-white">
          <fi-private-sidebar-component
-            class="fixed top-0 flex h-full w-full flex-col bg-white py-4 pr-4 pl-4 transition-all xl:static xl:w-xs xl:pr-2"
+            class="fixed top-0 z-50 flex h-full w-full flex-col bg-white p-3 transition-all sm:p-4 xl:static xl:z-auto xl:w-xs xl:pr-2"
             [navModules]="navModules"
             [currentModule]="currentModule"
             (navigate)="handleNavigate($event)"
+            (close)="handleToggleSidebar({ open: false })"
             (logout)="handleLogout()"
             [ngClass]="{
                'left-0': sidebarOpen,
-               '-left-full': !sidebarOpen,
+               '-left-full xl:left-0': !sidebarOpen,
             }"
          />
-         <fi-private-main-component class="flex h-full flex-auto flex-col py-4 pr-4 pl-2">
+         <fi-private-main-component class="flex h-full min-w-0 flex-auto flex-col p-3 sm:p-4 xl:pl-2">
             <fi-private-header-component
                header
                [currentModule]="currentModule"
                [navModulesBuffer]="navModulesBuffer"
+               (toggleSidebar)="handleToggleSidebar({ open: !sidebarOpen })"
             />
             <fi-private-footer-component footer />
          </fi-private-main-component>
@@ -75,10 +77,16 @@ export class PrivateLayoutComponent {
    }
 
    public handleNavigate(params: { module: ApplicationModule }): void {
+      this._navigation.sidebarOpen = false;
       this._navigation.updateModule(params);
    }
 
+   public handleToggleSidebar({ open }: { open: boolean }): void {
+      this._navigation.sidebarOpen = open;
+   }
+
    public handleLogout(): void {
+      this._navigation.sidebarOpen = false;
       this._users.logout();
    }
 }

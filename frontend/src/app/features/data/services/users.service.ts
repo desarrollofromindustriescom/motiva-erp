@@ -1,6 +1,6 @@
-import { effect, inject, Injectable, signal, untracked, WritableSignal } from '@angular/core';
+import { computed, inject, Injectable, signal, Signal, WritableSignal } from '@angular/core';
 import { EndpointData } from '../../../interfaces/api';
-import { ActiveSession, FieldsChangePassword, UsersForms, UsersRoutes } from '../../../interfaces/user';
+import { ActiveSession, FieldsChangePassword, UsersForms, UsersLoader, UsersRoutes } from '../../../interfaces/user';
 import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
 import { FormSchema, SignalForm } from '../../../interfaces/alias';
 import {
@@ -36,7 +36,11 @@ export class UsersService {
       revokeSession: { route: API_ROUTES.REVOKESESSION, method: HTTP_METHODS.DELETE },
    };
 
-   private readonly $loading: WritableSignal<boolean> = signal(false);
+   private readonly $loader: WritableSignal<Omit<UsersLoader, 'sessions'>> = signal({
+      changePassword: false,
+      revokeSessions: false,
+      revokeSession: {},
+   });
    private readonly $activeSessions: HttpResourceRef<ActiveSession[]> = httpResource<ActiveSession[]>(
       (): HttpResourceRequest | undefined => {
          if (!this._session.token) return undefined;
@@ -48,6 +52,11 @@ export class UsersService {
       },
       { defaultValue: [] },
    );
+
+   private readonly $loaderState: Signal<UsersLoader> = computed(() => ({
+      ...this.$loader(),
+      sessions: this.$activeSessions.isLoading(),
+   }));
 
    private readonly $modelChangePassword: WritableSignal<FieldsChangePassword> = signal({
       current_password: '',
@@ -102,21 +111,16 @@ export class UsersService {
             };
          });
 
-         disabled(schema.current_password, { when: () => this.$loading() });
-         disabled(schema.new_password, { when: () => this.$loading() });
-         disabled(schema.confirm_password, { when: () => this.$loading() });
+         disabled(schema.current_password, { when: () => this.$loader().changePassword });
+         disabled(schema.new_password, { when: () => this.$loader().changePassword });
+         disabled(schema.confirm_password, { when: () => this.$loader().changePassword });
       },
    );
 
-   constructor() {
-      effect(() => {
-         const loading: boolean = this.$activeSessions.isLoading();
-         untracked(() => this.$loading.set(loading));
-      });
-   }
+   constructor() {}
 
-   public get loading(): boolean {
-      return this.$loading();
+   public get loader(): UsersLoader {
+      return this.$loaderState();
    }
 
    public get activeSessions(): ActiveSession[] {
@@ -160,7 +164,7 @@ export class UsersService {
                   const body: FieldsChangePassword = this.$formChangePassword().value();
                   let { method, route } = this.routes.changePassword;
 
-                  this.$loading.set(true);
+                  this.setLoader({ key: 'changePassword', value: true });
                   firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`, { body }))
                      .then(() => {
                         this.activeSessionsClear();
@@ -169,7 +173,7 @@ export class UsersService {
                         resolve();
                      })
                      .catch(reject)
-                     .finally(() => this.$loading.set(false));
+                     .finally(() => this.setLoader({ key: 'changePassword', value: false }));
                }),
          ).then((state: boolean) => {
             if (state) return;
@@ -206,10 +210,10 @@ export class UsersService {
       const { method, route } = this.routes.revokeSessions;
 
       this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_CLOSE_ALL_SESSIONS }).then(() => {
-         this.$loading.set(true);
+         this.setLoader({ key: 'revokeSessions', value: true });
          firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`))
             .then(() => this.activeSessionsClear())
-            .finally(() => this.$loading.set(false));
+            .finally(() => this.setLoader({ key: 'revokeSessions', value: false }));
       });
    }
 
@@ -220,10 +224,10 @@ export class UsersService {
       const { method, route } = this.routes.revokeSession;
 
       this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_CLOSE_SESSION }).then(() => {
-         this.$loading.set(true);
+         this.setRevoking({ sessionID, value: true });
          firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}${sessionID}`))
             .then(() => this.activeSessionsRemove({ sessionID }))
-            .finally(() => this.$loading.set(false));
+            .finally(() => this.setRevoking({ sessionID, value: false }));
       });
    }
 
@@ -256,5 +260,26 @@ export class UsersService {
       this.$activeSessions.set(
          this.$activeSessions.value().filter((session: ActiveSession) => session.id !== sessionID),
       );
+   }
+
+   /**
+    * Toggles one action loader (each action owns its own flag)
+    */
+   private setLoader({ key, value }: { key: 'changePassword' | 'revokeSessions'; value: boolean }): void {
+      this.$loader.update((prev: Omit<UsersLoader, 'sessions'>) => ({ ...prev, [key]: value }));
+   }
+
+   /**
+    * Toggles the loader of a single session row
+    */
+   private setRevoking({ sessionID, value }: { sessionID: string; value: boolean }): void {
+      this.$loader.update((prev: Omit<UsersLoader, 'sessions'>) => {
+         const revokeSession: Record<string, boolean> = { ...prev.revokeSession };
+
+         if (value) revokeSession[sessionID] = true;
+         else delete revokeSession[sessionID];
+
+         return { ...prev, revokeSession };
+      });
    }
 }

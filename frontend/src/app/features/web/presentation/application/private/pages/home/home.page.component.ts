@@ -13,32 +13,33 @@ import { TitleCasePipe } from '@angular/common';
    template: `
       @let fullname = $fullname();
 
-      <section class="size-full flex flex-col gap-6 p-4 border border-slate-500 rounded-2xl">
-         <div class="w-full flex flex-col items-start justify-start">
-            <h2 class="text-xl text-second">
+      <section class="flex w-full flex-col gap-4 rounded-2xl border border-slate-500 p-4 sm:gap-6 sm:p-6">
+         <div class="flex w-full flex-col items-start justify-start">
+            <h2 class="text-second text-xl">
                {{ HOME_I18N_KEYS.WELCOME_MESSAGE | translate }}
             </h2>
-            <span class="text-lg font-bold text-second">{{ fullname | titlecase }}</span>
+            <span class="text-second text-lg font-bold wrap-anywhere">{{ fullname | titlecase }}</span>
          </div>
 
-         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-4">
+         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             @for (nav of navModules; track nav.slug) {
                <article *fiAuthorized="nav.allowed">
                   <button
-                     class="group w-full aspect-square flex flex-col items-center justify-between p-4 rounded-2xl border border-main hover:bg-main transition-all cursor-pointer"
+                     class="group border-main hover:bg-main flex aspect-square w-full cursor-pointer flex-col items-center justify-between rounded-2xl border p-3 transition-all sm:p-4"
                      (click)="handleNavigate({ module: nav.slug })"
                   >
-                     <div class="flex-auto flex items-center justify-center">
+                     <div class="flex flex-auto items-center justify-center">
                         <i
                            [class]="
-                              'group-hover:text-white group-hover:scale-120 text-main bx text-5xl transition-all ' +
+                              'text-main bx text-4xl transition-all group-hover:scale-120 group-hover:text-white sm:text-5xl ' +
                               nav.icon
                            "
                         ></i>
                      </div>
-                     <span class="text-base text-main/60 group-hover:text-white transition-all">{{
-                        nav.module | translate
-                     }}</span>
+                     <span
+                        class="text-main/60 text-center text-sm transition-all group-hover:text-white sm:text-base"
+                        >{{ nav.module | translate }}</span
+                     >
                   </button>
                </article>
             }

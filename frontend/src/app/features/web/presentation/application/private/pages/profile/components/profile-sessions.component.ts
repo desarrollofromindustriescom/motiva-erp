@@ -14,11 +14,15 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
    imports: [DatePipe, TableModule, TranslatePipe, NgClass, TooltipModule, LoaderComponent],
    template: `
       @let loading = $loading();
+      @let closingAll = $closingAll();
+      @let closing = $closing();
       @let sessions = $sessions();
+      @let busy = loading || closingAll;
+      @let anyClosing = closingAny(closing);
 
-      <section class="w-full flex flex-col gap-4 p-6 rounded-2xl border border-slate-500">
-         <div class="w-full flex items-center justify-between">
-            <h2 class="font-medium text-second text-lg">{{ I18N.SECTION_TITLE_ACTIVE_SESSIONS | translate }}</h2>
+      <section class="flex w-full flex-col gap-4 rounded-2xl border border-slate-500 p-4 sm:p-6">
+         <div class="flex w-full items-center justify-between">
+            <h2 class="text-second text-lg font-medium">{{ I18N.SECTION_TITLE_ACTIVE_SESSIONS | translate }}</h2>
             @if (loading) {
                <fi-loader-component />
             }
@@ -26,19 +30,19 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
 
          @if (!loading || sessions.length) {
             <p-table
-               class="w-full"
+               class="block w-full max-sm:[&_td]:px-2! max-sm:[&_th]:px-2!"
                [value]="sessions"
             >
                <ng-template #header>
                   <tr>
                      <th>
-                        <div class="flex items-center justify-center w-full">
+                        <div class="flex w-full items-center justify-center">
                            <span>{{ I18N.HEAD_DEVICE | translate }}</span>
                         </div>
                      </th>
                      <th>{{ I18N.HEAD_SYSTEM | translate }}</th>
-                     <th>{{ I18N.HEAD_NAVIGATOR | translate }}</th>
-                     <th>{{ I18N.HEAD_FIRST_SESSION | translate }}</th>
+                     <th class="max-sm:hidden">{{ I18N.HEAD_NAVIGATOR | translate }}</th>
+                     <th class="max-md:hidden">{{ I18N.HEAD_FIRST_SESSION | translate }}</th>
                      <th>{{ I18N.HEAD_LAST_SESSION | translate }}</th>
                      @if (sessions.length > 1) {
                         <th></th>
@@ -49,9 +53,9 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                   #body
                   let-session
                >
-                  <tr>
+                  <tr [ngClass]="{ 'opacity-60': closing[session.id] }">
                      <td>
-                        <div class="w-full flex items-center justify-center">
+                        <div class="flex w-full items-center justify-center">
                            <i
                               class="bx text-second text-4xl"
                               [ngClass]="{
@@ -62,23 +66,29 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                            </i>
                         </div>
                      </td>
-                     <td>{{ session.system }}</td>
-                     <td>{{ session.navigator }}</td>
-                     <td>{{ session.first_login | date: 'dd.MM.yyyy' }}</td>
+                     <td class="max-sm:max-w-28 max-sm:wrap-anywhere">{{ session.system }}</td>
+                     <td class="max-sm:hidden">{{ session.navigator }}</td>
+                     <td class="max-md:hidden">{{ session.first_login | date: 'dd.MM.yyyy' }}</td>
                      <td>{{ session.last_login | date: 'dd.MM.yyyy' }}</td>
                      @if (sessions.length > 1) {
                         <td>
                            @if (!session.current) {
                               <div class="flex w-full justify-end">
                                  <button
-                                    class="bg-red-500 rounded-md flex items-center justify-center-safe p-1.5 cursor-pointer hover:bg-red-600 focus:bg-red-600 transition-all disabled:cursor-auto disabled:opacity-60 disabled:hover:bg-red-500 disabled:focus:bg-red-500"
+                                    class="flex cursor-pointer items-center justify-center-safe rounded-md bg-red-500 p-1.5 transition-all hover:bg-red-600 focus:bg-red-600 disabled:cursor-auto disabled:opacity-60 disabled:hover:bg-red-500 disabled:focus:bg-red-500"
                                     tooltipPosition="top"
-                                    [disabled]="loading"
+                                    [disabled]="busy || closing[session.id]"
                                     [pTooltip]="I18N.BUTTON_CLOSE | translate"
                                     [showDelay]="1500"
                                     (click)="$close.emit({ sessionID: session.id })"
                                  >
-                                    <i class="bx bx-x text-xl text-white"></i>
+                                    @if (closing[session.id]) {
+                                       <span class="flex size-5 items-center justify-center">
+                                          <fi-loader-component tone="white" />
+                                       </span>
+                                    } @else {
+                                       <i class="bx bx-x text-xl text-white"></i>
+                                    }
                                  </button>
                               </div>
                            }
@@ -96,7 +106,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                <ng-template #header>
                   <tr>
                      <th>
-                        <div class="flex items-center justify-center w-full">
+                        <div class="flex w-full items-center justify-center">
                            <div class="h-4 w-24 rounded-md bg-slate-300"></div>
                         </div>
                      </th>
@@ -110,7 +120,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                <ng-template #body>
                   <tr>
                      <td>
-                        <div class="w-full flex items-center justify-center">
+                        <div class="flex w-full items-center justify-center">
                            <div class="size-7 rounded-full bg-slate-300"></div>
                         </div>
                      </td>
@@ -130,11 +140,17 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
 
          @if (sessions.length > 1) {
             <button
-               class="ml-auto bg-second rounded-xl flex items-center justify-center gap-2 text-white px-5 py-3 cursor-pointer hover:bg-second-light focus:bg-second-light transition-all mt-4 disabled:opacity-60 disabled:cursor-auto disabled:hover:bg-second disabled:focus:bg-second"
-               [disabled]="loading"
+               class="bg-second hover:bg-second-light focus:bg-second-light disabled:hover:bg-second disabled:focus:bg-second mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-5 py-3 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:ml-auto sm:w-auto"
+               [disabled]="busy || anyClosing"
                (click)="$closeAll.emit()"
             >
-               <i class="bx bx-x text-xl"></i>
+               @if (closingAll) {
+                  <span class="flex size-5 items-center justify-center">
+                     <fi-loader-component tone="white" />
+                  </span>
+               } @else {
+                  <i class="bx bx-x text-xl"></i>
+               }
                <span class="text-sm">{{ I18N.BUTTON_CLOSE_ALL_SESSIONS | translate }}</span>
             </button>
          }
@@ -149,7 +165,13 @@ export class ProfileSessionsComponent {
    };
 
    public $loading: InputSignal<boolean> = input(false, { alias: 'loading' });
+   public $closingAll: InputSignal<boolean> = input(false, { alias: 'closingAll' });
+   public $closing: InputSignal<Record<string, boolean>> = input<Record<string, boolean>>({}, { alias: 'closing' });
    public $sessions: InputSignal<ActiveSession[]> = input.required<ActiveSession[]>({ alias: 'sessions' });
+   public closingAny(closing: Record<string, boolean>): boolean {
+      return Object.keys(closing).length > 0;
+   }
+
    public $close: OutputEmitterRef<{ sessionID: string }> = output({ alias: 'close' });
    public $closeAll: OutputEmitterRef<void> = output({ alias: 'closeAll' });
 }

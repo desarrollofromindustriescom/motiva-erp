@@ -9,6 +9,13 @@ export interface FieldsChangePassword {
 
 export type UsersRoutes = 'changePassword' | 'logout' | 'sessions' | 'revokeSessions' | 'revokeSession';
 
+export interface UsersLoader {
+   sessions: boolean;
+   changePassword: boolean;
+   revokeSessions: boolean;
+   revokeSession: Record<string, boolean>;
+}
+
 export interface UsersForms {
    changePassword: SignalForm<FieldsChangePassword>;
 }

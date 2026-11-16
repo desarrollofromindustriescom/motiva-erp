@@ -12,16 +12,20 @@ import { UserProfile } from '../../../../../../../../interfaces/user';
    template: `
       @let session = $session();
 
-      <section class="w-full flex items-center justify-between bg-main px-6 py-8 rounded-2xl">
-         <div class="flex flex-col items-start justify-start">
-            <span class="font-medium text-white text-2xl">{{ session.fullname | titlecase }}</span>
+      <section
+         class="bg-main flex w-full flex-col-reverse items-center gap-4 rounded-2xl px-4 py-6 sm:flex-row sm:justify-between sm:px-6 sm:py-8"
+      >
+         <div class="flex w-full min-w-0 flex-col items-center justify-start text-center sm:items-start sm:text-left">
+            <span class="text-xl font-medium wrap-anywhere text-white sm:text-2xl">{{
+               session.fullname | titlecase
+            }}</span>
             <span class="font-medium text-white">@{{ session.username }}</span>
-            <span class="font-medium text-main bg-white px-3 py-1.5 rounded-lg mt-4">
+            <span class="text-main mt-3 rounded-lg bg-white px-3 py-1.5 font-medium sm:mt-4">
                {{ USER_PROFILE_I18N[session.profile] | translate }}
             </span>
          </div>
 
-         <div class="rounded-full bg-white p-1 size-32 flex">
+         <div class="flex size-24 shrink-0 rounded-full bg-white p-1 sm:size-32">
             <img
                class="size-full"
                [src]="PICTURES_DIR + PROFILE_DECORATION"

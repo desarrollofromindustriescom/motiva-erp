@@ -13,6 +13,14 @@ import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.reposit
       @let currentModule = $currentModule();
 
       <aside class="flex size-full max-h-full flex-col gap-2 overflow-auto">
+         <button
+            class="text-second ml-auto flex shrink-0 cursor-pointer items-center justify-center rounded-lg p-1.5 transition-all hover:bg-slate-200 xl:hidden"
+            type="button"
+            (click)="$close.emit()"
+         >
+            <i class="bx bx-x text-3xl"></i>
+         </button>
+
          <nav class="flex w-full flex-col rounded-2xl border border-slate-500 p-4">
             <ul class="flex w-full flex-col gap-1">
                @for (nav of navModules; track $index) {
@@ -59,5 +67,6 @@ export class PrivateSidebarComponent {
    public $navModules: InputSignal<NavigationRoute[]> = input([] as NavigationRoute[], { alias: 'navModules' });
    public $currentModule: InputSignal<ApplicationModule> = input.required({ alias: 'currentModule' });
    public $navigate: OutputEmitterRef<{ module: ApplicationModule }> = output({ alias: 'navigate' });
+   public $close: OutputEmitterRef<void> = output({ alias: 'close' });
    public $logout: OutputEmitterRef<void> = output({ alias: 'logout' });
 }

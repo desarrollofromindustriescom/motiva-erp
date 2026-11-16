@@ -131,6 +131,7 @@ export class NavigationService {
     *
     */
    public updateModule({ module }: { module: ApplicationModule }): void {
+      this.$sidebarOpen.set(false);
       this.$currentModule.set(module);
       this._router.navigate([PATHS.ROOT, PATHS.APP, this.navModulesBuffer[module].route]);
    }
