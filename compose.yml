@@ -52,6 +52,10 @@ services:
          dockerfile: nginx/Dockerfile
       ports:
          - '80:80'
+         - '443:443'
+      volumes:
+         # Cloudflare origin certificate: origin.pem + origin.key
+         - ./nginx/certs:/etc/ssl/cloudflare:ro
       networks:
          - motiva_net
       environment:

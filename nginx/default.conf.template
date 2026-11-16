@@ -1,74 +1,62 @@
-# Unknown hosts / direct IP access: behave as if nothing exists
+upstream api {
+    server ${API_HOST}:${API_PORT};
+}
+
+# Unknown hosts / direct IP access
 server {
     listen 80 default_server;
+    listen 443 ssl default_server;
     server_name _;
+
+    # No certificate is presented to unknown hosts
+    ssl_reject_handshake on;
 
     return 404;
 }
 
-# Frontend
+# Production HTTP -> HTTPS
 server {
     listen 80;
-    server_name app.motivacredito.com app.localhost;
+    server_name app.motivacredito.com api.motivacredito.com;
 
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # 403 is reported as not found
-    error_page 403 =404 /__not_found;
-
-    location = /__not_found {
-        internal;
-        default_type text/plain;
-        return 404 "Not Found";
-    }
-
-    # Never expose hidden files
-    location ~ /\. {
-        return 404;
-    }
-
-    location / {
-        try_files $uri $uri/index.html /index.html;
-    }
-
-    location /assets/ {
-        expires 30d;
-        add_header Cache-Control "public";
-        try_files $uri =404;
-    }
+    return 301 https://$host$request_uri;
 }
 
-# Backend
+# Production frontend
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name app.motivacredito.com;
+
+    ssl_certificate     /etc/ssl/cloudflare/origin.pem;
+    ssl_certificate_key /etc/ssl/cloudflare/origin.key;
+
+    include /etc/nginx/snippets/frontend.conf;
+}
+
+# Production backend
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name api.motivacredito.com;
+
+    ssl_certificate     /etc/ssl/cloudflare/origin.pem;
+    ssl_certificate_key /etc/ssl/cloudflare/origin.key;
+
+    include /etc/nginx/snippets/api.conf;
+}
+
+# Local development (plain HTTP, no redirect)
 server {
     listen 80;
-    server_name api.motivacredito.com api.localhost;
+    server_name app.localhost;
 
-    client_max_body_size 10m;
+    include /etc/nginx/snippets/frontend.conf;
+}
 
-    # 403 (from nginx or the upstream) is reported as not found
-    proxy_intercept_errors on;
-    error_page 403 =404 /__not_found;
+server {
+    listen 80;
+    server_name api.localhost;
 
-    location = /__not_found {
-        internal;
-        default_type text/plain;
-        return 404 "Not Found";
-    }
-
-    location / {
-        proxy_pass http://${API_HOST}:${API_PORT};
-        proxy_http_version 1.1;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        # $remote_addr is the real client IP (restored from CF-Connecting-IP by the
-        # realip module when the request comes from Cloudflare). Overwrites any
-        # client-supplied value, so the backend gets exactly one trusted entry.
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header CF-Connecting-IP $remote_addr;
-        proxy_set_header True-Client-IP $remote_addr;
-        # TLS is terminated at Cloudflare
-        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
-    }
+    include /etc/nginx/snippets/api.conf;
 }

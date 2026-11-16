@@ -1,7 +1,8 @@
 # Stage 1: build the Angular frontend (production configuration)
 FROM node:26-alpine AS frontend-build
 
-RUN corepack enable
+# corepack is no longer bundled with node >= 25
+RUN npm install -g pnpm@12.11.2
 
 WORKDIR /app
 
@@ -20,6 +21,9 @@ COPY --from=frontend-build /app/dist/motiva-erp-front/browser /usr/share/nginx/h
 
 # Real client IP behind Cloudflare (included in the http context)
 COPY nginx/cloudflare-realip.conf /etc/nginx/conf.d/00-cloudflare-realip.conf
+
+# Shared location blocks (not templates: no env substitution)
+COPY nginx/snippets/ /etc/nginx/snippets/
 
 # Rendered with envsubst at container start (only ${API_HOST} and ${API_PORT} are substituted)
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
