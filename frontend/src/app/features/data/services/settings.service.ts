@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal, Signal, WritableSignal } from '@angular/core';
 import { HttpClient, HttpContext, httpResource, HttpResourceRef, HttpResourceRequest } from '@angular/common/http';
-import { applyEach, disabled, form, max, min, required, SchemaPath, submit, validate } from '@angular/forms/signals';
+import { applyEach, disabled, form, submit, validate } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { EndpointData } from '../../../interfaces/api';
 import { FormSchema } from '../../../interfaces/alias';
@@ -26,24 +26,11 @@ import {
 import { FORMS_CUSTOM_VALIDATIONS, FORMS_I18N_KEYS } from '../repository/forms.repository';
 import { DIALOG_I18N_KEYS } from '../repository/dialog.repository';
 import { environment } from '../../../../environments/environment.development';
+import { monetaryRules, percentageRules, weeksRules } from '../../web/utilities/validators/numeric.validators';
 import { SessionService } from './session.service';
 import { DialogsService } from './dialogs.service';
 
-const PERCENTAGE_MIN: number = 0.1;
-const PERCENTAGE_MAX: number = 1000;
-const PERCENTAGE_DECIMALS: number = 3;
-const MONETARY_MIN: number = 0.1;
-const MONETARY_MAX: number = 100000;
-const MONETARY_DECIMALS: number = 2;
-const WEEKS_MIN: number = 1;
-const WEEKS_MAX: number = 100000;
-
 type NumberField = number | null;
-
-interface NumericContext {
-   value: Signal<NumberField>;
-   state: { touched: Signal<boolean> };
-}
 
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
@@ -112,8 +99,8 @@ export class SettingsService {
    private readonly $formExtras: SettingsForms['extras'] = form(
       this.$modelExtras,
       (schema: FormSchema<FieldsExtras>) => {
-         this.percentage(schema.mora);
-         this.monetary(schema.visit);
+         percentageRules(schema.mora);
+         monetaryRules(schema.visit);
 
          disabled(schema.mora, { when: () => this.$updating().extras });
          disabled(schema.visit, { when: () => this.$updating().extras });
@@ -123,9 +110,9 @@ export class SettingsService {
    private readonly $formAgreements: SettingsForms['agreements'] = form(
       this.$modelAgreements,
       (schema: FormSchema<FieldsAgreements>) => {
-         this.percentage(schema.weekly);
-         this.weeks(schema.weeks_before);
-         this.weeks(schema.weeks_after);
+         percentageRules(schema.weekly);
+         weeksRules(schema.weeks_before);
+         weeksRules(schema.weeks_after);
 
          disabled(schema.weekly, { when: () => this.$updating().agreements });
          disabled(schema.weeks_before, { when: () => this.$updating().agreements });
@@ -379,12 +366,12 @@ export class SettingsService {
     */
    private ratesSchema(schema: FormSchema<FieldsRates>, group: 'monthly' | 'weekly'): void {
       applyEach(schema.investor, (item) => {
-         this.percentage(item);
+         percentageRules(item);
          disabled(item, { when: () => this.$updating()[group] });
       });
 
       applyEach(schema.general, (item) => {
-         this.percentage(item);
+         percentageRules(item);
          disabled(item, { when: () => this.$updating()[group] });
 
          validate(item, ({ value, valueOf, index }) => {
@@ -398,62 +385,6 @@ export class SettingsService {
                message: FORMS_I18N_KEYS.VAL_INVESTOR_ABOVE_GENERAL,
             };
          });
-      });
-   }
-
-   /**
-    *
-    */
-   private percentage(path: SchemaPath<NumberField, any, any>): void {
-      this.numeric(path, PERCENTAGE_MIN, PERCENTAGE_MAX, PERCENTAGE_DECIMALS);
-   }
-
-   /**
-    *
-    */
-   private monetary(path: SchemaPath<NumberField, any, any>): void {
-      this.numeric(path, MONETARY_MIN, MONETARY_MAX, MONETARY_DECIMALS);
-   }
-
-   /**
-    *
-    */
-   private weeks(path: SchemaPath<NumberField, any, any>): void {
-      const when = ({ state }: NumericContext) => state.touched();
-
-      required(path, { when, message: FORMS_I18N_KEYS.VAL_REQUIRED });
-      min(path, WEEKS_MIN, { when, message: FORMS_I18N_KEYS.VAL_MIN_VALUE });
-      max(path, WEEKS_MAX, { when, message: FORMS_I18N_KEYS.VAL_MAX_VALUE });
-
-      validate(path, ({ value, state }: NumericContext) => {
-         const current: NumberField = value();
-
-         if (!state.touched() || current === null || Number.isInteger(current)) return null;
-
-         return { kind: FORMS_CUSTOM_VALIDATIONS.INTEGER, message: FORMS_I18N_KEYS.VAL_INTEGER };
-      });
-   }
-
-   /**
-    *
-    */
-   private numeric(path: SchemaPath<NumberField, any, any>, minimum: number, maximum: number, decimals: number): void {
-      const when = ({ state }: NumericContext) => state.touched();
-
-      required(path, { when, message: FORMS_I18N_KEYS.VAL_REQUIRED });
-      min(path, minimum, { when, message: FORMS_I18N_KEYS.VAL_MIN_VALUE });
-      max(path, maximum, { when, message: FORMS_I18N_KEYS.VAL_MAX_VALUE });
-
-      validate(path, ({ value, state }: NumericContext) => {
-         const current: NumberField = value();
-
-         if (!state.touched() || current === null) return null;
-
-         const scaled: number = current * Math.pow(10, decimals);
-
-         if (Math.abs(scaled - Math.round(scaled)) < 1e-6) return null;
-
-         return { kind: FORMS_CUSTOM_VALIDATIONS.DECIMALS, decimals, message: FORMS_I18N_KEYS.VAL_DECIMALS };
       });
    }
 }

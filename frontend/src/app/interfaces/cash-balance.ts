@@ -1,4 +1,8 @@
-export type CashBalanceRoutes = 'cashBalance';
+import { SignalForm } from './alias';
+
+export type CashBalanceRoutes = 'cashBalance' | 'deposit' | 'withdraw';
+
+export type CashMovement = 'deposit' | 'withdraw';
 
 export interface CashBalance {
    amount: number;
@@ -7,4 +11,15 @@ export interface CashBalance {
 
 export interface CashBalanceLoader {
    balance: boolean;
+   deposit: boolean;
+   withdraw: boolean;
+}
+
+export interface FieldsCashMovement {
+   amount: number | null;
+}
+
+export interface CashBalanceForms {
+   deposit: SignalForm<FieldsCashMovement>;
+   withdraw: SignalForm<FieldsCashMovement>;
 }

@@ -1,12 +1,14 @@
 import { Component, computed, inject, Signal } from '@angular/core';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
+import { CashDepositDialogComponent } from '../../../../common/dialogs/views/cash-balance/cash-deposit.dialog.component';
+import { CashWithdrawDialogComponent } from '../../../../common/dialogs/views/cash-balance/cash-withdraw.dialog.component';
 import { SettingsExtrasDialogComponent } from '../../../../common/dialogs/views/settings/settings-extras.dialog.component';
 import { SettingsAgreementsDialogComponent } from '../../../../common/dialogs/views/settings/settings-agreements.dialog.component';
 import { SettingsMonthlyDialogComponent } from '../../../../common/dialogs/views/settings/settings-monthly.dialog.component';
 import { SettingsWeeklyDialogComponent } from '../../../../common/dialogs/views/settings/settings-weekly.dialog.component';
 import { CashBalanceService } from '../../../../../../data/services/cash-balance.service';
-import { CashBalance } from '../../../../../../../interfaces/cash-balance';
+import { CashBalance, CashMovement } from '../../../../../../../interfaces/cash-balance';
 import { SettingsBalanceComponent } from './components/settings-balance.component';
 import { SettingsService } from '../../../../../../data/services/settings.service';
 import { SETTINGS_I18N_KEYS } from '../../../../../../data/repository/settings.repository';
@@ -26,7 +28,11 @@ import { SettingsRatesComponent } from './components/settings-rates.component';
       @let loader = $loader();
 
       <div class="flex w-full flex-col gap-3 sm:gap-4">
-         <fi-settings-balance-component [balance]="$balance()" />
+         <fi-settings-balance-component
+            [balance]="$balance()"
+            (deposit)="handleMovement({ movement: 'deposit' })"
+            (withdraw)="handleMovement({ movement: 'withdraw' })"
+         />
 
          @if (loader.settings && !$loaded()) {
             @for (item of skeletons; track item) {
@@ -81,6 +87,25 @@ export class SettingsPageComponent {
    constructor() {
       if (this._settings.loaded) this._settings.reload();
       if (this._cashBalance.balance) this._cashBalance.reload();
+   }
+
+   public handleMovement({ movement }: { movement: CashMovement }): void {
+      this._cashBalance.resetForm({ movement });
+
+      if (movement === 'deposit') {
+         this._dialogs.newDialog({
+            title: DIALOG_I18N_KEYS.DEPOSIT_TITLE,
+            component: CashDepositDialogComponent,
+            size: 'lg',
+         });
+         return;
+      }
+
+      this._dialogs.newDialog({
+         title: DIALOG_I18N_KEYS.WITHDRAW_TITLE,
+         component: CashWithdrawDialogComponent,
+         size: 'lg',
+      });
    }
 
    public handleEdit({ group }: { group: SettingsGroup }): void {

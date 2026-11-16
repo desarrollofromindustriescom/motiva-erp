@@ -6,9 +6,9 @@ import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.reposit
    selector: 'fi-setting-actions-component',
    imports: [TranslatePipe],
    template: `
-      <div class="flex w-full flex-row-reverse items-center justify-start gap-2 pt-2">
+      <div class="flex w-full flex-col items-center gap-2 pt-2 sm:flex-row-reverse sm:justify-start">
          <button
-            class="bg-contrast cursor-pointer rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60"
+            class="bg-contrast w-full cursor-pointer rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
             type="button"
             [disabled]="$loading()"
             (click)="$save.emit()"
@@ -16,7 +16,7 @@ import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.reposit
             {{ I18N.BUTTON_SAVE | translate }}
          </button>
          <button
-            class="cursor-pointer rounded-lg bg-red-500 px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60"
+            class="w-full cursor-pointer rounded-lg bg-red-500 px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
             type="button"
             [disabled]="$loading()"
             (click)="$cancel.emit()"

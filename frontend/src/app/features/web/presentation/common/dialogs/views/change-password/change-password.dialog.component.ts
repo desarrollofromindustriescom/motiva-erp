@@ -125,16 +125,16 @@ import { DialogsService } from '../../../../../../data/services/dialogs.service'
                <label for="confirm_password">{{ I18N.FIELD_CONFIRM_PASSWORD | translate }} *</label>
             </p-iftalabel>
          </fi-field-errors-component>
-         <div class="flex w-full flex-row-reverse items-center justify-start gap-2">
+         <div class="flex w-full flex-col items-center gap-2 sm:flex-row-reverse sm:justify-start">
             <button
-               class="bg-contrast cursor-pointer rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60"
+               class="bg-contrast w-full cursor-pointer rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
                [disabled]="loading"
                (click)="handleContinue()"
             >
                {{ I18N.BUTTON_CHANGE | translate }}
             </button>
             <button
-               class="cursor-pointer rounded-lg bg-red-500 px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60"
+               class="w-full cursor-pointer rounded-lg bg-red-500 px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
                [disabled]="loading"
                (click)="handleCancel()"
             >

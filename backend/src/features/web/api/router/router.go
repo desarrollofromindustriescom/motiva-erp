@@ -26,6 +26,8 @@ func Router() *http.ServeMux {
 	settingsProfiles := []string{repository.ProfileSuperadmin, repository.ProfileAdministrator}
 
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteCashBalance), middleware.Authorize(handlers.GetCashBalance, settingsProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteCashDeposit), middleware.Authorize(handlers.DepositCashBalance, settingsProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteCashWithdraw), middleware.Authorize(handlers.WithdrawCashBalance, settingsProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteSettings), middleware.Authorize(handlers.GetSettings, settingsProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsExtras), middleware.Authorize(handlers.UpdateExtraSettings, settingsProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsAgreements), middleware.Authorize(handlers.UpdateAgreementSettings, settingsProfiles...))

@@ -10,6 +10,8 @@
    "FIELD_PERCENTAGE": "El porcentaje debe estar entre 0.1 y 1000 con máximo 3 decimales",
    "FIELD_MONETARY": "El monto debe estar entre 0.1 y 100000 con máximo 2 decimales",
    "SETTINGS_INVESTOR_ABOVE_GENERAL": "El porcentaje del inversor no puede ser mayor al porcentaje general",
+   "CASH_BALANCE_INSUFFICIENT": "El monto a retirar no puede ser mayor al balance en caja",
+   "CASH_BALANCE_LIMIT_EXCEEDED": "El depósito supera el límite permitido para el balance en caja",
    "FIELD_SECURE_PASSWORD": "La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales",
    "CURRENT_PASSWORD_MISMATCH": "La contraseña actual no coincide con el valor proporcionado",
    "NEW_PASSWORD_SAME_AS_CURRENT": "La nueva contraseña no puede ser la misma que la actual",

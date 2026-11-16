@@ -165,9 +165,11 @@ CREATE TABLE IF NOT EXISTS payment_extras (
    payment_id UUID NOT NULL REFERENCES payments (id)
 );
 
+CREATE SEQUENCE IF NOT EXISTS movements_folio_seq;
+
 CREATE TABLE IF NOT EXISTS movements (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-   folio CHARACTER(32) NOT NULL,
+   folio CHARACTER(32) NOT NULL UNIQUE,
    amount INTEGER NOT NULL,
    type movement_type NOT NULL,
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

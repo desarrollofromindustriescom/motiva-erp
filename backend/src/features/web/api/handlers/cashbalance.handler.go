@@ -9,6 +9,7 @@ import (
 	"motiva-erp/backend/src/features/data/modules/cashbalance"
 	"motiva-erp/backend/src/features/data/repository"
 	"motiva-erp/backend/src/interfaces/controller"
+	"motiva-erp/backend/src/interfaces/models"
 )
 
 /**
@@ -40,4 +41,71 @@ func GetCashBalance(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
 	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Writes the updated balance as endpoint response
+ */
+func writeCashBalance(response http.ResponseWriter, balance *controller.CashBalancePreview) {
+	preview := &controller.EpPreview[controller.CashBalancePreview]{
+		Success: true,
+		Data:    balance,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Generic handler for deposit & withdrawal movements
+ */
+func createCashBalanceMovement(response http.ResponseWriter, request *http.Request, movement string) {
+	payload, ok := readPayload[controller.CashBalanceMovementPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	balance, err := cashbalance.CreateMovement(ctx, currentSession.User, movement, payload.Amount)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.CbErrNotFound):
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		case errors.Is(err, repository.CbErrInsufficient):
+			writeBadRequest(response, request, repository.CbI18nKeyInsufficient)
+		case errors.Is(err, repository.CbErrLimit):
+			writeBadRequest(response, request, repository.CbI18nKeyLimit)
+		default:
+			slog.Error("Error creating cash balance movement",
+				"event", "handlers.createCashBalanceMovement.CreateMovement",
+				"movement", movement,
+				"error", err,
+			)
+
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	writeCashBalance(response, balance)
+}
+
+/**
+ *
+ */
+func DepositCashBalance(response http.ResponseWriter, request *http.Request) {
+	createCashBalanceMovement(response, request, repository.CbMovementDeposit)
+}
+
+/**
+ *
+ */
+func WithdrawCashBalance(response http.ResponseWriter, request *http.Request) {
+	createCashBalanceMovement(response, request, repository.CbMovementWithdrawal)
 }

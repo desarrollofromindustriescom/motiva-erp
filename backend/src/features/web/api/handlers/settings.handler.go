@@ -8,8 +8,6 @@ import (
 
 	"motiva-erp/backend/src/features/data/modules/settings"
 	"motiva-erp/backend/src/features/data/repository"
-	"motiva-erp/backend/src/features/web/utilities/i18n"
-	"motiva-erp/backend/src/features/web/utilities/validation"
 	"motiva-erp/backend/src/interfaces/controller"
 )
 
@@ -56,44 +54,9 @@ func updateSettings[T any](
 	event string,
 	update func(payload *T) ([]*controller.SettingPreview, error),
 ) {
-	lang := request.Header.Get(repository.HeadAcceptLanguage)
-	payload, details, err := validation.RequestPayloadValidation[T](response, request)
+	payload, ok := readPayload[T](response, request)
 
-	if err != nil {
-		if details != nil {
-			preview := &controller.EpPreview[struct{}]{
-				Error: &controller.EpError{
-					Message: i18n.Translate(lang, repository.ValI18nKeyFailFieldsValidation, nil),
-					Details: []*controller.ErrorDetails{},
-				},
-			}
-
-			for _, detail := range *details {
-				preview.Error.Details = append(preview.Error.Details, &controller.ErrorDetails{
-					Field:  detail.Field,
-					Detail: i18n.Translate(lang, repository.I18nTagsKeys[detail.Tag], map[string]any{"Param": detail.Param}),
-				})
-			}
-
-			response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
-			response.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(response).Encode(preview)
-			return
-		}
-
-		var maxBytesErr *http.MaxBytesError
-
-		if errors.Is(err, repository.ValErrInvalidDataType) {
-			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
-			return
-		}
-
-		if errors.As(err, &maxBytesErr) {
-			http.Error(response, repository.HttpContentTooLarge, http.StatusRequestEntityTooLarge)
-			return
-		}
-
-		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+	if !ok {
 		return
 	}
 
@@ -101,15 +64,7 @@ func updateSettings[T any](
 
 	if err != nil {
 		if errors.Is(err, repository.StgErrInvestorAboveGeneral) {
-			preview := &controller.EpPreview[struct{}]{
-				Error: &controller.EpError{
-					Message: i18n.Translate(lang, repository.StgI18nKeyInvestorAboveGeneral, nil),
-				},
-			}
-
-			response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
-			response.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(response).Encode(preview)
+			writeBadRequest(response, request, repository.StgI18nKeyInvestorAboveGeneral)
 			return
 		}
 

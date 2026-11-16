@@ -33,6 +33,8 @@ export const API_ROUTES: Record<
    UPDATEMONTHLY: '/settings/monthly',
    UPDATEWEEKLY: '/settings/weekly',
    CASHBALANCE: '/cash-balance',
+   DEPOSIT: '/cash-balance/deposit',
+   WITHDRAW: '/cash-balance/withdraw',
 };
 export const HTTP_METHODS: Record<AllowedMethods, AllowedMethods> = {
    GET: 'GET',
