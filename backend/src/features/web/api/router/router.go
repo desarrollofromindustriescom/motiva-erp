@@ -22,11 +22,14 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodDelete, repository.RouteRevokeSession), handlers.RevokeSession)
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLogout), handlers.Logout)
 
-	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteSettings), handlers.GetSettings)
-	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsExtras), handlers.UpdateExtraSettings)
-	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsAgreements), handlers.UpdateAgreementSettings)
-	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsMonthly), handlers.UpdateMonthlySettings)
-	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsWeekly), handlers.UpdateWeeklySettings)
+	// Settings: only superadmin & administrator
+	settingsProfiles := []string{repository.ProfileSuperadmin, repository.ProfileAdministrator}
+
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteSettings), middleware.Authorize(handlers.GetSettings, settingsProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsExtras), middleware.Authorize(handlers.UpdateExtraSettings, settingsProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsAgreements), middleware.Authorize(handlers.UpdateAgreementSettings, settingsProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsMonthly), middleware.Authorize(handlers.UpdateMonthlySettings, settingsProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsWeekly), middleware.Authorize(handlers.UpdateWeeklySettings, settingsProfiles...))
 
 	root.Handle(repository.RouteMain, middleware.Pipeline(api, nil))
 

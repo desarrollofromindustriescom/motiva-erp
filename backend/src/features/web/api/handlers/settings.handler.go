@@ -5,30 +5,13 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"slices"
 
 	"motiva-erp/backend/src/features/data/modules/settings"
 	"motiva-erp/backend/src/features/data/repository"
 	"motiva-erp/backend/src/features/web/utilities/i18n"
 	"motiva-erp/backend/src/features/web/utilities/validation"
 	"motiva-erp/backend/src/interfaces/controller"
-	"motiva-erp/backend/src/interfaces/models"
 )
-
-/**
- * Settings are only available for superadmin & administrator
- */
-func settingsAllowed(response http.ResponseWriter, request *http.Request) bool {
-	currentSession := request.Context().Value("session").(*models.Session)
-
-	if slices.Contains(repository.StgAllowedProfiles, currentSession.User.Profile) {
-		return true
-	}
-
-	http.Error(response, repository.HttpForbidden, http.StatusForbidden)
-
-	return false
-}
 
 /**
  * Writes the list of settings as endpoint response
@@ -45,13 +28,9 @@ func writeSettings(response http.ResponseWriter, list []*controller.SettingPrevi
 }
 
 /**
- * Get all active settings (superadmin & administrator only)
+ * Get all active settings
  */
 func GetSettings(response http.ResponseWriter, request *http.Request) {
-	if !settingsAllowed(response, request) {
-		return
-	}
-
 	list, err := settings.GetActiveSettings(request.Context())
 
 	if err != nil {
@@ -77,10 +56,6 @@ func updateSettings[T any](
 	event string,
 	update func(payload *T) ([]*controller.SettingPreview, error),
 ) {
-	if !settingsAllowed(response, request) {
-		return
-	}
-
 	lang := request.Header.Get(repository.HeadAcceptLanguage)
 	payload, details, err := validation.RequestPayloadValidation[T](response, request)
 

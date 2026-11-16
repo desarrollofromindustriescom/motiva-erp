@@ -6,8 +6,6 @@ import (
 	"motiva-erp/backend/src/interfaces/models"
 )
 
-var StgAllowedProfiles = []string{"superadmin", "administrator"}
-
 const (
 	StgUnitPercentage string = "percentage"
 	StgUnitMonetary   string = "monetary"
