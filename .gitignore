@@ -12,3 +12,6 @@
 **/.angular/
 **/.vscode/
 **/.history/
+# Cloudflare origin certificate and key
+nginx/certs/*
+!nginx/certs/.gitkeep
