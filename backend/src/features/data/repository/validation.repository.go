@@ -11,6 +11,8 @@ const (
 	ValFormDataMaxFileSize    int64 = 9 << 20
 
 	ValKeySecurePassword string = "securepassword"
+	ValKeyPercentage     string = "percentage"
+	ValKeyMonetary       string = "monetary"
 
 	ValMimeJson     string = "application/json"
 	ValMimeFormData string = "multipart/form-data"
@@ -19,6 +21,11 @@ const (
 	ValI18nKeyFieldRequired        models.I18nKey = "FIELD_REQUIRED"
 	ValI18nKeyFieldMinLength       models.I18nKey = "FIELD_MIN_LENGTH"
 	ValI18nKeyFieldSecurePassword  models.I18nKey = "FIELD_SECURE_PASSWORD"
+	ValI18nKeyFieldMinValue        models.I18nKey = "FIELD_MIN_VALUE"
+	ValI18nKeyFieldMaxValue        models.I18nKey = "FIELD_MAX_VALUE"
+	ValI18nKeyFieldLength          models.I18nKey = "FIELD_LENGTH"
+	ValI18nKeyFieldPercentage      models.I18nKey = "FIELD_PERCENTAGE"
+	ValI18nKeyFieldMonetary        models.I18nKey = "FIELD_MONETARY"
 )
 
 var (

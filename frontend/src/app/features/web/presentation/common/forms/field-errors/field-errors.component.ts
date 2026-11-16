@@ -9,13 +9,13 @@ import { TranslatePipe } from '@ngx-translate/core';
       @let field = $field();
       @let params = $params();
 
-      <div class="w-full flex flex-col gap-1">
+      <div class="flex w-full flex-col gap-1">
          <ng-content />
 
-         <ul class="w-full flex flex-col">
+         <ul class="flex w-full flex-col">
             @if (field.touched() && field.invalid()) {
                @for (error of field.errors(); track error.kind) {
-                  <li class="text-red-500 text-xs">
+                  <li class="text-xs text-red-500">
                      • {{ error.message | translate: { Param: params[error.kind] || '' } }}
                   </li>
                }
@@ -25,9 +25,9 @@ import { TranslatePipe } from '@ngx-translate/core';
    `,
 })
 export class FieldErrorsComponent {
-   public $field: InputSignal<FieldState<string | number, string>> = input.required({ alias: 'field' });
+   public $field: InputSignal<FieldState<any, any>> = input.required({ alias: 'field' });
    public $params: Signal<Record<string, string>> = computed(() => {
-      const field: FieldState<string | number, string> = this.$field();
+      const field: FieldState<any, any> = this.$field();
       const errors: ValidationError.WithFieldTree[] = field.errors();
       const params: Record<string, string> = {};
 

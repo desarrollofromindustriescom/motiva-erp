@@ -14,6 +14,8 @@ var (
 	validate  *validator.Validate       = nil
 	registers map[string]validator.Func = map[string]validator.Func{
 		repository.ValKeySecurePassword: securePasswordValidation,
+		repository.ValKeyPercentage:     percentageValidation,
+		repository.ValKeyMonetary:       monetaryValidation,
 	}
 )
 

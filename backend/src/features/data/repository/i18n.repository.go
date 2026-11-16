@@ -13,4 +13,9 @@ var I18nTagsKeys map[string]models.I18nKey = map[string]models.I18nKey{
 	"required":           ValI18nKeyFieldRequired,
 	"min":                ValI18nKeyFieldMinLength,
 	ValKeySecurePassword: ValI18nKeyFieldSecurePassword,
+	"gte":                ValI18nKeyFieldMinValue,
+	"lte":                ValI18nKeyFieldMaxValue,
+	"len":                ValI18nKeyFieldLength,
+	ValKeyPercentage:     ValI18nKeyFieldPercentage,
+	ValKeyMonetary:       ValI18nKeyFieldMonetary,
 }

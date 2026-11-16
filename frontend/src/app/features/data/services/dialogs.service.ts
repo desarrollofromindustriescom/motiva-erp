@@ -1,12 +1,14 @@
 import { inject, Injectable, signal, Type, WritableSignal } from '@angular/core';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { DialogData } from '../../../interfaces/dialogs';
+import { DialogData, DialogSize } from '../../../interfaces/dialogs';
 import { DialogLayoutComponent } from '../../web/presentation/common/dialogs/layout/dialog-layout.component';
 import Swal, { SweetAlertIcon } from 'sweetalert2';
 import { DIALOG_I18N_KEYS } from '../repository/dialog.repository';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { FORMS_I18N_KEYS } from '../repository/forms.repository';
+
+const DIALOG_WIDTHS: Record<DialogSize, string> = { sm: '48rem', lg: '64rem' };
 
 @Injectable({ providedIn: 'root' })
 export class DialogsService {
@@ -31,24 +33,35 @@ export class DialogsService {
       return this.$dialogs();
    }
 
-   private openTemplate(): DynamicDialogRef<any> | null {
+   private openTemplate({ size }: { size: DialogSize }): DynamicDialogRef<any> | null {
       return this._dialog.open(DialogLayoutComponent, {
          closeOnEscape: false,
          showHeader: false,
          modal: true,
          focusOnShow: false,
+         width: DIALOG_WIDTHS[size],
+         style: { maxWidth: '95vw' },
+         breakpoints: { '768px': '95vw' },
       });
    }
 
    /**
     *
     */
-   public newDialog({ title, component }: { title: string; component: Type<any> }): void {
-      const ref: DynamicDialogRef<any> | null = this.openTemplate();
+   public newDialog({
+      title,
+      component,
+      size = 'sm',
+   }: {
+      title: string;
+      component: Type<any>;
+      size?: DialogSize;
+   }): void {
+      const ref: DynamicDialogRef<any> | null = this.openTemplate({ size });
 
       if (!ref) return;
 
-      this.$dialogs.update((current: DialogData[]) => [...current, { ref, title, component }]);
+      this.$dialogs.update((current: DialogData[]) => [...current, { ref, title, component, size }]);
    }
 
    /**
@@ -74,7 +87,7 @@ export class DialogsService {
       const previous: DialogData | undefined = dialogs.at(-1);
       if (!previous) return;
 
-      const ref: DynamicDialogRef<any> | null = this.openTemplate();
+      const ref: DynamicDialogRef<any> | null = this.openTemplate({ size: previous.size });
 
       if (ref) {
          previous.ref = ref;

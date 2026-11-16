@@ -1,3 +1,36 @@
+import { SettingRatePeriod } from '../../../interfaces/settings';
+
 export const SETTINGS_I18N_KEYS = {
    MODULE_TITLE: 'SETTINGS_MODULE_TITLE',
+   SECTION_EXTRAS: 'SETTINGS_SECTION_EXTRAS',
+   SECTION_AGREEMENTS: 'SETTINGS_SECTION_AGREEMENTS',
+   SECTION_MONTHLY: 'SETTINGS_SECTION_MONTHLY',
+   SECTION_WEEKLY: 'SETTINGS_SECTION_WEEKLY',
+   HEAD_CONCEPT: 'SETTINGS_HEAD_CONCEPT',
+   HEAD_VALUE: 'SETTINGS_HEAD_VALUE',
+   HEAD_PERIOD: 'SETTINGS_HEAD_PERIOD',
+   HEAD_INVESTOR: 'SETTINGS_HEAD_INVESTOR',
+   FIELD_INVESTOR: 'SETTINGS_FIELD_INVESTOR',
+   FIELD_GENERAL_VALUE: 'SETTINGS_FIELD_GENERAL_VALUE',
+   UNIT_WEEK_ONE: 'SETTINGS_UNIT_WEEK_ONE',
+   UNIT_WEEK_OTHER: 'SETTINGS_UNIT_WEEK_OTHER',
 };
+
+export const SETTINGS_PERIOD_I18N_KEYS: Record<SettingRatePeriod, { one: string; other: string }> = {
+   month: { one: 'SETTINGS_PERIOD_MONTH_ONE', other: 'SETTINGS_PERIOD_MONTH_OTHER' },
+   week: { one: 'SETTINGS_PERIOD_WEEK_ONE', other: 'SETTINGS_PERIOD_WEEK_OTHER' },
+};
+
+export const SETTINGS_EXTRAS: { slug: string; concept: string }[] = [
+   { slug: 'mora', concept: 'SETTINGS_CONCEPT_MORA' },
+   { slug: 'visit', concept: 'SETTINGS_CONCEPT_VISIT' },
+];
+
+export const SETTINGS_AGREEMENTS: { slug: string; concept: string }[] = [
+   { slug: 'agreement_weekly', concept: 'SETTINGS_CONCEPT_AGREEMENT_WEEKLY' },
+   { slug: 'agreement_weeks_before', concept: 'SETTINGS_CONCEPT_AGREEMENT_WEEKS_BEFORE' },
+   { slug: 'agreement_weeks_after', concept: 'SETTINGS_CONCEPT_AGREEMENT_WEEKS_AFTER' },
+];
+
+export const SETTINGS_MONTHLY_PERIODS: number = 3;
+export const SETTINGS_WEEKLY_PERIODS: number = 13;

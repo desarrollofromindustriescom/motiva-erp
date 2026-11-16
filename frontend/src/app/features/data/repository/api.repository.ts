@@ -1,6 +1,7 @@
 import { HttpContextToken } from '@angular/common/http';
 import { AllowedMethods, ApiContext } from '../../../interfaces/api';
 import { AuthenticationRoutes } from '../../../interfaces/authentication';
+import { SettingsRoutes } from '../../../interfaces/settings';
 import { UsersRoutes } from '../../../interfaces/user';
 
 export const DEFAULT_ERR_TITLE: string = 'DEFAULT_ERR_MESSAGE';
@@ -14,7 +15,7 @@ export const ERR_CODE_TITLES: Record<number, string> = {
    429: 'ERR_TITLE_TOO_MANY_REQUEST',
    500: 'ERR_TITLE_INTERNAL_SERVER_ERROR',
 };
-export const API_ROUTES: Record<Uppercase<AuthenticationRoutes | UsersRoutes>, string> = {
+export const API_ROUTES: Record<Uppercase<AuthenticationRoutes | UsersRoutes | SettingsRoutes>, string> = {
    LOGIN: '/login',
    VALIDATE: '/validate',
    CHANGEPASSWORD: '/users/change-password',
@@ -22,6 +23,11 @@ export const API_ROUTES: Record<Uppercase<AuthenticationRoutes | UsersRoutes>, s
    SESSIONS: '/users/sessions',
    REVOKESESSIONS: '/users/sessions',
    REVOKESESSION: '/users/session/',
+   SETTINGS: '/settings',
+   UPDATEEXTRAS: '/settings/extras',
+   UPDATEAGREEMENTS: '/settings/agreements',
+   UPDATEMONTHLY: '/settings/monthly',
+   UPDATEWEEKLY: '/settings/weekly',
 };
 export const HTTP_METHODS: Record<AllowedMethods, AllowedMethods> = {
    GET: 'GET',

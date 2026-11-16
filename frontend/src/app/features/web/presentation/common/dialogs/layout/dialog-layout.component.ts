@@ -12,9 +12,9 @@ import { DialogData } from '../../../../../../interfaces/dialogs';
       @let dialogData = $dialogData();
       @let hasHistory = $hasHistory();
 
-      <section class="w-3xl flex flex-col items-start justify-start pt-4.5 gap-4">
+      <section class="flex w-full flex-col items-start justify-start gap-4 pt-4.5">
          <fi-dialog-header-component
-            class="w-full flex"
+            class="flex w-full"
             [title]="dialogData ? dialogData.title : ''"
             [loading]="loading"
             [hasHistory]="hasHistory"
@@ -23,7 +23,7 @@ import { DialogData } from '../../../../../../interfaces/dialogs';
          />
 
          @if (dialogData) {
-            <main class="w-full flex [&>*:first-child]:w-full px-3">
+            <main class="flex max-h-[70dvh] w-full overflow-y-auto px-3 pb-3 [&>*:first-child]:w-full">
                <ng-container *ngComponentOutlet="dialogData.component" />
             </main>
          }

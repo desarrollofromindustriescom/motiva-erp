@@ -9,4 +9,5 @@ const (
 	HttpServerTimeout       string = "Server timeout"
 	HttpTooManyRequest      string = "Too many requests"
 	HttpUnauthorized        string = "Unauthorized"
+	HttpForbidden           string = "Forbidden"
 )
