@@ -26,10 +26,9 @@ services:
       build:
          context: ./backend/
          dockerfile: Dockerfile
-      ports:
-         - '${API_PORT}:${API_PORT}'
-      volumes:
-         - ./backend:/app
+         target: prod
+      expose:
+         - '${API_PORT}'
       networks:
          - motiva_net
       environment:
@@ -45,6 +44,21 @@ services:
          postgres-db:
             condition: service_healthy
             restart: true
+   nginx:
+      container_name: motiva-nginx
+      restart: unless-stopped
+      build:
+         context: .
+         dockerfile: nginx/Dockerfile
+      ports:
+         - '80:80'
+      networks:
+         - motiva_net
+      environment:
+         - API_HOST=golang-api
+         - API_PORT=${API_PORT}
+      depends_on:
+         - golang-api
 
 volumes:
    pgdata:

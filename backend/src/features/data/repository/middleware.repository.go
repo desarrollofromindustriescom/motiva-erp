@@ -11,7 +11,7 @@ const (
 	MwTimeoutDuration  time.Duration = 15 * time.Second
 	MwExtendedTimeout  time.Duration = 1 * time.Minute
 	MwDeadlineDuration time.Duration = MwTimeoutDuration + 30*time.Second
-	MwTrustedProxies   int           = 3
+	MwTrustedProxies   int           = 1
 	MwMaxRatePerSecond rate.Limit    = 10
 	MwMaxRateBurst     int           = 20
 	MwBannDuration     time.Duration = 5 * time.Minute
