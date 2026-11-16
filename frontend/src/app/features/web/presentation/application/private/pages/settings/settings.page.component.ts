@@ -5,6 +5,9 @@ import { SettingsExtrasDialogComponent } from '../../../../common/dialogs/views/
 import { SettingsAgreementsDialogComponent } from '../../../../common/dialogs/views/settings/settings-agreements.dialog.component';
 import { SettingsMonthlyDialogComponent } from '../../../../common/dialogs/views/settings/settings-monthly.dialog.component';
 import { SettingsWeeklyDialogComponent } from '../../../../common/dialogs/views/settings/settings-weekly.dialog.component';
+import { CashBalanceService } from '../../../../../../data/services/cash-balance.service';
+import { CashBalance } from '../../../../../../../interfaces/cash-balance';
+import { SettingsBalanceComponent } from './components/settings-balance.component';
 import { SettingsService } from '../../../../../../data/services/settings.service';
 import { SETTINGS_I18N_KEYS } from '../../../../../../data/repository/settings.repository';
 import {
@@ -18,11 +21,13 @@ import { SettingsRatesComponent } from './components/settings-rates.component';
 
 @Component({
    selector: 'fi-settings-page-component',
-   imports: [SettingsConceptsComponent, SettingsRatesComponent],
+   imports: [SettingsBalanceComponent, SettingsConceptsComponent, SettingsRatesComponent],
    template: `
       @let loader = $loader();
 
       <div class="flex w-full flex-col gap-3 sm:gap-4">
+         <fi-settings-balance-component [balance]="$balance()" />
+
          @if (loader.settings && !$loaded()) {
             @for (item of skeletons; track item) {
                <section class="flex w-full animate-pulse flex-col gap-4 rounded-2xl border border-slate-500 p-4 sm:p-6">
@@ -59,6 +64,7 @@ import { SettingsRatesComponent } from './components/settings-rates.component';
 })
 export class SettingsPageComponent {
    private readonly _settings: SettingsService = inject(SettingsService);
+   private readonly _cashBalance: CashBalanceService = inject(CashBalanceService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
 
    public readonly I18N = SETTINGS_I18N_KEYS;
@@ -66,6 +72,7 @@ export class SettingsPageComponent {
 
    public readonly $loader: Signal<SettingsLoader> = computed(() => this._settings.loader);
    public readonly $loaded: Signal<boolean> = computed(() => this._settings.loaded);
+   public readonly $balance: Signal<CashBalance | undefined> = computed(() => this._cashBalance.balance);
    public readonly $extras: Signal<SettingConceptRow[]> = computed(() => this._settings.extras);
    public readonly $agreements: Signal<SettingConceptRow[]> = computed(() => this._settings.agreements);
    public readonly $monthly: Signal<SettingRateRow[]> = computed(() => this._settings.monthly);
@@ -73,6 +80,7 @@ export class SettingsPageComponent {
 
    constructor() {
       if (this._settings.loaded) this._settings.reload();
+      if (this._cashBalance.balance) this._cashBalance.reload();
    }
 
    public handleEdit({ group }: { group: SettingsGroup }): void {

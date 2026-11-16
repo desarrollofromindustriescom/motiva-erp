@@ -22,9 +22,10 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodDelete, repository.RouteRevokeSession), handlers.RevokeSession)
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLogout), handlers.Logout)
 
-	// Settings: only superadmin & administrator
+	// Settings & general cash balance: only superadmin & administrator
 	settingsProfiles := []string{repository.ProfileSuperadmin, repository.ProfileAdministrator}
 
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteCashBalance), middleware.Authorize(handlers.GetCashBalance, settingsProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteSettings), middleware.Authorize(handlers.GetSettings, settingsProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsExtras), middleware.Authorize(handlers.UpdateExtraSettings, settingsProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsAgreements), middleware.Authorize(handlers.UpdateAgreementSettings, settingsProfiles...))

@@ -10,6 +10,7 @@ const (
 	RouteRevokeSession      string = "/api/users/session/{id}"
 	RouteLogout             string = "/api/users/logout"
 	RouteSettings           string = "/api/settings"
+	RouteCashBalance        string = "/api/cash-balance"
 	RouteSettingsExtras     string = "/api/settings/extras"
 	RouteSettingsAgreements string = "/api/settings/agreements"
 	RouteSettingsMonthly    string = "/api/settings/monthly"
