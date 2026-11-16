@@ -1,4 +1,5 @@
 import { UserProfile } from '../../../interfaces/user';
+import { TagSeverity } from './cash-balance.repository';
 
 export const PROFILE_I18N_KEYS = {
    MODULE_TITLE: 'PROFILE_MODULE_TITLE',
@@ -12,4 +13,12 @@ export const USER_PROFILE_I18N_KEYS: Record<UserProfile, string> = {
    manager: 'USER_PROFILE_MANAGER',
    borrower: 'USER_PROFILE_INVESTOR',
    investor: 'USER_PROFILE_BORROWER',
+};
+
+export const USER_PROFILE_SEVERITY: Record<UserProfile, TagSeverity> = {
+   superadmin: 'contrast',
+   administrator: 'info',
+   manager: 'warn',
+   borrower: 'secondary',
+   investor: 'success',
 };

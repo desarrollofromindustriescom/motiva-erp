@@ -8,12 +8,13 @@ import { LoaderComponent } from '../../../forms/loader/loader.component';
    imports: [TranslatePipe, NgClass, LoaderComponent],
    template: `
       @let title = $title();
+      @let titleParams = $titleParams();
       @let loading = $loading();
       @let headerActions = $headerActions();
 
-      <header class="w-full flex flex-col items-start justify-start gap-1.5">
+      <header class="flex w-full flex-col items-start justify-start gap-1.5">
          <div
-            class="w-full flex items-center"
+            class="flex w-full items-center"
             [ngClass]="{
                'justify-end': headerActions.length < 2,
                'justify-between': headerActions.length > 1,
@@ -21,21 +22,21 @@ import { LoaderComponent } from '../../../forms/loader/loader.component';
          >
             @for (action of headerActions; track $index) {
                <button
-                  class="group cursor-pointer flex items-center justify-center size-10 rounded-full bg-white hover:bg-slate-200 focus:bg-slate-200 transition-all disabled:opacity-60 disabled:cursor-auto disabled:hover:bg-white disabled:focus:bg-white"
+                  class="group flex size-10 cursor-pointer items-center justify-center rounded-full bg-white transition-all hover:bg-slate-200 focus:bg-slate-200 disabled:cursor-auto disabled:opacity-60 disabled:hover:bg-white disabled:focus:bg-white"
                   [disabled]="loading"
                   (click)="action.handle()"
                >
                   <i
                      [class]="
-                        'text-slate-400 bx text-2xl group-disabled:group-hover:text-slate-400 group-disabled:group-focus:text-slate-400 group-hover:text-slate-900 group-focus:text-slate-900 transition-all ' +
+                        'bx text-2xl text-slate-400 transition-all group-hover:text-slate-900 group-focus:text-slate-900 group-disabled:group-hover:text-slate-400 group-disabled:group-focus:text-slate-400 ' +
                         action.icon
                      "
                   ></i>
                </button>
             }
          </div>
-         <div class="w-full flex items-end justify-between px-3">
-            <h2 class="text-xl font-medium">{{ title | translate }}</h2>
+         <div class="flex w-full items-end justify-between px-3">
+            <h2 class="text-xl font-medium">{{ title | translate: titleParams }}</h2>
             @if (loading) {
                <fi-loader-component />
             }
@@ -45,6 +46,10 @@ import { LoaderComponent } from '../../../forms/loader/loader.component';
 })
 export class DialogHeaderComponent {
    public $title: InputSignal<string> = input('', { alias: 'title' });
+   public $titleParams: InputSignal<Record<string, string> | undefined> = input<Record<string, string> | undefined>(
+      undefined,
+      { alias: 'titleParams' },
+   );
    public $loading: InputSignal<boolean> = input(false, { alias: 'loading' });
    public $hasHistory: InputSignal<boolean> = input(false, { alias: 'hasHistory' });
 

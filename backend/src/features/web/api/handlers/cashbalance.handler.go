@@ -109,3 +109,36 @@ func DepositCashBalance(response http.ResponseWriter, request *http.Request) {
 func WithdrawCashBalance(response http.ResponseWriter, request *http.Request) {
 	createCashBalanceMovement(response, request, repository.CbMovementWithdrawal)
 }
+
+/**
+ * Paginated movements of the general cash balance. Uses QUERY
+ * method: it reads data like GET but receives the page in the body
+ */
+func QueryCashMovements(response http.ResponseWriter, request *http.Request) {
+	payload, ok := readPayload[controller.MovementsQueryPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	movements, err := cashbalance.GetMovements(request.Context(), payload.Page, payload.Size)
+
+	if err != nil {
+		slog.Error("Error getting cash balance movements",
+			"event", "handlers.QueryCashMovements.GetMovements",
+			"error", err,
+		)
+
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	preview := &controller.EpPreview[controller.MovementsPagePreview]{
+		Success: true,
+		Data:    movements,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}

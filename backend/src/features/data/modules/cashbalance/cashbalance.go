@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"strings"
 	"time"
 
 	"motiva-erp/backend/src/features/data/database"
@@ -110,4 +111,62 @@ func CreateMovement(ctx context.Context, user *models.User, movement string, amo
 	}
 
 	return &controller.CashBalancePreview{Amount: float64(next) / 100, LastUpdate: now}, nil
+}
+
+/**
+ * Page of general balance movements, newest first. Each item
+ * carries its external references (status & user who executed it)
+ */
+func GetMovements(ctx context.Context, page int, size int) (*controller.MovementsPagePreview, error) {
+	pool := database.GetPool()
+	result := &controller.MovementsPagePreview{
+		Items: []*controller.MovementPreview{},
+		Page:  page,
+		Size:  size,
+	}
+
+	if err := pool.QueryRow(ctx, repository.CbQryCountMovements).Scan(&result.Total); err != nil {
+		return nil, err
+	}
+
+	rows, err := pool.Query(ctx, repository.CbQryGetMovements, size, (page-1)*size)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var amount int
+
+		item := &controller.MovementPreview{
+			Status: &controller.MovementStatusPreview{},
+			User:   &controller.MovementUserPreview{},
+		}
+
+		err = rows.Scan(
+			&item.ID,
+			&item.Folio,
+			&amount,
+			&item.Type,
+			&item.CreatedAt,
+			&item.Status.Slug,
+			&item.Status.Title,
+			&item.User.Fullname,
+			&item.User.Username,
+			&item.User.Profile,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		item.Folio = strings.TrimSpace(item.Folio)
+		item.Amount = float64(amount) / 100
+
+		result.Items = append(result.Items, item)
+	}
+
+	return result, rows.Err()
 }

@@ -39,6 +39,9 @@ export class DialogsService {
          showHeader: false,
          modal: true,
          focusOnShow: false,
+         // every dialog uses the same layout component, so PrimeNG would
+         // refuse to open one while the previous one is still closing
+         duplicate: true,
          width: DIALOG_WIDTHS[size],
          style: { maxWidth: '95vw' },
          breakpoints: { '768px': '95vw' },
@@ -50,18 +53,24 @@ export class DialogsService {
     */
    public newDialog({
       title,
+      titleParams,
       component,
       size = 'sm',
    }: {
       title: string;
+      titleParams?: Record<string, string>;
       component: Type<any>;
       size?: DialogSize;
    }): void {
+      const previous: DialogData | undefined = this.$dialogs().at(-1);
       const ref: DynamicDialogRef<any> | null = this.openTemplate({ size });
 
       if (!ref) return;
 
-      this.$dialogs.update((current: DialogData[]) => [...current, { ref, title, component, size }]);
+      // The dialog below stays in the history, but only one is shown at a time
+      previous?.ref.close();
+
+      this.$dialogs.update((current: DialogData[]) => [...current, { ref, title, titleParams, component, size }]);
    }
 
    /**

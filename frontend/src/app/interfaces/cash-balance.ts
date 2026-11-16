@@ -1,6 +1,7 @@
 import { SignalForm } from './alias';
+import { UserProfile } from './user';
 
-export type CashBalanceRoutes = 'cashBalance' | 'deposit' | 'withdraw';
+export type CashBalanceRoutes = 'cashBalance' | 'deposit' | 'withdraw' | 'movements';
 
 export type CashMovement = 'deposit' | 'withdraw';
 
@@ -22,4 +23,39 @@ export interface FieldsCashMovement {
 export interface CashBalanceForms {
    deposit: SignalForm<FieldsCashMovement>;
    withdraw: SignalForm<FieldsCashMovement>;
+}
+
+export type MovementType = 'deposit' | 'withdrawal';
+
+export interface MovementStatus {
+   slug: string;
+   title: string;
+}
+
+export interface MovementUser {
+   fullname: string;
+   username: string;
+   profile: UserProfile;
+}
+
+export interface Movement {
+   id: string;
+   folio: string;
+   amount: number;
+   type: MovementType;
+   created_at: string;
+   status: MovementStatus;
+   user: MovementUser;
+}
+
+export interface MovementsPage {
+   items: Movement[];
+   total: number;
+   page: number;
+   size: number;
+}
+
+export interface MovementsQuery {
+   page: number;
+   size: number;
 }

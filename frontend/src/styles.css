@@ -52,3 +52,12 @@ input[type='number'] {
    -moz-appearance: textfield;
    appearance: textfield;
 }
+
+/* Paginator with the application main color */
+.p-paginator {
+   --p-paginator-nav-button-color: var(--color-main);
+   --p-paginator-nav-button-hover-color: var(--color-main);
+   --p-paginator-nav-button-hover-background: rgb(242 119 50 / 0.1);
+   --p-paginator-nav-button-selected-background: var(--color-main);
+   --p-paginator-nav-button-selected-color: #fff;
+}

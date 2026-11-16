@@ -1,6 +1,8 @@
 import { Component, computed, inject, Signal } from '@angular/core';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
+import { CashMovementsDialogComponent } from '../../../../common/dialogs/views/cash-balance/cash-movements.dialog.component';
+import { CashMovementsService } from '../../../../../../data/services/cash-movements.service';
 import { CashDepositDialogComponent } from '../../../../common/dialogs/views/cash-balance/cash-deposit.dialog.component';
 import { CashWithdrawDialogComponent } from '../../../../common/dialogs/views/cash-balance/cash-withdraw.dialog.component';
 import { SettingsExtrasDialogComponent } from '../../../../common/dialogs/views/settings/settings-extras.dialog.component';
@@ -30,6 +32,7 @@ import { SettingsRatesComponent } from './components/settings-rates.component';
       <div class="flex w-full flex-col gap-3 sm:gap-4">
          <fi-settings-balance-component
             [balance]="$balance()"
+            (movements)="handleMovements()"
             (deposit)="handleMovement({ movement: 'deposit' })"
             (withdraw)="handleMovement({ movement: 'withdraw' })"
          />
@@ -71,6 +74,7 @@ import { SettingsRatesComponent } from './components/settings-rates.component';
 export class SettingsPageComponent {
    private readonly _settings: SettingsService = inject(SettingsService);
    private readonly _cashBalance: CashBalanceService = inject(CashBalanceService);
+   private readonly _cashMovements: CashMovementsService = inject(CashMovementsService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
 
    public readonly I18N = SETTINGS_I18N_KEYS;
@@ -87,6 +91,16 @@ export class SettingsPageComponent {
    constructor() {
       if (this._settings.loaded) this._settings.reload();
       if (this._cashBalance.balance) this._cashBalance.reload();
+   }
+
+   public handleMovements(): void {
+      this._cashMovements.open();
+
+      this._dialogs.newDialog({
+         title: DIALOG_I18N_KEYS.MOVEMENTS_TITLE,
+         component: CashMovementsDialogComponent,
+         size: 'lg',
+      });
    }
 
    public handleMovement({ movement }: { movement: CashMovement }): void {

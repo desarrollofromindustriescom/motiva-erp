@@ -43,6 +43,30 @@ const (
 			last_update = $2
 		WHERE id = $3
 	`
+	CbQryCountMovements string = `--sql
+		SELECT COUNT(*)
+		FROM movements
+		WHERE cash_balance_id IN (SELECT id FROM cash_balances WHERE user_id IS NULL)
+	`
+	CbQryGetMovements string = `--sql
+		SELECT
+			movements.id,
+			movements.folio,
+			movements.amount,
+			movements.type,
+			movements.created_at,
+			status.slug,
+			status.title,
+			users.fullname,
+			users.username,
+			users.profile
+		FROM movements
+		INNER JOIN status ON movements.status_id = status.id
+		INNER JOIN users ON movements.user_id = users.id
+		WHERE movements.cash_balance_id IN (SELECT id FROM cash_balances WHERE user_id IS NULL)
+		ORDER BY movements.created_at DESC, movements.id DESC
+		LIMIT $1 OFFSET $2
+	`
 	CbQryNextMovementFolio string = `--sql
 		SELECT nextval('movements_folio_seq')
 	`

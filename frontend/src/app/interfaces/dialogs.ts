@@ -5,6 +5,7 @@ export type DialogSize = 'sm' | 'lg';
 
 export interface DialogData {
    title: string;
+   titleParams?: Record<string, string>;
    size: DialogSize;
    component: Type<any>;
    ref: DynamicDialogRef<any>;

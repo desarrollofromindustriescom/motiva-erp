@@ -35,6 +35,7 @@ export const API_ROUTES: Record<
    CASHBALANCE: '/cash-balance',
    DEPOSIT: '/cash-balance/deposit',
    WITHDRAW: '/cash-balance/withdraw',
+   MOVEMENTS: '/cash-balance/movements',
 };
 export const HTTP_METHODS: Record<AllowedMethods, AllowedMethods> = {
    GET: 'GET',

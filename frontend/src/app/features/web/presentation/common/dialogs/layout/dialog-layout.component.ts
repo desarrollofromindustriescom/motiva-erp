@@ -16,6 +16,7 @@ import { DialogData } from '../../../../../../interfaces/dialogs';
          <fi-dialog-header-component
             class="flex w-full"
             [title]="dialogData ? dialogData.title : ''"
+            [titleParams]="dialogData ? dialogData.titleParams : undefined"
             [loading]="loading"
             [hasHistory]="hasHistory"
             (back)="handleBack()"

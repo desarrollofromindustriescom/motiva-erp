@@ -26,7 +26,7 @@ export class CashBalanceService {
    private readonly _session: SessionService = inject(SessionService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
 
-   private readonly routes: Record<CashBalanceRoutes, EndpointData> = {
+   private readonly routes: Omit<Record<CashBalanceRoutes, EndpointData>, 'movements'> = {
       cashBalance: { route: API_ROUTES.CASHBALANCE, method: HTTP_METHODS.GET },
       deposit: { route: API_ROUTES.DEPOSIT, method: HTTP_METHODS.POST },
       withdraw: { route: API_ROUTES.WITHDRAW, method: HTTP_METHODS.POST },
