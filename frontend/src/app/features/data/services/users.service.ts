@@ -160,35 +160,44 @@ export class UsersService {
             ? DIALOG_I18N_KEYS.CONFIRM_CHANGE_PASSWORD_SESSIONS
             : DIALOG_I18N_KEYS.CONFIRM_CHANGE_PASSWORD;
 
-      this._dialogs.confirmation({ message }).then(() =>
-         submit(
-            this.$formChangePassword,
-            async () =>
-               new Promise<void>((resolve, reject) => {
-                  const body: FieldsChangePassword = this.$formChangePassword().value();
-                  let { method, route } = this.routes.changePassword;
+      // the form is validated first, so the confirmation is only asked for a form that can be sent
+      submit(this.$formChangePassword, async () => {
+         try {
+            await this._dialogs.confirmation({ message });
+         } catch {
+            return;
+         }
 
-                  this.setLoader({ key: 'changePassword', value: true });
-                  firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`, { body }))
-                     .then(() => {
-                        this.activeSessionsClear();
-                        this.resetForm({ form: 'changePassword' });
-                        this._dialogs.closeDialogs();
-                        resolve();
-                     })
-                     .catch(reject)
-                     .finally(() => this.setLoader({ key: 'changePassword', value: false }));
-               }),
-         ).then((state: boolean) => {
-            if (state) return;
+         const body: FieldsChangePassword = this.$formChangePassword().value();
+         let { method, route } = this.routes.changePassword;
 
-            this._dialogs.alert({
-               severity: 'error',
-               title: FORMS_I18N_KEYS.ERROR_TITLE,
-               text: FORMS_I18N_KEYS.VAL_COMPLETE_CORRECTLY,
-            });
-         }),
-      );
+         this.setLoader({ key: 'changePassword', value: true });
+
+         try {
+            await firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`, { body }));
+
+            // the screen that forces the change leaves once the session says it was changed
+            const session = this._session.session;
+
+            if (session) this._session.session = { ...session, password_changed: true };
+
+            this.activeSessionsClear();
+            this.resetForm({ form: 'changePassword' });
+            this._dialogs.closeDialogs();
+         } catch {
+            // the error interceptor already notified the user
+         } finally {
+            this.setLoader({ key: 'changePassword', value: false });
+         }
+      }).then((state: boolean) => {
+         if (state) return;
+
+         this._dialogs.alert({
+            severity: 'error',
+            title: FORMS_I18N_KEYS.ERROR_TITLE,
+            text: FORMS_I18N_KEYS.VAL_COMPLETE_CORRECTLY,
+         });
+      });
    }
 
    /**

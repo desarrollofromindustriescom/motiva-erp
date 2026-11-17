@@ -13,7 +13,9 @@ const (
 
 	AuthQryUpdatePassword string = `--sql
 		UPDATE users
-		SET password = $1
+		SET
+			password = $1,
+			passwordChanged = TRUE
 		WHERE id = $2
 	`
 	AuthQryGetUserXUsername string = `--sql

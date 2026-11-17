@@ -34,6 +34,9 @@ export class AuthenticationService {
       login: { route: API_ROUTES.LOGIN, method: HTTP_METHODS.POST },
    };
 
+   // session recovery in progress, shared by everyone that asks for it meanwhile
+   private recovering: Promise<void> | null = null;
+
    private readonly $loader: WritableSignal<Record<AuthenticationLoader, boolean>> = signal({
       login: false,
       validate: false,
@@ -148,20 +151,24 @@ export class AuthenticationService {
     *
     */
    public recoverSession(options?: { hideError?: boolean }): Promise<void> {
-      return new Promise((resolve, reject) => {
-         const token: string = this._session.token;
-         const session: Session | null = this._session.session;
+      if (this._session.token && this._session.session) return Promise.resolve();
 
-         if (token && session) return resolve();
+      // the guards of a route run at the same time & all of them need the session
+      if (this.recovering) return this.recovering;
 
+      const recovery: Promise<void> = new Promise<void>((resolve, reject) => {
          let handler: () => Promise<void> = () => Promise.resolve();
 
-         if (!token) handler = () => this._session.getTokenCookie();
+         if (!this._session.token) handler = () => this._session.getTokenCookie();
 
          handler()
             .then(() => this.validate(options))
             .then(resolve)
             .catch(reject);
-      });
+      }).finally(() => (this.recovering = null));
+
+      this.recovering = recovery;
+
+      return recovery;
    }
 }

@@ -14,6 +14,7 @@ export const PATHS = {
    ROOT_RELATIVE: '',
    ROOT: '/',
    APP: 'app',
+   CHANGE_PASSWORD: 'change-password',
    LOANS: 'loans',
    KPIS: 'kpis',
    USERS: 'users',
