@@ -36,7 +36,7 @@ import { CashMovementDetailDialogComponent } from './cash-movement-detail.dialog
                   <th>{{ I18N.HEAD_FOLIO | translate }}</th>
                   <th class="text-right!">{{ I18N.HEAD_AMOUNT | translate }}</th>
                   <th class="max-sm:hidden">{{ I18N.HEAD_DATE | translate }}</th>
-                  <th>{{ I18N.HEAD_TYPE | translate }}</th>
+                  <th class="max-sm:hidden">{{ I18N.HEAD_TYPE | translate }}</th>
                   <th class="max-md:hidden">{{ I18N.HEAD_STATUS | translate }}</th>
                   <th></th>
                </tr>
@@ -55,7 +55,7 @@ import { CashMovementDetailDialogComponent } from './cash-movement-detail.dialog
                      {{ signedAmount(movement) | currency }}
                   </td>
                   <td class="max-sm:hidden">{{ movement.created_at | date: 'dd.MM.yyyy' }}</td>
-                  <td>
+                  <td class="max-sm:hidden">
                      <p-tag
                         [value]="TYPE_I18N[movement.type] | translate"
                         [severity]="TYPE_SEVERITY[movement.type]"

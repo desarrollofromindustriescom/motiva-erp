@@ -55,7 +55,7 @@ interface RowAction {
                            ></i>
                         </button>
                      </th>
-                     <th class="max-md:hidden">{{ I18N.HEAD_USERNAME | translate }}</th>
+                     <th class="max-lg:hidden">{{ I18N.HEAD_USERNAME | translate }}</th>
                      <th>{{ I18N.HEAD_FULLNAME | translate }}</th>
                      <th class="max-lg:hidden">{{ I18N.HEAD_STATUS | translate }}</th>
                      <th class="max-sm:hidden">{{ I18N.HEAD_PROFILE | translate }}</th>
@@ -67,8 +67,8 @@ interface RowAction {
                   let-user
                >
                   <tr>
-                     <td class="whitespace-nowrap">{{ user.curp || '-' }}</td>
-                     <td class="max-md:hidden">{{ user.username }}</td>
+                     <td class="max-sm:text-xs max-sm:break-all sm:whitespace-nowrap">{{ user.curp || '-' }}</td>
+                     <td class="max-lg:hidden">{{ user.username }}</td>
                      <td>{{ user.fullname }}</td>
                      <td class="max-lg:hidden">
                         <span
@@ -85,7 +85,9 @@ interface RowAction {
                         >
                      </td>
                      <td>
-                        <div class="flex w-full items-center justify-end gap-1">
+                        <div
+                           class="ml-auto grid w-fit grid-cols-3 gap-1 sm:flex sm:w-full sm:items-center sm:justify-end"
+                        >
                            @for (action of actions; track action.icon) {
                               <button
                                  class="flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all disabled:cursor-auto disabled:bg-slate-300"
@@ -161,6 +163,7 @@ export class UsersTableComponent {
    public $edit: OutputEmitterRef<UserRow> = output({ alias: 'edit' });
    public $password: OutputEmitterRef<UserRow> = output({ alias: 'password' });
    public $wallet: OutputEmitterRef<UserRow> = output({ alias: 'wallet' });
+   public $documents: OutputEmitterRef<UserRow> = output({ alias: 'documents' });
 
    public readonly $users: Signal<UserRow[]> = computed(() => this._list.users);
    public readonly $total: Signal<number> = computed(() => this._list.total);
@@ -182,6 +185,7 @@ export class UsersTableComponent {
       if (action.id === 'edit') this.$edit.emit(user);
       if (action.id === 'password') this.$password.emit(user);
       if (action.id === 'wallet') this.$wallet.emit(user);
+      if (action.id === 'documents') this.$documents.emit(user);
       if (action.id === 'delete') this._deletion.delete({ id: user.id });
    }
 

@@ -348,7 +348,7 @@ func QueryInvestorInvestments(response http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	payload, ok := readPayload[controller.MovementsQueryPayload](response, request)
+	payload, ok := readPayload[controller.InvestmentsQueryPayload](response, request)
 
 	if !ok {
 		return
@@ -357,7 +357,7 @@ func QueryInvestorInvestments(response http.ResponseWriter, request *http.Reques
 	ctx := request.Context()
 	currentSession := ctx.Value("session").(*models.Session)
 
-	investments, err := cashbalance.GetInvestorInvestments(ctx, id, visibleProfiles(currentSession.User), payload.Page, payload.Size)
+	investments, err := cashbalance.GetInvestorInvestments(ctx, id, visibleProfiles(currentSession.User), payload.Status, payload.Page, payload.Size)
 
 	if err != nil {
 		switch {

@@ -59,6 +59,9 @@ type InvestorBalancePreview struct {
 	LastUpdate time.Time `json:"last_update"`
 	// amount (currency units) not locked by the active investments
 	Available float64 `json:"available"`
+	// a cancellation request can be made with at least 1 active investment & none pending
+	ActiveInvestments   int  `json:"active_investments"`
+	PendingCancellation bool `json:"pending_cancellation"`
 }
 
 type NewInvestmentPayload struct {
@@ -90,4 +93,30 @@ type InvestmentsPagePreview struct {
 	Total int                  `json:"total"`
 	Page  int                  `json:"page"`
 	Size  int                  `json:"size"`
+}
+
+/**
+ * Page query of the investments of an investor, optionally only
+ * the ones with a status
+ */
+type InvestmentsQueryPayload struct {
+	Page   int    `json:"page" validate:"required,gte=1"`
+	Size   int    `json:"size" validate:"required,gte=1,lte=100"`
+	Status string `json:"status" validate:"omitempty,oneof=active"`
+}
+
+/**
+ * Pending cancellation request of an investor with the investments it
+ * applies to, its totals and what the general cash balance has available
+ */
+type CancellationPreview struct {
+	ID               uuid.UUID            `json:"id"`
+	CreatedAt        time.Time            `json:"created_at"`
+	Message          string               `json:"message"`
+	TotalInitial     float64              `json:"total_initial"`
+	TotalRecovered   float64              `json:"total_recovered"`
+	TotalReward      float64              `json:"total_reward"`
+	GeneralAvailable float64              `json:"general_available"`
+	CanApprove       bool                 `json:"can_approve"`
+	Investments      []*InvestmentPreview `json:"investments"`
 }

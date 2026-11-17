@@ -100,10 +100,11 @@ export const USERS_STATUS_COLORS: Record<string, string> = {
  */
 export const USERS_ACTION_RULES: Record<
    UserActionId,
-   (user: { profile: string; status: { slug: string } }) => boolean
+   (user: { profile: string; status: { slug: string }; pending_cancellation?: boolean }) => boolean
 > = {
    details: () => true,
-   documents: (user) => user.profile === 'investor',
+   // the cancellation request of an investor can only be reviewed while it's pending
+   documents: (user) => user.profile === 'investor' && !!user.pending_cancellation,
    wallet: (user) => user.profile === 'investor',
    // the superadmin password is never regenerated
    password: (user) => user.profile !== 'superadmin',

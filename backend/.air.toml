@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 [build]
    cmd = "go build -o ./tmp/main ."
    entrypoint = "tmp/main"
-   exclude_dir = [ "tmp" ]
+   exclude_dir = [ "tmp", "uploads" ]
    include_ext = [ "go" ]
 
 [log]

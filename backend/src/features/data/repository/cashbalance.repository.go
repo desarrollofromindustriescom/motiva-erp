@@ -80,7 +80,8 @@ const (
 	CbQryNextInvestmentFolio string = `--sql
 		SELECT nextval('investments_folio_seq')
 	`
-	// current_amount & current_reward start in 0 (the money will be used on loans)
+	// current_amount starts with the amount of the investment (the money it holds right now,
+	// loans will change it) & current_reward starts in 0
 	CbQryInsertInvestment string = `--sql
 		INSERT INTO cash_balance_details (
 			folio,
@@ -92,7 +93,7 @@ const (
 			cash_balance_cycle_id,
 			cash_balance_id
 		) VALUES (
-			$1, $2, 0, 0, $3, $4, $5, $6
+			$1, $2, $2, 0, $3, $4, $5, $6
 		)
 	`
 	// the investment must belong to the balance of the investor
@@ -108,7 +109,10 @@ const (
 		SELECT COUNT(*)
 		FROM cash_balance_details
 		INNER JOIN cash_balances ON cash_balance_details.cash_balance_id = cash_balances.id
-		WHERE cash_balances.user_id = $1
+		INNER JOIN status ON cash_balance_details.status_id = status.id
+		WHERE
+			cash_balances.user_id = $1 AND
+			($2 = '' OR status.slug = $2)
 	`
 	// every investment of the investor, the active ones first
 	CbQryGetInvestments string = `--sql
@@ -128,12 +132,14 @@ const (
 		INNER JOIN cash_balances ON cash_balance_details.cash_balance_id = cash_balances.id
 		INNER JOIN cash_balance_cycles ON cash_balance_details.cash_balance_cycle_id = cash_balance_cycles.id
 		INNER JOIN status ON cash_balance_details.status_id = status.id
-		WHERE cash_balances.user_id = $1
+		WHERE
+			cash_balances.user_id = $1 AND
+			($2 = '' OR status.slug = $2)
 		ORDER BY
 			(status.slug = 'active') DESC,
 			cash_balance_details.created_at DESC,
 			cash_balance_details.id DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 )
 

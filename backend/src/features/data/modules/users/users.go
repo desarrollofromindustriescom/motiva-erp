@@ -184,6 +184,7 @@ func GetPage(ctx context.Context, payload *controller.UsersQueryPayload, profile
 			&item.CreatedAt,
 			&item.Status.Slug,
 			&item.Status.Title,
+			&item.PendingCancellation,
 		)
 
 		if err != nil {

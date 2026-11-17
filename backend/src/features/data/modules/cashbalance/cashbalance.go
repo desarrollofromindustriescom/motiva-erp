@@ -239,6 +239,16 @@ func GetInvestorBalance(ctx context.Context, id uuid.UUID, profiles []string) (*
 		return nil, err
 	}
 
+	pool := database.GetPool()
+
+	if err = pool.QueryRow(ctx, repository.CcQryActiveInvestmentsByUser, id).Scan(&preview.ActiveInvestments); err != nil {
+		return nil, err
+	}
+
+	if err = pool.QueryRow(ctx, repository.CcQryPendingByUser, id).Scan(&preview.PendingCancellation); err != nil {
+		return nil, err
+	}
+
 	return preview, nil
 }
 
@@ -261,31 +271,15 @@ func availableAmount(ctx context.Context, id uuid.UUID, amountCents int) (float6
  * balance. The movement is registered with the user that executes it.
  */
 func CreateInvestorMovement(ctx context.Context, executor *models.User, id uuid.UUID, profiles []string, movement string, amount float64) (*controller.InvestorBalancePreview, error) {
-	user, err := loadInvestor(ctx, id, profiles)
-
-	if err != nil {
+	if _, err := loadInvestor(ctx, id, profiles); err != nil {
 		return nil, err
 	}
 
-	balance, err := CreateMovement(ctx, executor, &id, movement, amount)
-
-	if err != nil {
+	if _, err := CreateMovement(ctx, executor, &id, movement, amount); err != nil {
 		return nil, err
 	}
 
-	available, err := availableAmount(ctx, id, int(math.Round(balance.Amount*100)))
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &controller.InvestorBalancePreview{
-		Fullname:   user.Fullname,
-		Since:      user.CreatedAt,
-		Amount:     balance.Amount,
-		LastUpdate: balance.LastUpdate,
-		Available:  available,
-	}, nil
+	return GetInvestorBalance(ctx, id, profiles)
 }
 
 /**

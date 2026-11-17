@@ -40,7 +40,7 @@ interface InvestmentAction {
          <h2 class="text-second text-xl font-medium sm:text-2xl">{{ I18N.TITLE | translate }}</h2>
 
          <p-table
-            class="block w-full max-sm:[&_td]:px-2! max-sm:[&_th]:px-2!"
+            class="block w-full max-sm:[&_td]:px-1.5! max-sm:[&_th]:px-1.5!"
             [value]="investments"
             [loading]="loading"
          >
@@ -79,7 +79,7 @@ interface InvestmentAction {
                      >
                   </td>
                   <td>
-                     <div class="flex w-full items-center justify-end gap-1">
+                     <div class="flex w-full items-center justify-end gap-1 max-sm:flex-col max-sm:items-end">
                         @for (action of actions; track action.id) {
                            <button
                               class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md p-1 transition-all"

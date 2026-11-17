@@ -3,10 +3,12 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"motiva-erp/backend/src/features/data/repository"
 	"motiva-erp/backend/src/features/web/api/handlers"
 	"motiva-erp/backend/src/features/web/utilities/middleware"
+	"motiva-erp/backend/src/interfaces/models"
 )
 
 func Router() *http.ServeMux {
@@ -64,11 +66,22 @@ func Router() *http.ServeMux {
 
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteUserInvestmentMovements), middleware.Authorize(handlers.QueryInvestmentMovements, usersProfiles...))
 
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteUserCancellationPending), middleware.Authorize(handlers.GetPendingCancellation, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteUserCancellationDocument), middleware.Authorize(handlers.GetCancellationDocument, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationApprove), middleware.Authorize(handlers.ApproveCancellation, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationReject), middleware.Authorize(handlers.RejectCancellation, usersProfiles...))
+
 	root.Handle(repository.RouteMain, middleware.Pipeline(api, nil))
 
-	// TODO: Config for endpoints to allow files
-	// streamConfig := &models.MiddlewareConfig{ Timeout: 1 * time.Minute }
-	// root.Handle("POST /api/investment/cancel-request", middleware.Pipeline(/*handler*/, *streamConfig))
+	// Endpoints with files need more time to read the request, so they use their
+	// own middleware config instead of the default one. The more specific route
+	// takes precedence over the generic api one.
+	streamConfig := &models.MiddlewareConfig{Timeout: 1 * time.Minute}
+
+	root.Handle(
+		fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellations),
+		middleware.Pipeline(middleware.Authorize(handlers.CreateCancellation, usersProfiles...), streamConfig),
+	)
 
 	return root
 }

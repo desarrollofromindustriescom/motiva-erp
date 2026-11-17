@@ -31,6 +31,7 @@ export const API_ROUTES: Record<
    REGENERATEPASSWORD: '/users/',
    INVESTORBALANCE: '/users/',
    INVESTMENTS: '/users/',
+   CANCELLATIONS: '/users/',
    CYCLES: '/cash-balance/cycles',
    CHANGEPASSWORD: '/users/change-password',
    LOGOUT: '/users/logout',

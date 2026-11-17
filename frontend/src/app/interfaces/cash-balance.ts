@@ -17,6 +17,9 @@ export interface InvestorBalance {
    last_update: string;
    // amount not locked by the active investments
    available: number;
+   // a cancellation request needs at least 1 active investment & none pending
+   active_investments: number;
+   pending_cancellation: boolean;
 }
 
 export interface CashBalanceLoader {

@@ -6,9 +6,11 @@ import { InvestorBalance } from '../../../../../../../interfaces/cash-balance';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { InvestorMovementDialogComponent } from './investor-movement.dialog.component';
 import { InvestorInvestmentDialogComponent } from './investor-investment.dialog.component';
+import { InvestmentCancellationDialogComponent } from './investment-cancellation.dialog.component';
 import { InvestmentsTableComponent } from './investments-table.component';
 import { CashMovementsDialogComponent } from '../cash-balance/cash-movements.dialog.component';
 import { CashMovementsService } from '../../../../../../data/services/cash-movements.service';
+import { InvestmentCancellationService } from '../../../../../../data/services/investment-cancellation.service';
 import { InvestmentsService } from '../../../../../../data/services/investments.service';
 import { InvestorBalanceService } from '../../../../../../data/services/investor-balance.service';
 import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
@@ -54,11 +56,12 @@ interface BalanceAction {
                   <div class="flex flex-wrap items-center gap-2">
                      @for (action of actions; track action.id) {
                         <button
-                           class="flex cursor-pointer items-center justify-center rounded-xl bg-white p-2.5 transition-all hover:bg-slate-100 focus:bg-slate-100"
+                           class="flex cursor-pointer items-center justify-center rounded-xl bg-white p-2.5 transition-all hover:bg-slate-100 focus:bg-slate-100 disabled:cursor-auto disabled:opacity-50 disabled:hover:bg-white disabled:focus:bg-white"
                            type="button"
                            tooltipPosition="top"
                            [pTooltip]="action.label | translate"
                            [showDelay]="1500"
+                           [disabled]="!enabled({ action, balance })"
                            (click)="handleAction({ action })"
                         >
                            <i [class]="'bx text-main text-2xl ' + action.icon"></i>
@@ -83,6 +86,7 @@ export class InvestorBalanceDialogComponent {
    private readonly _dialogs: DialogsService = inject(DialogsService);
    private readonly _movements: CashMovementsService = inject(CashMovementsService);
    private readonly _investments: InvestmentsService = inject(InvestmentsService);
+   private readonly _cancellation: InvestmentCancellationService = inject(InvestmentCancellationService);
 
    public readonly I18N = USERS_I18N_KEYS;
    public readonly SETTINGS = SETTINGS_I18N_KEYS;
@@ -116,9 +120,21 @@ export class InvestorBalanceDialogComponent {
       });
    }
 
-   // the cancellation request has no behavior yet
+   /**
+    * A cancellation request needs at least 1 active investment & no other request
+    * pending (a request answered, approved or rejected, doesn't block a new one)
+    */
+   public enabled({ action, balance }: { action: BalanceAction; balance: InvestorBalance }): boolean {
+      if (action.id !== 'cancellation') return true;
+
+      return balance.active_investments > 0 && !balance.pending_cancellation;
+   }
+
    public handleAction({ action }: { action: BalanceAction }): void {
       switch (action.id) {
+         case 'cancellation':
+            this.handleCancellation();
+            break;
          case 'investment':
             this.handleInvestment();
             break;
@@ -130,6 +146,15 @@ export class InvestorBalanceDialogComponent {
             this.handleMovement({ movement: action.id });
             break;
       }
+   }
+
+   private handleCancellation(): void {
+      this._cancellation.start();
+      this._dialogs.newDialog({
+         title: DIALOG_I18N_KEYS.CANCELLATION_TITLE,
+         component: InvestmentCancellationDialogComponent,
+         size: 'lg',
+      });
    }
 
    private handleInvestment(): void {

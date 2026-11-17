@@ -52,7 +52,18 @@ const (
 			users.profile,
 			users.created_at,
 			status.slug,
-			status.title
+			status.title,
+			EXISTS (
+				SELECT 1
+				FROM cancel_request
+				INNER JOIN status AS request_status ON cancel_request.status_id = request_status.id
+				INNER JOIN cancel_request_details ON cancel_request_details.cancel_request_id = cancel_request.id
+				INNER JOIN cash_balance_details ON cancel_request_details.cash_balance_detail_id = cash_balance_details.id
+				INNER JOIN cash_balances ON cash_balance_details.cash_balance_id = cash_balances.id
+				WHERE
+					cash_balances.user_id = users.id AND
+					request_status.slug = 'pending'
+			) AS pending_cancellation
 		FROM users
 		INNER JOIN status ON users.status_id = status.id
 		WHERE

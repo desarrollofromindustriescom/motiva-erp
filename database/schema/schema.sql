@@ -171,7 +171,7 @@ CREATE SEQUENCE IF NOT EXISTS investments_folio_seq;
 
 CREATE TABLE IF NOT EXISTS movements (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-   folio CHARACTER(32) NOT NULL UNIQUE,
+   folio CHARACTER(32) NOT NULL,
    amount INTEGER NOT NULL,
    type movement_type NOT NULL,
    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -181,5 +181,6 @@ CREATE TABLE IF NOT EXISTS movements (
    origin_payment_id UUID REFERENCES payments (id),
    origin_payment_extra_id UUID REFERENCES payment_extras (id),
    user_id UUID NOT NULL REFERENCES users (id),
-   status_id UUID NOT NULL REFERENCES status (id) DEFAULT '97469771-106a-4b3e-a2c6-ee0e0d8fa6d5'
+   status_id UUID NOT NULL REFERENCES status (id) DEFAULT '97469771-106a-4b3e-a2c6-ee0e0d8fa6d5',
+   UNIQUE (folio, cash_balance_id)
 );

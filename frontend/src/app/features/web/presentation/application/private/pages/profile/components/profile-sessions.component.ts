@@ -30,7 +30,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
 
          @if (!loading || sessions.length) {
             <p-table
-               class="block w-full max-sm:[&_td]:px-2! max-sm:[&_th]:px-2!"
+               class="block w-full max-sm:[&_td]:px-1.5! max-sm:[&_th]:px-1.5!"
                [value]="sessions"
             >
                <ng-template #header>

@@ -47,7 +47,7 @@ func GetActiveCycles(ctx context.Context) ([]*controller.CashCyclePreview, error
  * Page of every investment of an investor (the active ones first, then the
  * newest). Amounts are stored in cents.
  */
-func GetInvestorInvestments(ctx context.Context, id uuid.UUID, profiles []string, page int, size int) (*controller.InvestmentsPagePreview, error) {
+func GetInvestorInvestments(ctx context.Context, id uuid.UUID, profiles []string, status string, page int, size int) (*controller.InvestmentsPagePreview, error) {
 	if _, err := loadInvestor(ctx, id, profiles); err != nil {
 		return nil, err
 	}
@@ -59,11 +59,11 @@ func GetInvestorInvestments(ctx context.Context, id uuid.UUID, profiles []string
 		Size:  size,
 	}
 
-	if err := pool.QueryRow(ctx, repository.CbQryCountInvestments, id).Scan(&result.Total); err != nil {
+	if err := pool.QueryRow(ctx, repository.CbQryCountInvestments, id, status).Scan(&result.Total); err != nil {
 		return nil, err
 	}
 
-	rows, err := pool.Query(ctx, repository.CbQryGetInvestments, id, size, (page-1)*size)
+	rows, err := pool.Query(ctx, repository.CbQryGetInvestments, id, status, size, (page-1)*size)
 
 	if err != nil {
 		return nil, err
@@ -109,8 +109,8 @@ func GetInvestorInvestments(ctx context.Context, id uuid.UUID, profiles []string
  * Opens an investment with part of the balance of an investor, in one
  * transaction: it locks the balance, checks the amount against the available
  * balance (total minus the active investments), computes the closing date
- * from the term & registers it with its folio. current_amount & current_reward
- * start in 0 because that money will be used on loans. Returns the updated balance.
+ * from the term & registers it with its folio. current_amount starts with the
+ * amount of the investment & current_reward in 0. Returns the updated balance.
  */
 func CreateInvestorInvestment(ctx context.Context, id uuid.UUID, profiles []string, amount float64, cycleID uuid.UUID) (*controller.InvestorBalancePreview, error) {
 	if _, err := loadInvestor(ctx, id, profiles); err != nil {

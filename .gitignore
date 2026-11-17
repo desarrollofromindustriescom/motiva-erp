@@ -15,3 +15,6 @@
 # Cloudflare origin certificate and key
 nginx/certs/*
 !nginx/certs/.gitkeep
+
+# Files uploaded to the API in development
+backend/uploads/

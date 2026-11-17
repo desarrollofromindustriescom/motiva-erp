@@ -116,11 +116,11 @@ export class DialogsService {
    /**
     *
     */
-   public confirmation({ message }: { message: string }): Promise<void> {
+   public confirmation({ message, params }: { message: string; params?: Record<string, string> }): Promise<void> {
       return new Promise((resolve, reject) => {
          this._confirmation.confirm({
             header: this._translate.instant(DIALOG_I18N_KEYS.CONFIRM_TITLE),
-            message: this._translate.instant(message),
+            message: this._translate.instant(message, params),
             icon: 'bx bx-alert-triangle',
             rejectButtonProps: {
                label: this._translate.instant(FORMS_I18N_KEYS.BUTTON_CANCEL),

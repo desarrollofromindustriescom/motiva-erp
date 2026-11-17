@@ -40,11 +40,11 @@ const MENU_GAP = 8;
                      <span class="text-base">{{ section.button.label | translate }}</span>
                   </span>
                   <i
-                     class="bx bx-chevron-right hidden text-xl transition-transform xl:block"
+                     class="bx bx-chevron-right hidden! text-xl transition-transform xl:block!"
                      [ngClass]="{ 'rotate-180': openId === section.id }"
                   ></i>
                   <i
-                     class="bx bx-chevron-down text-xl transition-transform xl:hidden"
+                     class="bx bx-chevron-down text-xl transition-transform xl:hidden!"
                      [ngClass]="{ 'rotate-180': openId === section.id }"
                   ></i>
                </button>

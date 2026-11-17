@@ -9,6 +9,7 @@ const (
 	EnvDBHost       string = "DB_HOST"
 	EnvEnv          string = "ENV"
 	EnvAllowOrigins string = "ALLOW_ORIGINS"
+	EnvUploadsDir   string = "UPLOADS_DIR"
 
 	EnvValDevelopment string = "DEVELOPMENT"
 )

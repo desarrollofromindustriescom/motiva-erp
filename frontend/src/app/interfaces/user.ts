@@ -108,6 +108,8 @@ export interface UserRow {
    profile: UserProfile;
    created_at: string;
    status: Status;
+   // the investor has a cancellation request waiting for an answer
+   pending_cancellation: boolean;
 }
 
 export interface UsersPage {

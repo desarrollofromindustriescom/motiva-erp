@@ -77,6 +77,8 @@ type UserRowPreview struct {
 	Profile   string             `json:"profile"`
 	CreatedAt time.Time          `json:"created_at"`
 	Status    *UserStatusPreview `json:"status"`
+	// the investor has a cancellation request waiting for an answer
+	PendingCancellation bool `json:"pending_cancellation"`
 }
 
 type UsersPagePreview struct {
