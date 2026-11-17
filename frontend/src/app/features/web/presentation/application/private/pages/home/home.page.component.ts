@@ -6,6 +6,7 @@ import { HOME_I18N_KEYS } from '../../../../../../data/repository/home.repositor
 import { ApplicationModule, NavigationRoute } from '../../../../../../../interfaces/navigation';
 import { AuthorizedDirective } from '../../../../../utilities/directives/authorized.directive';
 import { TitleCasePipe } from '@angular/common';
+import { navTitle } from '../../../../../../data/repository/navigation.repository';
 
 @Component({
    selector: 'fi-home-page-component',
@@ -38,7 +39,7 @@ import { TitleCasePipe } from '@angular/common';
                      </div>
                      <span
                         class="text-main/60 text-center text-sm transition-all group-hover:text-white sm:text-base"
-                        >{{ nav.module | translate }}</span
+                        >{{ title(nav) | translate }}</span
                      >
                   </button>
                </article>
@@ -60,6 +61,10 @@ export class HomePageComponent {
    });
 
    constructor() {}
+
+   public title(nav: NavigationRoute): string {
+      return navTitle(nav, this._session.session?.profile);
+   }
 
    public handleNavigate(params: { module: ApplicationModule }): void {
       this._navigation.updateModule(params);

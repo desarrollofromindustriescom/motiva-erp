@@ -71,6 +71,9 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationApprove), middleware.Authorize(handlers.ApproveCancellation, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationReject), middleware.Authorize(handlers.RejectCancellation, usersProfiles...))
 
+	// Panel of the investor: its own balance
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteInvestorBalance), middleware.Authorize(handlers.GetMyBalance, repository.ProfileInvestor))
+
 	root.Handle(repository.RouteMain, middleware.Pipeline(api, nil))
 
 	// Endpoints with files need more time to read the request, so they use their

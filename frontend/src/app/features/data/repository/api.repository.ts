@@ -32,6 +32,7 @@ export const API_ROUTES: Record<
    INVESTORBALANCE: '/users/',
    INVESTMENTS: '/users/',
    CANCELLATIONS: '/users/',
+   MYBALANCE: '/investor/balance',
    CYCLES: '/cash-balance/cycles',
    CHANGEPASSWORD: '/users/change-password',
    LOGOUT: '/users/logout',

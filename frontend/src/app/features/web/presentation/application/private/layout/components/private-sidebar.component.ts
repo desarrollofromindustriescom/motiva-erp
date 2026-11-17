@@ -1,11 +1,14 @@
 import { NgClass } from '@angular/common';
-import { Component, input, InputSignal, output, OutputEmitterRef } from '@angular/core';
+import { Component, computed, inject, input, InputSignal, output, OutputEmitterRef, Signal } from '@angular/core';
 import { ApplicationModule, NavigationRoute } from '../../../../../../../interfaces/navigation';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthorizedDirective } from '../../../../../utilities/directives/authorized.directive';
 import { SidebarSection } from '../../../../../../../interfaces/sidebar';
 import { PrivateSectionsComponent } from './private-sections.component';
 import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.repository';
+import { navTitle } from '../../../../../../data/repository/navigation.repository';
+import { SessionService } from '../../../../../../data/services/session.service';
+import { UserProfile } from '../../../../../../../interfaces/user';
 
 @Component({
    selector: 'fi-private-sidebar-component',
@@ -39,7 +42,7 @@ import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.reposit
                         }"
                      >
                         <i [class]="'bx text-2xl ' + nav.icon"></i>
-                        <span class="text-base">{{ nav.module | translate }}</span>
+                        <span class="text-base">{{ title(nav) | translate }}</span>
                      </button>
                   </li>
                }
@@ -70,7 +73,10 @@ import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.reposit
    `,
 })
 export class PrivateSidebarComponent {
+   private readonly _session: SessionService = inject(SessionService);
+
    public readonly I18N = FORMS_I18N_KEYS;
+   public readonly $profile: Signal<UserProfile | undefined> = computed(() => this._session.session?.profile);
 
    public $navModules: InputSignal<NavigationRoute[]> = input([] as NavigationRoute[], { alias: 'navModules' });
    public $currentModule: InputSignal<ApplicationModule> = input.required({ alias: 'currentModule' });
@@ -79,4 +85,8 @@ export class PrivateSidebarComponent {
    public $navigate: OutputEmitterRef<{ module: ApplicationModule }> = output({ alias: 'navigate' });
    public $close: OutputEmitterRef<void> = output({ alias: 'close' });
    public $logout: OutputEmitterRef<void> = output({ alias: 'logout' });
+
+   public title(nav: NavigationRoute): string {
+      return navTitle(nav, this.$profile());
+   }
 }

@@ -1,8 +1,11 @@
-import { Component, input, InputSignal, output, OutputEmitterRef } from '@angular/core';
+import { Component, computed, inject, input, InputSignal, output, OutputEmitterRef, Signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ApplicationModule, NavigationRoute } from '../../../../../../../interfaces/navigation';
 import { ASSETS_DIR, ICONS } from '../../../../../../data/repository/assets.repository';
 import { TooltipModule } from 'primeng/tooltip';
+import { navTitle } from '../../../../../../data/repository/navigation.repository';
+import { SessionService } from '../../../../../../data/services/session.service';
+import { UserProfile } from '../../../../../../../interfaces/user';
 
 @Component({
    selector: 'fi-private-header-component',
@@ -24,7 +27,7 @@ import { TooltipModule } from 'primeng/tooltip';
                <i class="bx bx-menu text-2xl"></i>
             </button>
             <h1 class="truncate text-lg font-medium text-white sm:text-xl">
-               {{ navModulesBuffer[currentModule].module | translate }}
+               {{ title(navModulesBuffer[currentModule]) | translate }}
             </h1>
          </div>
          <div class="flex shrink-0 items-center gap-2">
@@ -39,8 +42,12 @@ import { TooltipModule } from 'primeng/tooltip';
    `,
 })
 export class PrivateHeaderComponent {
+   private readonly _session: SessionService = inject(SessionService);
+
    public readonly ASSETS_DIR = ASSETS_DIR;
    public readonly ICONS = ICONS;
+
+   public readonly $profile: Signal<UserProfile | undefined> = computed(() => this._session.session?.profile);
 
    public $currentModule: InputSignal<ApplicationModule> = input.required({ alias: 'currentModule' });
    public $navModulesBuffer: InputSignal<Record<ApplicationModule, NavigationRoute>> = input.required({
@@ -50,4 +57,8 @@ export class PrivateHeaderComponent {
    public $toggleSidebar: OutputEmitterRef<void> = output({ alias: 'toggleSidebar' });
 
    constructor() {}
+
+   public title(nav: NavigationRoute): string {
+      return navTitle(nav, this.$profile());
+   }
 }

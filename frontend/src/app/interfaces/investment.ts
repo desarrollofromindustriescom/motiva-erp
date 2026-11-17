@@ -1,6 +1,6 @@
 import { Status } from './status';
 
-export type InvestmentsRoutes = 'cycles' | 'investments' | 'cancellations';
+export type InvestmentsRoutes = 'cycles' | 'investments' | 'cancellations' | 'myBalance';
 
 export interface CashCycle {
    id: string;

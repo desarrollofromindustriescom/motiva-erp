@@ -23,6 +23,7 @@ export class NavigationService {
          route: PATHS.DASHBOARD,
          slug: APPLICATION_MODULES.DASHBOARD,
          module: DASHBOARD_I18N_KEYS.MODULE_TITLE,
+         titles: { investor: DASHBOARD_I18N_KEYS.INVESTOR_TITLE },
          allowed: {
             borrower: true,
             investor: true,

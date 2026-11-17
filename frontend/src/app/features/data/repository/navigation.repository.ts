@@ -1,4 +1,5 @@
-import { ApplicationModule } from '../../../interfaces/navigation';
+import { ApplicationModule, NavigationRoute } from '../../../interfaces/navigation';
+import { UserProfile } from '../../../interfaces/user';
 
 export const APPLICATION_MODULES: Record<Uppercase<ApplicationModule>, ApplicationModule> = {
    HOME: 'home',
@@ -23,3 +24,11 @@ export const PATHS = {
    DASHBOARD: 'dashboard',
    ALL_ROUTES: '**',
 };
+
+/**
+ * Title (translation key) of a module for a profile: some modules have their own
+ * name for a profile, ex: the dashboard is the panel of the investor
+ */
+export function navTitle(route: NavigationRoute, profile: UserProfile | undefined): string {
+   return (profile && route.titles?.[profile]) || route.module;
+}

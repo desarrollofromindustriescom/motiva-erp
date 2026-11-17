@@ -505,3 +505,38 @@ func QueryInvestmentMovements(response http.ResponseWriter, request *http.Reques
 	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(preview)
 }
+
+/**
+ * Cash balance of the investor that makes the request (its own panel). It
+ * receives no id, so an investor can only read its own data.
+ */
+func GetMyBalance(response http.ResponseWriter, request *http.Request) {
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	balance, err := cashbalance.GetInvestorBalance(ctx, currentSession.User.ID, repository.UsrAllProfiles)
+
+	if err != nil {
+		if errors.Is(err, repository.CbErrNotFound) {
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+			return
+		}
+
+		slog.Error("Error getting the balance of the investor",
+			"event", "handlers.GetMyBalance.GetInvestorBalance",
+			"error", err,
+		)
+
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	preview := &controller.EpPreview[controller.InvestorBalancePreview]{
+		Success: true,
+		Data:    balance,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}

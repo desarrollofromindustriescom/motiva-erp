@@ -25,6 +25,7 @@ const (
 	RouteLogout                   string = "/api/users/logout"
 	RouteSettings                 string = "/api/settings"
 	RouteCashBalance              string = "/api/cash-balance"
+	RouteInvestorBalance          string = "/api/investor/balance"
 	RouteCashCycles               string = "/api/cash-balance/cycles"
 	RouteCashMovements            string = "/api/cash-balance/movements"
 	RouteCashDeposit              string = "/api/cash-balance/deposit"
