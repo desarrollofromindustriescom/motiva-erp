@@ -24,6 +24,7 @@ import { LoansTableComponent } from './components/loans-table.component';
    template: `<fi-loans-table-component
       class="flex flex-auto flex-col"
       (details)="handleDetails({ loan: $event })"
+      (edit)="handleEdit({ loan: $event })"
    />`,
 })
 export class LoansPageComponent {
@@ -82,6 +83,22 @@ export class LoansPageComponent {
          titleParams: { folio: compactFolio(loan.folio) },
          component: LoanDetailDialogComponent,
          size: 'sm',
+      });
+   }
+
+   /**
+    * Continues a pending loan in the same dialog of a new one, with its data
+    */
+   public handleEdit({ loan }: { loan: LoanRow }): void {
+      this._creation.startEdit({ id: loan.id }).then((done: boolean) => {
+         if (!done) return;
+
+         this._dialogs.newDialog({
+            title: DIALOG_I18N_KEYS.EDIT_LOAN_TITLE,
+            titleParams: { folio: compactFolio(loan.folio) },
+            component: LoanCreateDialogComponent,
+            size: 'lg',
+         });
       });
    }
 }

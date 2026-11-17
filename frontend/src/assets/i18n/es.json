@@ -350,7 +350,7 @@
    "LOANS_EMPTY": "No hay préstamos que mostrar",
    "LOANS_TOOLTIP_DETAILS": "Detalles",
    "LOANS_TOOLTIP_PAYMENTS": "Pagos",
-   "LOANS_TOOLTIP_EDIT": "Editar",
+   "LOANS_TOOLTIP_EDIT": "Continuar préstamo",
    "LOANS_TOOLTIP_PAY": "Registrar pago",
    "LOANS_STATUS_PENDING": "Pendiente",
    "LOANS_STATUS_ACTIVE": "Al corriente",
@@ -390,5 +390,6 @@
    "LOANS_DETAIL_PAID_INTEREST_COMMISSION": "Monto abonado de interés a comisión",
    "LOANS_DETAIL_CURRENT": "Monto actual",
    "LOANS_BUTTON_PAY": "Abonar",
-   "LOANS_BUTTON_PAYMENTS": "Ver pagos"
+   "LOANS_BUTTON_PAYMENTS": "Ver pagos",
+   "DIALOG_EDIT_LOAN_TITLE": "Continuar préstamo {{folio}}"
 }

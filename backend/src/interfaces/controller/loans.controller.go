@@ -162,10 +162,12 @@ type LoanLenderPreview struct {
 }
 
 type LoanBorrowerDetailPreview struct {
-	Fullname    string  `json:"fullname"`
-	PhoneNumber *string `json:"phone_number"`
-	CURP        *string `json:"curp"`
-	Address     *string `json:"address"`
+	ID          uuid.UUID `json:"id"`
+	Fullname    string    `json:"fullname"`
+	Username    string    `json:"username"`
+	PhoneNumber *string   `json:"phone_number"`
+	CURP        *string   `json:"curp"`
+	Address     *string   `json:"address"`
 }
 
 type LoanDetailPreview struct {

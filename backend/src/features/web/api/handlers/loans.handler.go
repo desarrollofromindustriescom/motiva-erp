@@ -140,3 +140,28 @@ func GetLoan(response http.ResponseWriter, request *http.Request) {
 
 	writeLoanResult(response, request, "handlers.GetLoan.GetByID", http.StatusOK, loan, err)
 }
+
+/**
+ * Changes a pending loan & continues it: it stays pending or, with funds, it is approved
+ */
+func UpdateLoan(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payload, ok := readPayload[controller.NewLoanPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	loan, err := loans.Update(ctx, currentSession.User, id, payload)
+
+	writeLoanResult(response, request, "handlers.UpdateLoan.Update", http.StatusOK, loan, err)
+}

@@ -60,6 +60,18 @@ const (
 		WHERE settings.id = $1
 	`
 
+	// a pending loan keeps its folio & request date
+	LnQryUpdate string = `--sql
+		UPDATE loans
+		SET
+			amount = $2,
+			type = $3::loan_type,
+			no_payments = $4,
+			rate_settings_id = $5,
+			request_user_id = $6
+		WHERE id = $1
+	`
+
 	// the borrower is the user that requests the loan, the one that approves it is the resolver
 	LnQryInsert string = `--sql
 		INSERT INTO loans (
@@ -376,7 +388,9 @@ const (
 			loans.no_payments,
 			loans.request_date,
 			loans.resolution_date,
+			borrowers.id,
 			borrowers.fullname,
+			borrowers.username,
 			borrowers.phone_number,
 			borrowers.curp,
 			borrowers.address` + lnFromOne + `

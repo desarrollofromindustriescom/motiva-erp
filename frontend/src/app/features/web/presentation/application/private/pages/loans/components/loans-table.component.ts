@@ -83,11 +83,12 @@ interface RowAction {
                         >
                            @for (action of actions; track action.id) {
                               <button
-                                 class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all"
+                                 class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all disabled:cursor-auto disabled:bg-slate-300"
                                  type="button"
                                  tooltipPosition="top"
                                  [pTooltip]="action.tooltip | translate"
                                  [showDelay]="1500"
+                                 [disabled]="!enabled({ action, loan })"
                                  (click)="handleAction({ action, loan })"
                               >
                                  <i [class]="'bx text-lg text-white ' + action.icon"></i>
@@ -131,7 +132,7 @@ export class LoansTableComponent {
    public readonly STATUS_COLORS: Record<string, string> = LOAN_STATUS_COLORS;
    public readonly $size: number = this._list.size;
 
-   // only the details are available for now
+   // the details are always available, continuing a loan only while it is pending
    public readonly actions: RowAction[] = [
       { id: 'details', icon: 'bx-file-detail', tooltip: LOANS_I18N_KEYS.TOOLTIP_DETAILS },
       { id: 'payments', icon: 'bx-currency-notes', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAYMENTS },
@@ -140,6 +141,7 @@ export class LoansTableComponent {
    ];
 
    public $details: OutputEmitterRef<LoanRow> = output({ alias: 'details' });
+   public $edit: OutputEmitterRef<LoanRow> = output({ alias: 'edit' });
 
    public readonly $loans: Signal<LoanRow[]> = computed(() => this._list.loans);
    public readonly $total: Signal<number> = computed(() => this._list.total);
@@ -151,8 +153,13 @@ export class LoansTableComponent {
       return compactFolio(loan.folio);
    }
 
+   public enabled({ action, loan }: { action: RowAction; loan: LoanRow }): boolean {
+      return action.id !== 'edit' || loan.status.slug === 'pending';
+   }
+
    public handleAction({ action, loan }: { action: RowAction; loan: LoanRow }): void {
       if (action.id === 'details') this.$details.emit(loan);
+      if (action.id === 'edit') this.$edit.emit(loan);
    }
 
    public handlePage(event: PaginatorState): void {

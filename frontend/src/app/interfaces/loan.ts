@@ -1,4 +1,4 @@
-export type LoansRoutes = 'loanFunds' | 'createLoan' | 'approveLoan' | 'listLoans' | 'getLoan';
+export type LoansRoutes = 'loanFunds' | 'createLoan' | 'approveLoan' | 'listLoans' | 'getLoan' | 'updateLoan';
 
 export type LoanType = 'weekly' | 'monthly';
 
@@ -104,7 +104,14 @@ export interface LoanDetail {
    paid_capital: number;
    paid_interest: number;
    current: number;
-   borrower: { fullname: string; phone_number: string | null; curp: string | null; address: string | null };
+   borrower: {
+      id: string;
+      fullname: string;
+      username: string;
+      phone_number: string | null;
+      curp: string | null;
+      address: string | null;
+   };
    general: LoanLender | null;
    investors: LoanLender[];
 }

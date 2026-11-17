@@ -410,6 +410,20 @@ func preview(id uuid.UUID, number string, amount int64, loanType string, noPayme
  * the funds & the loan is active, with the user that approves as its resolver.
  */
 func Create(ctx context.Context, executor *models.User, payload *controller.NewLoanPayload) (*controller.LoanPreview, error) {
+	return save(ctx, executor, payload, nil)
+}
+
+/**
+ * Changes a pending loan (borrower, amount, type & number of payments, ex: because the
+ * borrower or the lenders changed) & continues it: without funds it stays pending, with
+ * them it is approved the same way as a new one. It keeps its folio & request date.
+ */
+func Update(ctx context.Context, executor *models.User, id uuid.UUID, payload *controller.NewLoanPayload) (*controller.LoanPreview, error) {
+	return save(ctx, executor, payload, &id)
+}
+
+// registers a new loan or, with an id, replaces the data of a pending one
+func save(ctx context.Context, executor *models.User, payload *controller.NewLoanPayload, existing *uuid.UUID) (*controller.LoanPreview, error) {
 	amount, ok := toCents(payload.Amount)
 
 	if !ok {
@@ -462,18 +476,34 @@ func Create(ctx context.Context, executor *models.User, payload *controller.NewL
 		return nil, repository.LnErrAmountTooLarge
 	}
 
-	number, err := folio.NextLoan(ctx, tx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var loanID uuid.UUID
+	var (
+		loanID uuid.UUID
+		number string
+	)
 
 	now := time.Now()
 
-	if err = tx.QueryRow(ctx, repository.LnQryInsert, number, now, int(amount), payload.Type, payload.NoPayments, interest.id, borrowerID).Scan(&loanID); err != nil {
-		return nil, err
+	if existing == nil {
+		if number, err = folio.NextLoan(ctx, tx); err != nil {
+			return nil, err
+		}
+
+		if err = tx.QueryRow(ctx, repository.LnQryInsert, number, now, int(amount), payload.Type, payload.NoPayments, interest.id, borrowerID).Scan(&loanID); err != nil {
+			return nil, err
+		}
+	} else {
+		// only a pending loan can change, it is locked so it can't be approved at the same time
+		if err = tx.QueryRow(ctx, repository.LnQryLockPending, *existing).Scan(&loanID, &number, new(int), new(string), new(int), new(uuid.UUID)); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, repository.LnErrNotPending
+			}
+
+			return nil, err
+		}
+
+		if _, err = tx.Exec(ctx, repository.LnQryUpdate, loanID, int(amount), payload.Type, payload.NoPayments, interest.id, borrowerID); err != nil {
+			return nil, err
+		}
 	}
 
 	status := "pending"
@@ -732,7 +762,9 @@ func GetByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, 
 		&detail.NoPayments,
 		&detail.RequestDate,
 		&detail.ResolutionDate,
+		&detail.Borrower.ID,
 		&detail.Borrower.Fullname,
+		&detail.Borrower.Username,
 		&detail.Borrower.PhoneNumber,
 		&detail.Borrower.CURP,
 		&detail.Borrower.Address,

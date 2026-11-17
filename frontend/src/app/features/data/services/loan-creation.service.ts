@@ -7,6 +7,7 @@ import { FormSchema, SignalForm } from '../../../interfaces/alias';
 import {
    FieldsLoan,
    Loan,
+   LoanDetail,
    LoanFundChoice,
    LoanFunds,
    LoanInvestorFund,
@@ -49,13 +50,16 @@ export class LoanCreationService {
    private readonly _dialogs: DialogsService = inject(DialogsService);
    private readonly _list: LoansListService = inject(LoansListService);
 
-   private readonly routes: Record<'users' | 'funds' | 'create', EndpointData> = {
+   private readonly routes: Record<'users' | 'funds' | 'create' | 'detail', EndpointData> = {
       users: { route: API_ROUTES.LISTUSERS, method: HTTP_METHODS.QUERY },
       funds: { route: API_ROUTES.LOANFUNDS, method: HTTP_METHODS.QUERY },
       create: { route: API_ROUTES.CREATELOAN, method: HTTP_METHODS.POST },
+      detail: { route: API_ROUTES.GETLOAN, method: HTTP_METHODS.GET },
    };
 
    private readonly $active: WritableSignal<boolean> = signal(false);
+   // pending loan that is being continued, none when the loan is new
+   private readonly $editId: WritableSignal<string | null> = signal(null);
    private readonly $saving: WritableSignal<boolean> = signal(false);
    private readonly $model: WritableSignal<FieldsLoan> = signal({ ...EMPTY_MODEL });
 
@@ -224,6 +228,7 @@ export class LoanCreationService {
     * Empty form & borrowers to start a new loan
     */
    public start(): void {
+      this.$editId.set(null);
       clearTimeout(this.searchTimer);
       this.searchVersion++;
       this.$form().reset({ ...EMPTY_MODEL });
@@ -233,6 +238,50 @@ export class LoanCreationService {
       this.$saving.set(false);
       this.$active.set(true);
       this.loadBorrowers({ search: '' });
+   }
+
+   /**
+    * Continues a pending loan: the form starts with its data (all of it can change) & the
+    * money isn't chosen yet. Returns false when the loan couldn't be read.
+    */
+   public async startEdit({ id }: { id: string }): Promise<boolean> {
+      const { route, method } = this.routes.detail;
+      const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
+
+      this._dialogs.loading = true;
+
+      try {
+         const loan: LoanDetail = await firstValueFrom(
+            this._http.request<LoanDetail>(method, `${environment.apiUrl}${route}${id}`, { context }),
+         );
+
+         this.start();
+         this.$editId.set(id);
+         this.$form().reset({
+            borrower_id: loan.borrower.id,
+            amount: loan.amount,
+            type: loan.type,
+            no_payments: loan.no_payments,
+         });
+         // the selector shows the borrower of the loan even before the list arrives
+         this.$borrower.set({
+            id: loan.borrower.id,
+            fullname: loan.borrower.fullname,
+            username: loan.borrower.username,
+            curp: loan.borrower.curp,
+            profile: 'borrower',
+            created_at: loan.request_date,
+            status: { id: '', slug: 'active', title: '' },
+            pending_cancellation: false,
+         });
+
+         return true;
+      } catch {
+         // the error interceptor already notifies the user
+         return false;
+      } finally {
+         this._dialogs.loading = false;
+      }
    }
 
    /**
@@ -401,12 +450,16 @@ export class LoanCreationService {
          }
 
          const { route, method } = this.routes.create;
+         const editing: string | null = this.$editId();
+         const url: string = editing
+            ? `${environment.apiUrl}${API_ROUTES.UPDATELOAN}${editing}`
+            : `${environment.apiUrl}${route}`;
 
          this.$saving.set(true);
          this._dialogs.loading = true;
 
          try {
-            await firstValueFrom(this._http.request<Loan>(method, `${environment.apiUrl}${route}`, { body }));
+            await firstValueFrom(this._http.request<Loan>(editing ? HTTP_METHODS.PUT : method, url, { body }));
 
             this.$saving.set(false);
             this._dialogs.loading = false;
