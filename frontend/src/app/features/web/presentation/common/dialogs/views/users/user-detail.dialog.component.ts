@@ -3,6 +3,7 @@ import { Component, computed, effect, inject, Signal, untracked } from '@angular
 import { TranslatePipe } from '@ngx-translate/core';
 import { EditableProfile, UserActionId, UserDetail } from '../../../../../../../interfaces/user';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
+import { InvestorBalanceService } from '../../../../../../data/services/investor-balance.service';
 import { UserPasswordService } from '../../../../../../data/services/user-password.service';
 import { UserEditService } from '../../../../../../data/services/user-edit.service';
 import { UserDeletionService } from '../../../../../../data/services/user-deletion.service';
@@ -12,6 +13,7 @@ import { DIALOG_I18N_KEYS, USER_EDIT_TITLES } from '../../../../../../data/repos
 import { USERS_ACTION_RULES, USERS_I18N_KEYS } from '../../../../../../data/repository/users.repository';
 import { UserEditDialogComponent } from './user-edit.dialog.component';
 import { UserPasswordDialogComponent } from './user-password.dialog.component';
+import { InvestorBalanceDialogComponent } from '../investments/investor-balance.dialog.component';
 import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pipe';
 
 interface DetailRow {
@@ -144,6 +146,7 @@ export class UserDetailDialogComponent {
    private readonly _deletion: UserDeletionService = inject(UserDeletionService);
    private readonly _edit: UserEditService = inject(UserEditService);
    private readonly _password: UserPasswordService = inject(UserPasswordService);
+   private readonly _balance: InvestorBalanceService = inject(InvestorBalanceService);
 
    private readonly phone: PhoneFormatPipe = new PhoneFormatPipe();
    private readonly date: DatePipe = new DatePipe('en-US');
@@ -238,6 +241,11 @@ export class UserDetailDialogComponent {
 
    public handleAction({ action, user }: { action: DetailAction; user: UserDetail }): void {
       if (action.id === 'delete') this._deletion.delete({ id: user.id });
+
+      if (action.id === 'wallet') {
+         this._balance.open({ id: user.id });
+         this._dialogs.newDialog({ title: '', component: InvestorBalanceDialogComponent, size: 'lg' });
+      }
 
       if (action.id === 'password') {
          this._password.regenerate({ id: user.id }).then((done: boolean) => {

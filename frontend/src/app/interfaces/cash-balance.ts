@@ -10,6 +10,13 @@ export interface CashBalance {
    last_update: string;
 }
 
+export interface InvestorBalance {
+   fullname: string;
+   since: string;
+   amount: number;
+   last_update: string;
+}
+
 export interface CashBalanceLoader {
    balance: boolean;
    deposit: boolean;

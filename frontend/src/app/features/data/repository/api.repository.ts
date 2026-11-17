@@ -28,6 +28,7 @@ export const API_ROUTES: Record<
    DELETEUSER: '/users/',
    UPDATEUSER: '/users/',
    REGENERATEPASSWORD: '/users/',
+   INVESTORBALANCE: '/users/',
    CHANGEPASSWORD: '/users/change-password',
    LOGOUT: '/users/logout',
    SESSIONS: '/users/sessions',

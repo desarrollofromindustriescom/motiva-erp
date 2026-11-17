@@ -12,6 +12,7 @@ import {
 import { SIDEBAR_OPTIONS, SIDEBAR_SECTIONS } from '../../../../../../data/repository/sidebar.repository';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { SidebarService } from '../../../../../../data/services/sidebar.service';
+import { InvestorBalanceService } from '../../../../../../data/services/investor-balance.service';
 import { UserPasswordService } from '../../../../../../data/services/user-password.service';
 import { UserEditService } from '../../../../../../data/services/user-edit.service';
 import { UserDetailService } from '../../../../../../data/services/user-detail.service';
@@ -19,6 +20,7 @@ import { UserCreationService } from '../../../../../../data/services/user-creati
 import { UsersTableComponent } from './components/users-table.component';
 import { UsersListService } from '../../../../../../data/services/users-list.service';
 import { SidebarFiltersEvent } from '../../../../../../../interfaces/sidebar';
+import { InvestorBalanceDialogComponent } from '../../../../common/dialogs/views/investments/investor-balance.dialog.component';
 import { UserPasswordDialogComponent } from '../../../../common/dialogs/views/users/user-password.dialog.component';
 import { UserEditDialogComponent } from '../../../../common/dialogs/views/users/user-edit.dialog.component';
 import { UserDetailDialogComponent } from '../../../../common/dialogs/views/users/user-detail.dialog.component';
@@ -43,6 +45,7 @@ const NEW_USER_OPTIONS: Record<string, { profile: CreatableProfile; title: strin
       (details)="handleDetails({ user: $event })"
       (edit)="handleEdit({ user: $event })"
       (password)="handlePassword({ user: $event })"
+      (wallet)="handleBalance({ user: $event })"
    />`,
 })
 export class UsersPageComponent {
@@ -53,6 +56,7 @@ export class UsersPageComponent {
    private readonly _detail: UserDetailService = inject(UserDetailService);
    private readonly _edit: UserEditService = inject(UserEditService);
    private readonly _password: UserPasswordService = inject(UserPasswordService);
+   private readonly _balance: InvestorBalanceService = inject(InvestorBalanceService);
 
    constructor() {
       // filters are never active when entering the page
@@ -117,5 +121,11 @@ export class UsersPageComponent {
             size: 'sm',
          });
       });
+   }
+
+   public handleBalance({ user }: { user: UserRow }): void {
+      this._balance.open({ id: user.id });
+      // the dialog has no title, the name of the investor is part of its content
+      this._dialogs.newDialog({ title: '', component: InvestorBalanceDialogComponent, size: 'lg' });
    }
 }

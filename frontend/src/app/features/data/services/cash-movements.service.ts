@@ -8,9 +8,9 @@ import { environment } from '../../../../environments/environment.development';
 import { SessionService } from './session.service';
 
 /**
- * Movements of the general cash balance. Data is only requested after
- * `open()` is called (when the movements dialog is opened) and it's kept
- * while the user goes to the detail dialog & comes back.
+ * Movements of the general cash balance or of the balance of an investor. Data is
+ * only requested after `open()` is called (when the movements dialog is opened) and
+ * it's kept while the user goes to the detail dialog & comes back.
  */
 @Injectable({ providedIn: 'root' })
 export class CashMovementsService {
@@ -21,6 +21,8 @@ export class CashMovementsService {
    };
 
    private readonly $active: WritableSignal<boolean> = signal(false);
+   // movements of the balance of an investor, or of the general balance when there is none
+   private readonly $investorId: WritableSignal<string | null> = signal(null);
    private readonly $version: WritableSignal<number> = signal(0);
    private readonly $page: WritableSignal<number> = signal(1);
    private readonly $selected: WritableSignal<Movement | null> = signal(null);
@@ -33,10 +35,14 @@ export class CashMovementsService {
          this.$version();
 
          const { route, method } = this.routes.movements;
+         const investorId: string | null = this.$investorId();
          const body: MovementsQuery = { page: this.$page(), size: MOVEMENTS_PAGE_SIZE };
          const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
+         const url: string = investorId
+            ? `${environment.apiUrl}${API_ROUTES.INVESTORBALANCE}${investorId}/balance/movements`
+            : `${environment.apiUrl}${route}`;
 
-         return { url: `${environment.apiUrl}${route}`, method, body, context };
+         return { url, method, body, context };
       },
    );
 
@@ -73,9 +79,11 @@ export class CashMovementsService {
    }
 
    /**
-    * Starts a fresh query from the first page
+    * Starts a fresh query from the first page, for the general balance or,
+    * when an investor is given, for its own balance
     */
-   public open(): void {
+   public open({ investorId }: { investorId?: string } = {}): void {
+      this.$investorId.set(investorId ?? null);
       this.$page.set(1);
       this.$active.set(true);
       this.$version.update((version: number) => version + 1);

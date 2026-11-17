@@ -47,3 +47,14 @@ type MovementsPagePreview struct {
 	Page  int                `json:"page"`
 	Size  int                `json:"size"`
 }
+
+/**
+ * Cash balance of an investor with the data shown on its header,
+ * amount is in currency units (stored in cents)
+ */
+type InvestorBalancePreview struct {
+	Fullname   string    `json:"fullname"`
+	Since      time.Time `json:"since"`
+	Amount     float64   `json:"amount"`
+	LastUpdate time.Time `json:"last_update"`
+}

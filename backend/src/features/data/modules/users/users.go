@@ -473,12 +473,18 @@ func Create(ctx context.Context, payload *controller.CreateUserPayload) (*contro
 
 	preview := &controller.CreatedUserPreview{Password: password}
 
+	query := repository.UsrQryCreate
+
+	if isInvestor {
+		query = repository.UsrQryCreateInvestor
+	}
+
 	for range repository.UsrMaxUsernameAttempts {
 		username := buildUsername(payload.Fullname, payload.Profile)
 
 		err = database.GetPool().QueryRow(
 			ctx,
-			repository.UsrQryCreate,
+			query,
 			payload.Fullname,
 			username,
 			string(hash),

@@ -9,6 +9,7 @@ import (
 
 	"motiva-erp/backend/src/features/data/database"
 	"motiva-erp/backend/src/features/data/modules/folio"
+	"motiva-erp/backend/src/features/data/modules/users"
 	"motiva-erp/backend/src/features/data/repository"
 	"motiva-erp/backend/src/interfaces/controller"
 	"motiva-erp/backend/src/interfaces/models"
@@ -43,13 +44,14 @@ func GetGeneralBalance(ctx context.Context) (*controller.CashBalancePreview, err
 }
 
 /**
- * Deposit or withdrawal on the general balance, in one transaction:
+ * Deposit or withdrawal on a balance (the general one when there is no owner,
+ * or the one of an investor), in one transaction:
  * - locks the balance row so movements are applied one by one
  * - validates the new amount (withdrawal can't exceed the balance)
  * - updates the balance & creates the movement with its folio
  * Movement has no origin payment nor target loan
  */
-func CreateMovement(ctx context.Context, user *models.User, movement string, amount float64) (*controller.CashBalancePreview, error) {
+func CreateMovement(ctx context.Context, user *models.User, ownerID *uuid.UUID, movement string, amount float64) (*controller.CashBalancePreview, error) {
 	cents := int(math.Round(amount * 100))
 
 	tx, err := database.GetPool().Begin(ctx)
@@ -65,7 +67,7 @@ func CreateMovement(ctx context.Context, user *models.User, movement string, amo
 		current   int
 	)
 
-	if err = tx.QueryRow(ctx, repository.CbQryLockGeneralBalance).Scan(&balanceID, &current); err != nil {
+	if err = tx.QueryRow(ctx, repository.CbQryLockBalance, ownerID).Scan(&balanceID, &current); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repository.CbErrNotFound
 		}
@@ -117,7 +119,7 @@ func CreateMovement(ctx context.Context, user *models.User, movement string, amo
  * Page of general balance movements, newest first. Each item
  * carries its external references (status & user who executed it)
  */
-func GetMovements(ctx context.Context, page int, size int) (*controller.MovementsPagePreview, error) {
+func GetMovements(ctx context.Context, ownerID *uuid.UUID, page int, size int) (*controller.MovementsPagePreview, error) {
 	pool := database.GetPool()
 	result := &controller.MovementsPagePreview{
 		Items: []*controller.MovementPreview{},
@@ -125,11 +127,11 @@ func GetMovements(ctx context.Context, page int, size int) (*controller.Movement
 		Size:  size,
 	}
 
-	if err := pool.QueryRow(ctx, repository.CbQryCountMovements).Scan(&result.Total); err != nil {
+	if err := pool.QueryRow(ctx, repository.CbQryCountMovements, ownerID).Scan(&result.Total); err != nil {
 		return nil, err
 	}
 
-	rows, err := pool.Query(ctx, repository.CbQryGetMovements, size, (page-1)*size)
+	rows, err := pool.Query(ctx, repository.CbQryGetMovements, ownerID, size, (page-1)*size)
 
 	if err != nil {
 		return nil, err
@@ -169,4 +171,92 @@ func GetMovements(ctx context.Context, page int, size int) (*controller.Movement
 	}
 
 	return result, rows.Err()
+}
+
+/**
+ * Investor whose balance is going to be used. Only users in the allowed
+ * profiles can be read, only investors have a balance and it is created
+ * when missing (legacy investors)
+ */
+func loadInvestor(ctx context.Context, id uuid.UUID, profiles []string) (*controller.UserDetailPreview, error) {
+	user, err := users.GetByID(ctx, id, profiles)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if user.Profile != repository.ProfileInvestor {
+		return nil, repository.CbErrNotInvestor
+	}
+
+	if _, err = database.GetPool().Exec(ctx, repository.CbQryEnsureInvestorBalance, id); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+/**
+ * Cash balance of an investor (amount is stored in cents)
+ */
+func GetInvestorBalance(ctx context.Context, id uuid.UUID, profiles []string) (*controller.InvestorBalancePreview, error) {
+	user, err := loadInvestor(ctx, id, profiles)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var amount int
+
+	preview := &controller.InvestorBalancePreview{Fullname: user.Fullname, Since: user.CreatedAt}
+
+	err = database.GetPool().QueryRow(ctx, repository.CbQryGetInvestorBalance, id).Scan(&amount, &preview.LastUpdate)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.CbErrNotFound
+		}
+
+		return nil, err
+	}
+
+	preview.Amount = float64(amount) / 100
+
+	return preview, nil
+}
+
+/**
+ * Deposit or withdrawal on the balance of an investor, returns the updated
+ * balance. The movement is registered with the user that executes it.
+ */
+func CreateInvestorMovement(ctx context.Context, executor *models.User, id uuid.UUID, profiles []string, movement string, amount float64) (*controller.InvestorBalancePreview, error) {
+	user, err := loadInvestor(ctx, id, profiles)
+
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := CreateMovement(ctx, executor, &id, movement, amount)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &controller.InvestorBalancePreview{
+		Fullname:   user.Fullname,
+		Since:      user.CreatedAt,
+		Amount:     balance.Amount,
+		LastUpdate: balance.LastUpdate,
+	}, nil
+}
+
+/**
+ * Page of the movements of the balance of an investor (newest first)
+ */
+func GetInvestorMovements(ctx context.Context, id uuid.UUID, profiles []string, page int, size int) (*controller.MovementsPagePreview, error) {
+	if _, err := loadInvestor(ctx, id, profiles); err != nil {
+		return nil, err
+	}
+
+	return GetMovements(ctx, &id, page, size)
 }

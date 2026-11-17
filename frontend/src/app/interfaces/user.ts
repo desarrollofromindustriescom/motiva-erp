@@ -14,6 +14,7 @@ export type UsersRoutes =
    | 'deleteUser'
    | 'updateUser'
    | 'regeneratePassword'
+   | 'investorBalance'
    | 'changePassword'
    | 'logout'
    | 'sessions'

@@ -160,6 +160,7 @@ export class UsersTableComponent {
    public $details: OutputEmitterRef<UserRow> = output({ alias: 'details' });
    public $edit: OutputEmitterRef<UserRow> = output({ alias: 'edit' });
    public $password: OutputEmitterRef<UserRow> = output({ alias: 'password' });
+   public $wallet: OutputEmitterRef<UserRow> = output({ alias: 'wallet' });
 
    public readonly $users: Signal<UserRow[]> = computed(() => this._list.users);
    public readonly $total: Signal<number> = computed(() => this._list.total);
@@ -180,6 +181,7 @@ export class UsersTableComponent {
       if (action.id === 'details') this.$details.emit(user);
       if (action.id === 'edit') this.$edit.emit(user);
       if (action.id === 'password') this.$password.emit(user);
+      if (action.id === 'wallet') this.$wallet.emit(user);
       if (action.id === 'delete') this._deletion.delete({ id: user.id });
    }
 

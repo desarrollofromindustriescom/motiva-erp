@@ -139,6 +139,33 @@ const (
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id
 	`
+	// same insert, plus the cash balance of the investor (amount in cents) in one statement,
+	// so the user & its balance are both created or none is
+	UsrQryCreateInvestor string = `--sql
+		WITH new_user AS (
+			INSERT INTO users (
+				fullname,
+				username,
+				password,
+				profile,
+				phone_number,
+				curp,
+				address,
+				guarantee_fullname,
+				guarantee_phone_number,
+				guarantee_address,
+				account_clabe,
+				account_bank
+			)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			RETURNING id
+		),
+		new_balance AS (
+			INSERT INTO cash_balances (amount, last_update, user_id)
+			SELECT 0, CURRENT_TIMESTAMP, id FROM new_user
+		)
+		SELECT id FROM new_user
+	`
 )
 
 /**
