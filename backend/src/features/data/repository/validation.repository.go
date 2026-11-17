@@ -13,6 +13,9 @@ const (
 	ValKeySecurePassword string = "securepassword"
 	ValKeyPercentage     string = "percentage"
 	ValKeyMonetary       string = "monetary"
+	ValKeyPhone          string = "phone"
+	ValKeyCURP           string = "curp"
+	ValKeyClabe          string = "clabe"
 
 	ValMimeJson     string = "application/json"
 	ValMimeFormData string = "multipart/form-data"

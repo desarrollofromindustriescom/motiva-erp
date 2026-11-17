@@ -35,6 +35,11 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsMonthly), middleware.Authorize(handlers.UpdateMonthlySettings, settingsProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteSettingsWeekly), middleware.Authorize(handlers.UpdateWeeklySettings, settingsProfiles...))
 
+	// Users module: superadmin, administrator & manager (a manager can only create investors & borrowers)
+	usersProfiles := []string{repository.ProfileSuperadmin, repository.ProfileAdministrator, repository.ProfileManager}
+
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUsers), middleware.Authorize(handlers.CreateUser, usersProfiles...))
+
 	root.Handle(repository.RouteMain, middleware.Pipeline(api, nil))
 
 	// TODO: Config for endpoints to allow files

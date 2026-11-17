@@ -5,10 +5,13 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"slices"
+	"strings"
 
 	"motiva-erp/backend/src/features/data/database"
 	"motiva-erp/backend/src/features/data/modules/authentication"
 	"motiva-erp/backend/src/features/data/modules/session"
+	"motiva-erp/backend/src/features/data/modules/users"
 	"motiva-erp/backend/src/features/data/repository"
 	"motiva-erp/backend/src/features/web/utilities/i18n"
 	"motiva-erp/backend/src/features/web/utilities/validation"
@@ -260,5 +263,114 @@ func RevokeSession(response http.ResponseWriter, request *http.Request) {
 
 	response.WriteHeader(http.StatusOK)
 	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Fields required by each profile (json names), guarantee fields
+ * are only required when the borrower has guarantee
+ */
+func missingUserFields(payload *controller.CreateUserPayload) []string {
+	required := map[string]string{"fullname": payload.Fullname}
+
+	switch payload.Profile {
+	case repository.ProfileInvestor:
+		required["phone_number"] = payload.PhoneNumber
+		required["curp"] = payload.CURP
+		required["account_clabe"] = payload.AccountClabe
+		required["account_bank"] = payload.AccountBank
+	case repository.ProfileBorrower:
+		required["phone_number"] = payload.PhoneNumber
+		required["curp"] = payload.CURP
+		required["address"] = payload.Address
+
+		if payload.WithGuarantee {
+			required["guarantee_fullname"] = payload.GuaranteeFullname
+			required["guarantee_phone_number"] = payload.GuaranteePhoneNumber
+			required["guarantee_address"] = payload.GuaranteeAddress
+		}
+	}
+
+	missing := []string{}
+
+	for field, value := range required {
+		if strings.TrimSpace(value) == "" {
+			missing = append(missing, field)
+		}
+	}
+
+	slices.Sort(missing)
+
+	return missing
+}
+
+/**
+ * Creates a user of any creatable profile & returns the generated
+ * credentials. A manager can only create investors & borrowers
+ */
+func CreateUser(response http.ResponseWriter, request *http.Request) {
+	payload, ok := readPayload[controller.CreateUserPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	if currentSession.User.Profile == repository.ProfileManager &&
+		!slices.Contains(repository.UsrManagerCreatableProfiles, payload.Profile) {
+		http.Error(response, repository.HttpForbidden, http.StatusForbidden)
+		return
+	}
+
+	payload.Fullname = strings.TrimSpace(payload.Fullname)
+	payload.Address = strings.TrimSpace(payload.Address)
+	payload.GuaranteeFullname = strings.TrimSpace(payload.GuaranteeFullname)
+	payload.GuaranteeAddress = strings.TrimSpace(payload.GuaranteeAddress)
+	payload.AccountBank = strings.TrimSpace(payload.AccountBank)
+
+	if missing := missingUserFields(payload); len(missing) > 0 {
+		lang := request.Header.Get(repository.HeadAcceptLanguage)
+		preview := &controller.EpPreview[struct{}]{
+			Error: &controller.EpError{
+				Message: i18n.Translate(lang, repository.ValI18nKeyFailFieldsValidation, nil),
+				Details: []*controller.ErrorDetails{},
+			},
+		}
+
+		for _, field := range missing {
+			preview.Error.Details = append(preview.Error.Details, &controller.ErrorDetails{
+				Field:  field,
+				Detail: i18n.Translate(lang, repository.ValI18nKeyFieldRequired, nil),
+			})
+		}
+
+		response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+		response.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(response).Encode(preview)
+		return
+	}
+
+	created, err := users.Create(ctx, payload)
+
+	if err != nil {
+		slog.Error("Error creating user",
+			"event", "handlers.CreateUser.Create",
+			"profile", payload.Profile,
+			"error", err,
+		)
+
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	preview := &controller.EpPreview[controller.CreatedUserPreview]{
+		Success: true,
+		Data:    created,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusCreated)
 	json.NewEncoder(response).Encode(preview)
 }

@@ -7,6 +7,7 @@ import { RouterOutlet } from '@angular/router';
    template: `
       <main class="flex size-full max-h-full flex-col gap-2 overflow-auto">
          <ng-content select="[header]" />
+         <ng-content select="[topSections]" />
 
          <section class="flex w-full flex-auto flex-col [&>*:nth-child(2)]:flex-auto">
             <router-outlet />

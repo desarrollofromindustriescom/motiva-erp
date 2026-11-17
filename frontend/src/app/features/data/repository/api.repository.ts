@@ -22,6 +22,7 @@ export const API_ROUTES: Record<
 > = {
    LOGIN: '/login',
    VALIDATE: '/validate',
+   CREATEUSER: '/users',
    CHANGEPASSWORD: '/users/change-password',
    LOGOUT: '/users/logout',
    SESSIONS: '/users/sessions',

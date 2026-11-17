@@ -10,14 +10,25 @@ import { ApplicationModule, NavigationRoute } from '../../../../../../interfaces
 import { PrivateHeaderComponent } from './components/private-header.component';
 import { PrivateFooterComponent } from './components/private-footer.component';
 import { UsersService } from '../../../../../data/services/users.service';
+import { SidebarService } from '../../../../../data/services/sidebar.service';
+import { SidebarSection } from '../../../../../../interfaces/sidebar';
+import { PrivateSectionsComponent } from './components/private-sections.component';
 import { NgClass } from '@angular/common';
 
 @Component({
    selector: 'fi-private-layout-component',
-   imports: [PrivateSidebarComponent, PrivateMainComponent, PrivateHeaderComponent, PrivateFooterComponent, NgClass],
+   imports: [
+      PrivateSidebarComponent,
+      PrivateMainComponent,
+      PrivateHeaderComponent,
+      PrivateFooterComponent,
+      PrivateSectionsComponent,
+      NgClass,
+   ],
    template: `
       @let sidebarOpen = $sidebarOpen();
       @let currentModule = $currentModule();
+      @let sections = $sections();
 
       <section class="flex h-dvh w-full bg-white">
          <fi-private-sidebar-component
@@ -26,6 +37,8 @@ import { NgClass } from '@angular/common';
             [currentModule]="currentModule"
             (navigate)="handleNavigate($event)"
             (close)="handleToggleSidebar({ open: false })"
+            [sections]="sections"
+            (choose)="handleSelect($event)"
             (logout)="handleLogout()"
             [ngClass]="{
                'left-0': sidebarOpen,
@@ -39,6 +52,12 @@ import { NgClass } from '@angular/common';
                [navModulesBuffer]="navModulesBuffer"
                (toggleSidebar)="handleToggleSidebar({ open: !sidebarOpen })"
             />
+            <fi-private-sections-component
+               topSections
+               class="flex flex-col gap-2 xl:hidden"
+               [sections]="sections"
+               (choose)="handleSelect($event)"
+            />
             <fi-private-footer-component footer />
          </fi-private-main-component>
       </section>
@@ -48,6 +67,7 @@ export class PrivateLayoutComponent {
    private readonly _router: Router = inject(Router);
    private readonly _users: UsersService = inject(UsersService);
    private readonly _navigation: NavigationService = inject(NavigationService);
+   private readonly _sidebar: SidebarService = inject(SidebarService);
 
    private readonly $navigationEnd: Signal<NavigationEnd | null> = toSignal(
       this._router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)),
@@ -57,6 +77,9 @@ export class PrivateLayoutComponent {
    public readonly navModules: NavigationRoute[] = this._navigation.navModules;
    public readonly navModulesBuffer: Record<ApplicationModule, NavigationRoute> = this._navigation.navModulesBuffer;
    public readonly $sidebarOpen: Signal<boolean> = computed(() => this._navigation.sidebarOpen);
+   public readonly $sections: Signal<SidebarSection[]> = computed(() =>
+      this._sidebar.sectionsOf({ module: this._navigation.currentModule }),
+   );
    public readonly $currentModule: Signal<ApplicationModule> = computed(() => this._navigation.currentModule);
 
    constructor() {
@@ -83,6 +106,10 @@ export class PrivateLayoutComponent {
 
    public handleToggleSidebar({ open }: { open: boolean }): void {
       this._navigation.sidebarOpen = open;
+   }
+
+   public handleSelect(params: { section: string; option: string }): void {
+      this._sidebar.select(params);
    }
 
    public handleLogout(): void {

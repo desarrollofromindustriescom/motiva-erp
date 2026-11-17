@@ -1,0 +1,8 @@
+# Development override: API with live reload (air) + source mounted
+# Usage: docker compose -f compose.yml -f compose.dev.yml up
+services:
+   golang-api:
+      build:
+         target: dev
+      volumes:
+         - ./backend:/app

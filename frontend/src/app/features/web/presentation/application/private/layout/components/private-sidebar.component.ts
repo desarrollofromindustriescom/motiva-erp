@@ -3,11 +3,13 @@ import { Component, input, InputSignal, output, OutputEmitterRef } from '@angula
 import { ApplicationModule, NavigationRoute } from '../../../../../../../interfaces/navigation';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthorizedDirective } from '../../../../../utilities/directives/authorized.directive';
+import { SidebarSection } from '../../../../../../../interfaces/sidebar';
+import { PrivateSectionsComponent } from './private-sections.component';
 import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.repository';
 
 @Component({
    selector: 'fi-private-sidebar-component',
-   imports: [NgClass, TranslatePipe, AuthorizedDirective],
+   imports: [NgClass, TranslatePipe, AuthorizedDirective, PrivateSectionsComponent],
    template: `
       @let navModules = $navModules();
       @let currentModule = $currentModule();
@@ -44,6 +46,12 @@ import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.reposit
             </ul>
          </nav>
 
+         <fi-private-sections-component
+            class="hidden flex-col gap-2 xl:flex"
+            [sections]="$sections()"
+            (choose)="$choose.emit($event)"
+         />
+
          <div class="flex w-full flex-col gap-2 rounded-2xl border border-slate-500 p-4">
             <span class="text-lg font-medium">Sesion</span>
             <button
@@ -66,6 +74,8 @@ export class PrivateSidebarComponent {
 
    public $navModules: InputSignal<NavigationRoute[]> = input([] as NavigationRoute[], { alias: 'navModules' });
    public $currentModule: InputSignal<ApplicationModule> = input.required({ alias: 'currentModule' });
+   public $sections: InputSignal<SidebarSection[]> = input([] as SidebarSection[], { alias: 'sections' });
+   public $choose: OutputEmitterRef<{ section: string; option: string }> = output({ alias: 'choose' });
    public $navigate: OutputEmitterRef<{ module: ApplicationModule }> = output({ alias: 'navigate' });
    public $close: OutputEmitterRef<void> = output({ alias: 'close' });
    public $logout: OutputEmitterRef<void> = output({ alias: 'logout' });

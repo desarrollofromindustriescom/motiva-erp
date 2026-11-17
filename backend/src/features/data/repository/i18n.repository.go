@@ -18,4 +18,9 @@ var I18nTagsKeys map[string]models.I18nKey = map[string]models.I18nKey{
 	"len":                ValI18nKeyFieldLength,
 	ValKeyPercentage:     ValI18nKeyFieldPercentage,
 	ValKeyMonetary:       ValI18nKeyFieldMonetary,
+	ValKeyPhone:          UsrI18nKeyFieldPhone,
+	ValKeyCURP:           UsrI18nKeyFieldCURP,
+	ValKeyClabe:          UsrI18nKeyFieldClabe,
+	"max":                UsrI18nKeyFieldMaxLength,
+	"oneof":              UsrI18nKeyFieldOneOf,
 }

@@ -7,7 +7,7 @@ export interface FieldsChangePassword {
    confirm_password: string;
 }
 
-export type UsersRoutes = 'changePassword' | 'logout' | 'sessions' | 'revokeSessions' | 'revokeSession';
+export type UsersRoutes = 'createUser' | 'changePassword' | 'logout' | 'sessions' | 'revokeSessions' | 'revokeSession';
 
 export interface UsersLoader {
    sessions: boolean;
@@ -49,4 +49,25 @@ export interface ActiveSession {
    first_login: string;
    last_login: string;
    current: boolean;
+}
+
+export type CreatableProfile = Exclude<UserProfile, 'superadmin'>;
+
+export interface FieldsNewUser {
+   fullname: string;
+   phone_number: string;
+   curp: string;
+   address: string;
+   with_guarantee: boolean;
+   guarantee_fullname: string;
+   guarantee_phone_number: string;
+   guarantee_address: string;
+   account_clabe: string;
+   account_bank: string;
+}
+
+export interface CreatedUser {
+   id: string;
+   username: string;
+   password: string;
 }
