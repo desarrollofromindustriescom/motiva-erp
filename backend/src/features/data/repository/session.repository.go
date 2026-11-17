@@ -62,6 +62,13 @@ const (
 			id <> $2 AND
 			status_id = (SELECT id FROM status WHERE slug = 'active')
 	`
+	SsQryRevokeUserSessions string = `--sql
+		UPDATE sessions
+		SET status_id = (SELECT id FROM status WHERE slug = 'revoked')
+		WHERE
+			user_id = $1 AND
+			status_id = (SELECT id FROM status WHERE slug = 'active')
+	`
 	SsQryRevokeSessionByToken string = `--sql
 		UPDATE sessions
 		SET status_id = (SELECT id FROM status WHERE slug = 'revoked')

@@ -28,7 +28,10 @@ export class UsersService {
    private readonly _dialogs: DialogsService = inject(DialogsService);
    private readonly _session: SessionService = inject(SessionService);
 
-   private readonly routes: Omit<Record<UsersRoutes, EndpointData>, 'createUser'> = {
+   private readonly routes: Omit<
+      Record<UsersRoutes, EndpointData>,
+      'createUser' | 'listUsers' | 'getUser' | 'deleteUser' | 'updateUser' | 'regeneratePassword'
+   > = {
       changePassword: { route: API_ROUTES.CHANGEPASSWORD, method: HTTP_METHODS.PATCH },
       logout: { route: API_ROUTES.LOGOUT, method: HTTP_METHODS.POST },
       sessions: { route: API_ROUTES.SESSIONS, method: HTTP_METHODS.GET },

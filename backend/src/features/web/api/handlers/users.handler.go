@@ -331,24 +331,7 @@ func CreateUser(response http.ResponseWriter, request *http.Request) {
 	payload.AccountBank = strings.TrimSpace(payload.AccountBank)
 
 	if missing := missingUserFields(payload); len(missing) > 0 {
-		lang := request.Header.Get(repository.HeadAcceptLanguage)
-		preview := &controller.EpPreview[struct{}]{
-			Error: &controller.EpError{
-				Message: i18n.Translate(lang, repository.ValI18nKeyFailFieldsValidation, nil),
-				Details: []*controller.ErrorDetails{},
-			},
-		}
-
-		for _, field := range missing {
-			preview.Error.Details = append(preview.Error.Details, &controller.ErrorDetails{
-				Field:  field,
-				Detail: i18n.Translate(lang, repository.ValI18nKeyFieldRequired, nil),
-			})
-		}
-
-		response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
-		response.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(response).Encode(preview)
+		writeMissingFields(response, request, missing)
 		return
 	}
 
@@ -372,5 +355,276 @@ func CreateUser(response http.ResponseWriter, request *http.Request) {
 
 	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
 	response.WriteHeader(http.StatusCreated)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Paginated users with optional combined filters. Uses QUERY
+ * method (reads data but receives the filters in the body).
+ * A manager only sees investors & borrowers.
+ */
+func QueryUsers(response http.ResponseWriter, request *http.Request) {
+	payload, ok := readPayload[controller.UsersQueryPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+	profiles := visibleProfiles(currentSession.User)
+
+	page, err := users.GetPage(ctx, payload, profiles)
+
+	if err != nil {
+		slog.Error("Error getting users page",
+			"event", "handlers.QueryUsers.GetPage",
+			"error", err,
+		)
+
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	preview := &controller.EpPreview[controller.UsersPagePreview]{
+		Success: true,
+		Data:    page,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Profiles the user is allowed to see in the users module:
+ * a manager only sees investors & borrowers
+ */
+func visibleProfiles(user *models.User) []string {
+	if user.Profile == repository.ProfileManager {
+		return repository.UsrManagerCreatableProfiles
+	}
+
+	return repository.UsrAllProfiles
+}
+
+/**
+ * Every stored field of one user (detail dialog)
+ */
+func GetUser(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	user, err := users.GetByID(ctx, id, visibleProfiles(currentSession.User))
+
+	if err != nil {
+		if errors.Is(err, repository.UsrErrNotFound) {
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+			return
+		}
+
+		slog.Error("Error getting user detail",
+			"event", "handlers.GetUser.GetByID",
+			"error", err,
+		)
+
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	preview := &controller.EpPreview[controller.UserDetailPreview]{
+		Success: true,
+		Data:    user,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Deletes (deactivates) a user: it can't log in anymore & its
+ * sessions are revoked. The frontend refreshes the table afterwards.
+ */
+func DeleteUser(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	err = users.Deactivate(ctx, currentSession.User, id, visibleProfiles(currentSession.User))
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.UsrErrNotFound):
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		case errors.Is(err, repository.UsrErrDeleteSelf):
+			writeBadRequest(response, request, repository.UsrI18nKeyDeleteSelf)
+		case errors.Is(err, repository.UsrErrDeleteProtected):
+			writeBadRequest(response, request, repository.UsrI18nKeyDeleteProtected)
+		case errors.Is(err, repository.UsrErrAlreadyInactive):
+			writeBadRequest(response, request, repository.UsrI18nKeyAlreadyInactive)
+		default:
+			slog.Error("Error deleting user",
+				"event", "handlers.DeleteUser.Deactivate",
+				"error", err,
+			)
+
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	preview := &controller.EpPreview[struct{}]{Success: true}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Writes a 400 response listing the required fields that came empty
+ */
+func writeMissingFields(response http.ResponseWriter, request *http.Request, missing []string) {
+	lang := request.Header.Get(repository.HeadAcceptLanguage)
+	preview := &controller.EpPreview[struct{}]{
+		Error: &controller.EpError{
+			Message: i18n.Translate(lang, repository.ValI18nKeyFailFieldsValidation, nil),
+			Details: []*controller.ErrorDetails{},
+		},
+	}
+
+	for _, field := range missing {
+		preview.Error.Details = append(preview.Error.Details, &controller.ErrorDetails{
+			Field:  field,
+			Detail: i18n.Translate(lang, repository.ValI18nKeyFieldRequired, nil),
+		})
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusBadRequest)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Edits an investor or a borrower & returns the updated data. A manager
+ * can only edit the profiles it sees, other profiles have nothing to edit.
+ */
+func UpdateUser(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payload, ok := readPayload[controller.UpdateUserPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	payload.Address = strings.TrimSpace(payload.Address)
+	payload.GuaranteeFullname = strings.TrimSpace(payload.GuaranteeFullname)
+	payload.GuaranteeAddress = strings.TrimSpace(payload.GuaranteeAddress)
+	payload.AccountBank = strings.TrimSpace(payload.AccountBank)
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	updated, missing, err := users.Update(ctx, id, visibleProfiles(currentSession.User), payload)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.UsrErrNotFound):
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		case errors.Is(err, repository.UsrErrNotEditable):
+			writeBadRequest(response, request, repository.UsrI18nKeyNotEditable)
+		case errors.Is(err, repository.UsrErrGuaranteeRemoval):
+			writeBadRequest(response, request, repository.UsrI18nKeyGuaranteeRemoval)
+		default:
+			slog.Error("Error updating user",
+				"event", "handlers.UpdateUser.Update",
+				"error", err,
+			)
+
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	if len(missing) > 0 {
+		writeMissingFields(response, request, missing)
+		return
+	}
+
+	preview := &controller.EpPreview[controller.UserDetailPreview]{
+		Success: true,
+		Data:    updated,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Regenerates the password of a user: the old one stops working and
+ * the new random one is returned once so it can be copied
+ */
+func RegenerateUserPassword(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	credentials, err := users.RegeneratePassword(ctx, currentSession.User, id, visibleProfiles(currentSession.User))
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.UsrErrNotFound):
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		case errors.Is(err, repository.UsrErrPasswordSelf):
+			writeBadRequest(response, request, repository.UsrI18nKeyPasswordSelf)
+		case errors.Is(err, repository.UsrErrPasswordProtected):
+			writeBadRequest(response, request, repository.UsrI18nKeyPasswordProtected)
+		default:
+			slog.Error("Error regenerating user password",
+				"event", "handlers.RegenerateUserPassword.RegeneratePassword",
+				"error", err,
+			)
+
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	preview := &controller.EpPreview[controller.CreatedUserPreview]{
+		Success: true,
+		Data:    credentials,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(preview)
 }

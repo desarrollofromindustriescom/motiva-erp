@@ -23,8 +23,8 @@ import { FieldErrorsComponent } from '../field-errors/field-errors.component';
          <p-iftalabel class="w-full">
             <input
                pInputText
-               class="w-full"
                autocomplete="off"
+               [class]="field().disabled() ? 'w-full bg-slate-200!' : 'w-full'"
                [id]="id"
                [attr.inputmode]="$inputmode()"
                [formField]="field"

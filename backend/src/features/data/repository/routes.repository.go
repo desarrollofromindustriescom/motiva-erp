@@ -5,6 +5,8 @@ const (
 	RouteLogin              string = "/api/login"
 	RouteValidate           string = "/api/validate"
 	RouteUsers              string = "/api/users"
+	RouteUser               string = "/api/users/{id}"
+	RouteUserPassword       string = "/api/users/{id}/password"
 	RouteChangePassword     string = "/api/users/change-password"
 	RouteSessions           string = "/api/users/sessions"
 	RouteRevokeSessions     string = "/api/users/sessions"

@@ -337,6 +337,15 @@ func RevokeOtherSessions(ctx context.Context, exec models.Executor, currentSessi
 }
 
 /**
+ * Revokes every active session of a user
+ */
+func RevokeUserSessions(ctx context.Context, exec models.Executor, userID uuid.UUID) error {
+	_, err := exec.Exec(ctx, repository.SsQryRevokeUserSessions, userID)
+
+	return err
+}
+
+/**
  * Revokes a session only if it belongs to the given user
  */
 func RevokeSessionByID(ctx context.Context, sessionID uuid.UUID, userID uuid.UUID) error {

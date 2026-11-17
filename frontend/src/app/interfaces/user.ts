@@ -7,7 +7,18 @@ export interface FieldsChangePassword {
    confirm_password: string;
 }
 
-export type UsersRoutes = 'createUser' | 'changePassword' | 'logout' | 'sessions' | 'revokeSessions' | 'revokeSession';
+export type UsersRoutes =
+   | 'createUser'
+   | 'listUsers'
+   | 'getUser'
+   | 'deleteUser'
+   | 'updateUser'
+   | 'regeneratePassword'
+   | 'changePassword'
+   | 'logout'
+   | 'sessions'
+   | 'revokeSessions'
+   | 'revokeSession';
 
 export interface UsersLoader {
    sessions: boolean;
@@ -51,6 +62,8 @@ export interface ActiveSession {
    current: boolean;
 }
 
+export type EditableProfile = 'investor' | 'borrower';
+
 export type CreatableProfile = Exclude<UserProfile, 'superadmin'>;
 
 export interface FieldsNewUser {
@@ -70,4 +83,54 @@ export interface CreatedUser {
    id: string;
    username: string;
    password: string;
+}
+
+export type UsersOrder = 'asc' | 'desc' | '';
+
+export interface UsersFilters {
+   search: string;
+   profile: string;
+   status: string;
+}
+
+export interface UsersQuery extends Partial<UsersFilters> {
+   page: number;
+   size: number;
+   order?: UsersOrder;
+}
+
+export interface UserRow {
+   id: string;
+   curp: string | null;
+   username: string;
+   fullname: string;
+   profile: UserProfile;
+   created_at: string;
+   status: Status;
+}
+
+export interface UsersPage {
+   items: UserRow[];
+   total: number;
+   page: number;
+   size: number;
+}
+
+export type UserActionId = 'details' | 'documents' | 'wallet' | 'password' | 'edit' | 'delete';
+
+export interface UserDetail {
+   id: string;
+   fullname: string;
+   username: string;
+   profile: UserProfile;
+   phone_number: string | null;
+   curp: string | null;
+   address: string | null;
+   guarantee_fullname: string | null;
+   guarantee_phone_number: string | null;
+   guarantee_address: string | null;
+   account_clabe: string | null;
+   account_bank: string | null;
+   created_at: string;
+   status: Status;
 }

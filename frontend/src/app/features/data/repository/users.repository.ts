@@ -1,4 +1,50 @@
+import { UserActionId } from '../../../interfaces/user';
+
+export const USERS_PAGE_SIZE: number = 10;
+
 export const USERS_I18N_KEYS = {
+   PASSWORD_NOTICE: 'USERS_PASSWORD_NOTICE',
+   TOOLTIP_DETAILS: 'USERS_TOOLTIP_DETAILS',
+   TOOLTIP_DOCUMENTS: 'USERS_TOOLTIP_DOCUMENTS',
+   TOOLTIP_WALLET: 'USERS_TOOLTIP_WALLET',
+   TOOLTIP_PASSWORD: 'USERS_TOOLTIP_PASSWORD',
+   TOOLTIP_EDIT: 'USERS_TOOLTIP_EDIT',
+   TOOLTIP_DELETE: 'USERS_TOOLTIP_DELETE',
+   DETAIL_NAME: 'USERS_DETAIL_NAME',
+   DETAIL_USERNAME: 'USERS_DETAIL_USERNAME',
+   DETAIL_PHONE: 'USERS_DETAIL_PHONE',
+   DETAIL_CURP: 'USERS_DETAIL_CURP',
+   DETAIL_ADDRESS: 'USERS_DETAIL_ADDRESS',
+   DETAIL_CREATED: 'USERS_DETAIL_CREATED',
+   DETAIL_CLABE: 'USERS_DETAIL_CLABE',
+   DETAIL_BANK: 'USERS_DETAIL_BANK',
+   DETAIL_SECTION_GUARANTEE: 'USERS_DETAIL_SECTION_GUARANTEE',
+   DETAIL_GUARANTEE_SAVED: 'USERS_DETAIL_GUARANTEE_SAVED',
+   DETAIL_GUARANTEE_NONE: 'USERS_DETAIL_GUARANTEE_NONE',
+   DETAIL_GUARANTEE_NONE_TEXT: 'USERS_DETAIL_GUARANTEE_NONE_TEXT',
+   BUTTON_REGENERATE: 'USERS_BUTTON_REGENERATE',
+   BUTTON_WALLET: 'USERS_BUTTON_WALLET',
+   BUTTON_DELETE: 'USERS_BUTTON_DELETE',
+   FILTERS_TITLE: 'USERS_FILTERS_TITLE',
+   FILTER_SEARCH: 'USERS_FILTER_SEARCH',
+   FILTER_PROFILE: 'USERS_FILTER_PROFILE',
+   FILTER_STATUS: 'USERS_FILTER_STATUS',
+   FILTER_PLACEHOLDER: 'USERS_FILTER_PLACEHOLDER',
+   BUTTON_FILTER: 'USERS_BUTTON_FILTER',
+   BUTTON_CLEAR_FILTERS: 'USERS_BUTTON_CLEAR_FILTERS',
+   HEAD_CURP: 'USERS_HEAD_CURP',
+   HEAD_USERNAME: 'USERS_HEAD_USERNAME',
+   HEAD_FULLNAME: 'USERS_HEAD_FULLNAME',
+   HEAD_STATUS: 'USERS_HEAD_STATUS',
+   HEAD_PROFILE: 'USERS_HEAD_PROFILE',
+   EMPTY: 'USERS_EMPTY',
+   ROLE_SUPERADMIN: 'USERS_ROLE_SUPERADMIN',
+   ROLE_ADMINISTRATOR: 'USERS_ROLE_ADMINISTRATOR',
+   ROLE_MANAGER: 'USERS_ROLE_MANAGER',
+   ROLE_INVESTOR: 'USERS_ROLE_INVESTOR',
+   ROLE_BORROWER: 'USERS_ROLE_BORROWER',
+   STATUS_ACTIVE: 'USERS_STATUS_ACTIVE',
+   STATUS_INACTIVE: 'USERS_STATUS_INACTIVE',
    MODULE_TITLE: 'USERS_MODULE_TITLE',
    ACTIONS_TITLE: 'USERS_ACTIONS_TITLE',
    ACTION_NEW_USER: 'USERS_ACTION_NEW_USER',
@@ -20,4 +66,51 @@ export const USERS_I18N_KEYS = {
    BUTTON_GENERATE: 'USERS_BUTTON_GENERATE',
    BUTTON_COPY: 'USERS_BUTTON_COPY',
    BUTTON_COPIED: 'USERS_BUTTON_COPIED',
+};
+
+export const USERS_ROLE_I18N_KEYS: Record<string, string> = {
+   superadmin: USERS_I18N_KEYS.ROLE_SUPERADMIN,
+   administrator: USERS_I18N_KEYS.ROLE_ADMINISTRATOR,
+   manager: USERS_I18N_KEYS.ROLE_MANAGER,
+   investor: USERS_I18N_KEYS.ROLE_INVESTOR,
+   borrower: USERS_I18N_KEYS.ROLE_BORROWER,
+};
+
+export const USERS_ROLE_COLORS: Record<string, string> = {
+   superadmin: 'bg-slate-700',
+   administrator: 'bg-second',
+   manager: 'bg-slate-500',
+   investor: 'bg-main',
+   borrower: 'bg-contrast',
+};
+
+export const USERS_STATUS_COLORS: Record<string, string> = {
+   active: 'bg-green-500',
+   inactive: 'bg-slate-500',
+};
+
+/**
+ * Which row actions a user allows, shared by the table & the detail dialog
+ */
+export const USERS_ACTION_RULES: Record<
+   UserActionId,
+   (user: { profile: string; status: { slug: string } }) => boolean
+> = {
+   details: () => true,
+   documents: (user) => user.profile === 'investor',
+   wallet: (user) => user.profile === 'investor',
+   // the superadmin password is never regenerated
+   password: (user) => user.profile !== 'superadmin',
+   // only investors & borrowers have data to edit
+   edit: (user) => ['investor', 'borrower'].includes(user.profile),
+   delete: (user) => user.status.slug === 'active',
+};
+
+export const USERS_ACTION_TOOLTIPS: Record<UserActionId, string> = {
+   details: USERS_I18N_KEYS.TOOLTIP_DETAILS,
+   documents: USERS_I18N_KEYS.TOOLTIP_DOCUMENTS,
+   wallet: USERS_I18N_KEYS.TOOLTIP_WALLET,
+   password: USERS_I18N_KEYS.TOOLTIP_PASSWORD,
+   edit: USERS_I18N_KEYS.TOOLTIP_EDIT,
+   delete: USERS_I18N_KEYS.TOOLTIP_DELETE,
 };

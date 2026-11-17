@@ -10,6 +10,7 @@ import { FORMS_I18N_KEYS } from '../repository/forms.repository';
 import { REGEX } from '../repository/regex.repository';
 import { environment } from '../../../../environments/environment.development';
 import { DialogsService } from './dialogs.service';
+import { UsersListService } from './users-list.service';
 
 const EMPTY_MODEL: FieldsNewUser = {
    fullname: '',
@@ -32,6 +33,7 @@ const EMPTY_MODEL: FieldsNewUser = {
 export class UserCreationService {
    private readonly _http: HttpClient = inject(HttpClient);
    private readonly _dialogs: DialogsService = inject(DialogsService);
+   private readonly _list: UsersListService = inject(UsersListService);
 
    private readonly route: EndpointData = { route: API_ROUTES.CREATEUSER, method: HTTP_METHODS.POST };
 
@@ -175,6 +177,8 @@ export class UserCreationService {
             );
 
             this.$credentials.set(created);
+            // the new user has data the table doesn't have yet
+            this._list.reload();
          } catch {
             // the error interceptor already notifies the user
          } finally {

@@ -1,8 +1,6 @@
-import { Component, computed, inject, signal, Signal, WritableSignal } from '@angular/core';
+import { Component, computed, inject, Signal } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
-import { IftaLabelModule } from 'primeng/iftalabel';
-import { InputTextModule } from 'primeng/inputtext';
 import { SignalForm } from '../../../../../../../interfaces/alias';
 import { CreatableProfile, CreatedUser, FieldsNewUser } from '../../../../../../../interfaces/user';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
@@ -11,8 +9,7 @@ import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.reposit
 import { USERS_I18N_KEYS } from '../../../../../../data/repository/users.repository';
 import { LoaderComponent } from '../../../forms/loader/loader.component';
 import { TextFieldComponent } from '../../../forms/text-field/text-field.component';
-
-type CopyKey = 'username' | 'password';
+import { UserCredentialsComponent } from '../../../forms/user-credentials/user-credentials.component';
 
 /**
  * One dialog for every creatable profile (administrator, manager, investor
@@ -20,7 +17,7 @@ type CopyKey = 'username' | 'password';
  */
 @Component({
    selector: 'fi-user-create-dialog-component',
-   imports: [FormField, TranslatePipe, IftaLabelModule, InputTextModule, LoaderComponent, TextFieldComponent],
+   imports: [FormField, TranslatePipe, LoaderComponent, TextFieldComponent, UserCredentialsComponent],
    template: `
       @let form = $form;
       @let profile = $profile();
@@ -133,32 +130,10 @@ type CopyKey = 'username' | 'password';
             </button>
          </div>
 
-         <div class="flex w-full flex-col gap-2 pt-4">
-            @for (item of credentialFields; track item.key) {
-               <div class="relative w-full">
-                  <p-iftalabel class="w-full">
-                     <input
-                        pInputText
-                        class="w-full bg-slate-200! pr-12!"
-                        readonly
-                        tabindex="-1"
-                        [id]="item.key"
-                        [value]="credentials ? credentials[item.key] : ''"
-                     />
-                     <label [for]="item.key">{{ item.label | translate }}</label>
-                  </p-iftalabel>
-
-                  <button
-                     class="text-second absolute top-1/2 right-3 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg p-1.5 transition-all hover:bg-slate-300 disabled:cursor-auto disabled:opacity-40 disabled:hover:bg-transparent"
-                     type="button"
-                     [disabled]="!credentials"
-                     (click)="handleCopy({ key: item.key })"
-                  >
-                     <i [class]="'bx text-xl ' + ($copied() === item.key ? 'bx-check' : 'bx-copy')"></i>
-                  </button>
-               </div>
-            }
-         </div>
+         <fi-user-credentials-component
+            class="pt-4"
+            [credentials]="credentials"
+         />
 
          <div class="flex w-full justify-end pt-2">
             <button
@@ -179,39 +154,14 @@ export class UserCreateDialogComponent {
 
    public readonly I18N = USERS_I18N_KEYS;
    public readonly FORMS = FORMS_I18N_KEYS;
-   public readonly credentialFields: { key: CopyKey; label: string }[] = [
-      { key: 'username', label: USERS_I18N_KEYS.FIELD_USERNAME },
-      { key: 'password', label: USERS_I18N_KEYS.FIELD_PASSWORD },
-   ];
 
    public readonly $form: SignalForm<FieldsNewUser> = this._creation.form;
    public readonly $profile: Signal<CreatableProfile> = computed(() => this._creation.profile);
    public readonly $loading: Signal<boolean> = computed(() => this._creation.loading);
    public readonly $credentials: Signal<CreatedUser | null> = computed(() => this._creation.credentials);
-   public readonly $copied: WritableSignal<CopyKey | null> = signal(null);
 
    public handleGenerate(): void {
       this._creation.create();
-   }
-
-   /**
-    * Copies one credential & shows a check for a moment
-    */
-   public handleCopy({ key }: { key: CopyKey }): void {
-      const credentials: CreatedUser | null = this._creation.credentials;
-
-      if (!credentials) return;
-
-      navigator.clipboard
-         .writeText(credentials[key])
-         .then(() => {
-            this.$copied.set(key);
-            setTimeout(
-               () => this.$copied.update((current: CopyKey | null) => (current === key ? null : current)),
-               1500,
-            );
-         })
-         .catch(() => undefined);
    }
 
    public handleClose(): void {
