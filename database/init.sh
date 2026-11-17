@@ -13,6 +13,7 @@ FILES=(
    "seeds/users"
    "seeds/settings"
    "seeds/cash_balances"
+   "seeds/cash_balance_cycles"
 )
 
 # Iterate each sql file name and check if

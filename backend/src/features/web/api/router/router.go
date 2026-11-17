@@ -58,6 +58,12 @@ func Router() *http.ServeMux {
 
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteUserMovements), middleware.Authorize(handlers.QueryInvestorMovements, usersProfiles...))
 
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteCashCycles), middleware.Authorize(handlers.GetCashCycles, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteUserInvestments), middleware.Authorize(handlers.QueryInvestorInvestments, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserInvestments), middleware.Authorize(handlers.CreateInvestorInvestment, usersProfiles...))
+
+	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteUserInvestmentMovements), middleware.Authorize(handlers.QueryInvestmentMovements, usersProfiles...))
+
 	root.Handle(repository.RouteMain, middleware.Pipeline(api, nil))
 
 	// TODO: Config for endpoints to allow files

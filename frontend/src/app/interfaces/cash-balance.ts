@@ -15,6 +15,8 @@ export interface InvestorBalance {
    since: string;
    amount: number;
    last_update: string;
+   // amount not locked by the active investments
+   available: number;
 }
 
 export interface CashBalanceLoader {

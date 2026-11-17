@@ -26,6 +26,9 @@
    "USER_ALREADY_INACTIVE": "El usuario ya está inactivo",
    "USER_PASSWORD_SELF": "No puedes regenerar tu propia contraseña, cámbiala desde tu perfil",
    "USER_PASSWORD_PROTECTED": "La contraseña del superadministrador no se puede regenerar",
+   "CASH_BALANCE_INSUFFICIENT_AVAILABLE": "El monto a retirar no puede ser mayor al saldo disponible, parte del balance está en inversiones activas",
+   "INVESTMENT_EXCEEDS_AVAILABLE": "El monto de la inversión no puede ser mayor al saldo disponible",
+   "INVESTMENT_CYCLE_NOT_FOUND": "El plazo de la inversión no existe o no está activo",
    "USER_NOT_INVESTOR": "El usuario no es un inversor",
    "USER_NOT_EDITABLE": "Este tipo de usuario no tiene datos que editar",
    "USER_GUARANTEE_REMOVAL": "Un prestatario con aval no puede quedarse sin él, solo se puede modificar"

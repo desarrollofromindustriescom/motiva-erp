@@ -53,3 +53,16 @@ func NextMovement(ctx context.Context, tx pgx.Tx) (string, error) {
 
 	return Format(repository.CbFolioPrefix, number)
 }
+
+/**
+ * Next incremental folio for investments using a database sequence
+ */
+func NextInvestment(ctx context.Context, tx pgx.Tx) (string, error) {
+	var number int64
+
+	if err := tx.QueryRow(ctx, repository.CbQryNextInvestmentFolio).Scan(&number); err != nil {
+		return "", err
+	}
+
+	return Format(repository.CbInvestmentFolioPrefix, number)
+}

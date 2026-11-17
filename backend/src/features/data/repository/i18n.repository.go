@@ -23,4 +23,5 @@ var I18nTagsKeys map[string]models.I18nKey = map[string]models.I18nKey{
 	ValKeyClabe:          UsrI18nKeyFieldClabe,
 	"max":                UsrI18nKeyFieldMaxLength,
 	"oneof":              UsrI18nKeyFieldOneOf,
+	"uuid":               UsrI18nKeyFieldOneOf,
 }

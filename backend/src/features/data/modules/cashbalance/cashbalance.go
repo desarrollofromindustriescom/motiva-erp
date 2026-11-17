@@ -90,6 +90,19 @@ func CreateMovement(ctx context.Context, user *models.User, ownerID *uuid.UUID, 
 		if next < 0 {
 			return nil, repository.CbErrInsufficient
 		}
+
+		// on the balance of an investor, the money of its active investments can't be withdrawn
+		if ownerID != nil {
+			var invested int64
+
+			if err = tx.QueryRow(ctx, repository.CbQryInvestedByBalance, balanceID).Scan(&invested); err != nil {
+				return nil, err
+			}
+
+			if int64(next) < invested {
+				return nil, repository.CbErrInsufficientAvailable
+			}
+		}
 	}
 
 	folioValue, err := folio.NextMovement(ctx, tx)
@@ -119,7 +132,7 @@ func CreateMovement(ctx context.Context, user *models.User, ownerID *uuid.UUID, 
  * Page of general balance movements, newest first. Each item
  * carries its external references (status & user who executed it)
  */
-func GetMovements(ctx context.Context, ownerID *uuid.UUID, page int, size int) (*controller.MovementsPagePreview, error) {
+func GetMovements(ctx context.Context, ownerID *uuid.UUID, investmentID *uuid.UUID, page int, size int) (*controller.MovementsPagePreview, error) {
 	pool := database.GetPool()
 	result := &controller.MovementsPagePreview{
 		Items: []*controller.MovementPreview{},
@@ -127,11 +140,11 @@ func GetMovements(ctx context.Context, ownerID *uuid.UUID, page int, size int) (
 		Size:  size,
 	}
 
-	if err := pool.QueryRow(ctx, repository.CbQryCountMovements, ownerID).Scan(&result.Total); err != nil {
+	if err := pool.QueryRow(ctx, repository.CbQryCountMovements, ownerID, investmentID).Scan(&result.Total); err != nil {
 		return nil, err
 	}
 
-	rows, err := pool.Query(ctx, repository.CbQryGetMovements, ownerID, size, (page-1)*size)
+	rows, err := pool.Query(ctx, repository.CbQryGetMovements, ownerID, investmentID, size, (page-1)*size)
 
 	if err != nil {
 		return nil, err
@@ -222,7 +235,25 @@ func GetInvestorBalance(ctx context.Context, id uuid.UUID, profiles []string) (*
 
 	preview.Amount = float64(amount) / 100
 
+	if preview.Available, err = availableAmount(ctx, id, amount); err != nil {
+		return nil, err
+	}
+
 	return preview, nil
+}
+
+/**
+ * Amount (currency units) of the balance of an investor that isn't locked
+ * by its active investments
+ */
+func availableAmount(ctx context.Context, id uuid.UUID, amountCents int) (float64, error) {
+	var invested int64
+
+	if err := database.GetPool().QueryRow(ctx, repository.CbQryInvestedByUser, id).Scan(&invested); err != nil {
+		return 0, err
+	}
+
+	return float64(int64(amountCents)-invested) / 100, nil
 }
 
 /**
@@ -242,11 +273,18 @@ func CreateInvestorMovement(ctx context.Context, executor *models.User, id uuid.
 		return nil, err
 	}
 
+	available, err := availableAmount(ctx, id, int(math.Round(balance.Amount*100)))
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &controller.InvestorBalancePreview{
 		Fullname:   user.Fullname,
 		Since:      user.CreatedAt,
 		Amount:     balance.Amount,
 		LastUpdate: balance.LastUpdate,
+		Available:  available,
 	}, nil
 }
 
@@ -258,5 +296,26 @@ func GetInvestorMovements(ctx context.Context, id uuid.UUID, profiles []string, 
 		return nil, err
 	}
 
-	return GetMovements(ctx, &id, page, size)
+	return GetMovements(ctx, &id, nil, page, size)
+}
+
+/**
+ * Page of the movements related to one investment of an investor
+ */
+func GetInvestmentMovements(ctx context.Context, id uuid.UUID, investmentID uuid.UUID, profiles []string, page int, size int) (*controller.MovementsPagePreview, error) {
+	if _, err := loadInvestor(ctx, id, profiles); err != nil {
+		return nil, err
+	}
+
+	var exists int
+
+	if err := database.GetPool().QueryRow(ctx, repository.CbQryInvestmentOfOwner, investmentID, id).Scan(&exists); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.CbErrInvestmentNotFound
+		}
+
+		return nil, err
+	}
+
+	return GetMovements(ctx, &id, &investmentID, page, size)
 }

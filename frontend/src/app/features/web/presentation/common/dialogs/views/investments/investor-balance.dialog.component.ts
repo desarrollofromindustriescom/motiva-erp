@@ -5,8 +5,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { InvestorBalance } from '../../../../../../../interfaces/cash-balance';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { InvestorMovementDialogComponent } from './investor-movement.dialog.component';
+import { InvestorInvestmentDialogComponent } from './investor-investment.dialog.component';
+import { InvestmentsTableComponent } from './investments-table.component';
 import { CashMovementsDialogComponent } from '../cash-balance/cash-movements.dialog.component';
 import { CashMovementsService } from '../../../../../../data/services/cash-movements.service';
+import { InvestmentsService } from '../../../../../../data/services/investments.service';
 import { InvestorBalanceService } from '../../../../../../data/services/investor-balance.service';
 import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
 import { SETTINGS_I18N_KEYS } from '../../../../../../data/repository/settings.repository';
@@ -24,57 +27,62 @@ interface BalanceAction {
  */
 @Component({
    selector: 'fi-investor-balance-dialog-component',
-   imports: [CurrencyPipe, DatePipe, TranslatePipe, TooltipModule],
+   imports: [CurrencyPipe, DatePipe, TranslatePipe, TooltipModule, InvestmentsTableComponent],
    template: `
       @let balance = $balance();
 
-      @if (balance) {
-         <section class="bg-main flex w-full flex-col gap-6 rounded-2xl p-5 sm:p-6">
-            <div class="flex min-w-0 flex-col">
-               <h2 class="text-xl font-bold wrap-anywhere text-white sm:text-2xl">{{ balance.fullname }}</h2>
-               <span class="text-xs text-white">
-                  {{ I18N.BALANCE_SINCE | translate: { date: (balance.since | date: 'dd.MM.yyyy') } }}
-               </span>
-            </div>
-
-            <div class="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div class="flex w-full flex-col gap-6">
+         @if (balance) {
+            <section class="bg-main flex w-full flex-col gap-6 rounded-2xl p-5 sm:p-6">
                <div class="flex min-w-0 flex-col">
-                  <span class="text-3xl font-bold wrap-anywhere text-white sm:text-4xl">
-                     {{ balance.amount | currency }}
-                  </span>
+                  <h2 class="text-xl font-bold wrap-anywhere text-white sm:text-2xl">{{ balance.fullname }}</h2>
                   <span class="text-xs text-white">
-                     {{ SETTINGS.BALANCE_UPDATED | translate: { date: (balance.last_update | date: 'dd.MM.yyyy') } }}
+                     {{ I18N.BALANCE_SINCE | translate: { date: (balance.since | date: 'dd.MM.yyyy') } }}
                   </span>
                </div>
 
-               <div class="flex flex-wrap items-center gap-2">
-                  @for (action of actions; track action.id) {
-                     <button
-                        class="flex cursor-pointer items-center justify-center rounded-xl bg-white p-2.5 transition-all hover:bg-slate-100 focus:bg-slate-100"
-                        type="button"
-                        tooltipPosition="top"
-                        [pTooltip]="action.label | translate"
-                        [showDelay]="1500"
-                        (click)="handleAction({ action })"
-                     >
-                        <i [class]="'bx text-main text-2xl ' + action.icon"></i>
-                     </button>
-                  }
+               <div class="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div class="flex min-w-0 flex-col">
+                     <span class="text-3xl font-bold wrap-anywhere text-white sm:text-4xl">
+                        {{ balance.amount | currency }}
+                     </span>
+                     <span class="text-xs text-white">
+                        {{ SETTINGS.BALANCE_UPDATED | translate: { date: (balance.last_update | date: 'dd.MM.yyyy') } }}
+                     </span>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2">
+                     @for (action of actions; track action.id) {
+                        <button
+                           class="flex cursor-pointer items-center justify-center rounded-xl bg-white p-2.5 transition-all hover:bg-slate-100 focus:bg-slate-100"
+                           type="button"
+                           tooltipPosition="top"
+                           [pTooltip]="action.label | translate"
+                           [showDelay]="1500"
+                           (click)="handleAction({ action })"
+                        >
+                           <i [class]="'bx text-main text-2xl ' + action.icon"></i>
+                        </button>
+                     }
+                  </div>
                </div>
+            </section>
+         } @else {
+            <div class="flex h-48 w-full animate-pulse flex-col justify-between rounded-2xl bg-slate-300 p-6">
+               <div class="h-7 w-56 rounded-md bg-slate-400/60"></div>
+               <div class="h-10 w-40 rounded-md bg-slate-400/60"></div>
             </div>
-         </section>
-      } @else {
-         <div class="flex h-48 w-full animate-pulse flex-col justify-between rounded-2xl bg-slate-300 p-6">
-            <div class="h-7 w-56 rounded-md bg-slate-400/60"></div>
-            <div class="h-10 w-40 rounded-md bg-slate-400/60"></div>
-         </div>
-      }
+         }
+
+         <fi-investments-table-component />
+      </div>
    `,
 })
 export class InvestorBalanceDialogComponent {
    private readonly _balance: InvestorBalanceService = inject(InvestorBalanceService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
    private readonly _movements: CashMovementsService = inject(CashMovementsService);
+   private readonly _investments: InvestmentsService = inject(InvestmentsService);
 
    public readonly I18N = USERS_I18N_KEYS;
    public readonly SETTINGS = SETTINGS_I18N_KEYS;
@@ -92,6 +100,11 @@ export class InvestorBalanceDialogComponent {
    public readonly $failed: Signal<boolean> = computed(() => this._balance.failed);
 
    constructor() {
+      // the investments are asked again every time this dialog is shown (ex: when coming back)
+      const id: string | null = this._balance.id;
+
+      if (id) this._investments.open({ investorId: id });
+
       effect(() => {
          const loading: boolean = this.$loading();
          untracked(() => (this._dialogs.loading = loading));
@@ -103,9 +116,12 @@ export class InvestorBalanceDialogComponent {
       });
    }
 
-   // cancellation request & new investment have no behavior yet
+   // the cancellation request has no behavior yet
    public handleAction({ action }: { action: BalanceAction }): void {
       switch (action.id) {
+         case 'investment':
+            this.handleInvestment();
+            break;
          case 'movements':
             this.handleMovements();
             break;
@@ -114,6 +130,15 @@ export class InvestorBalanceDialogComponent {
             this.handleMovement({ movement: action.id });
             break;
       }
+   }
+
+   private handleInvestment(): void {
+      this._investments.startCreation();
+      this._dialogs.newDialog({
+         title: DIALOG_I18N_KEYS.NEW_INVESTMENT_TITLE,
+         component: InvestorInvestmentDialogComponent,
+         size: 'lg',
+      });
    }
 
    /**

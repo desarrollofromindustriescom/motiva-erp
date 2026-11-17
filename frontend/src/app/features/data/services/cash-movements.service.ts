@@ -23,6 +23,8 @@ export class CashMovementsService {
    private readonly $active: WritableSignal<boolean> = signal(false);
    // movements of the balance of an investor, or of the general balance when there is none
    private readonly $investorId: WritableSignal<string | null> = signal(null);
+   // when it's also set, only the movements related to that investment of the investor
+   private readonly $investmentId: WritableSignal<string | null> = signal(null);
    private readonly $version: WritableSignal<number> = signal(0);
    private readonly $page: WritableSignal<number> = signal(1);
    private readonly $selected: WritableSignal<Movement | null> = signal(null);
@@ -38,9 +40,12 @@ export class CashMovementsService {
          const investorId: string | null = this.$investorId();
          const body: MovementsQuery = { page: this.$page(), size: MOVEMENTS_PAGE_SIZE };
          const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
-         const url: string = investorId
-            ? `${environment.apiUrl}${API_ROUTES.INVESTORBALANCE}${investorId}/balance/movements`
-            : `${environment.apiUrl}${route}`;
+         const investmentId: string | null = this.$investmentId();
+         const base: string = `${environment.apiUrl}${API_ROUTES.INVESTORBALANCE}${investorId}`;
+         let url: string = `${environment.apiUrl}${route}`;
+
+         if (investorId)
+            url = investmentId ? `${base}/investments/${investmentId}/movements` : `${base}/balance/movements`;
 
          return { url, method, body, context };
       },
@@ -80,10 +85,11 @@ export class CashMovementsService {
 
    /**
     * Starts a fresh query from the first page, for the general balance or,
-    * when an investor is given, for its own balance
+    * when an investor is given, for its own balance (or for one of its investments)
     */
-   public open({ investorId }: { investorId?: string } = {}): void {
+   public open({ investorId, investmentId }: { investorId?: string; investmentId?: string } = {}): void {
       this.$investorId.set(investorId ?? null);
+      this.$investmentId.set(investorId ? (investmentId ?? null) : null);
       this.$page.set(1);
       this.$active.set(true);
       this.$version.update((version: number) => version + 1);

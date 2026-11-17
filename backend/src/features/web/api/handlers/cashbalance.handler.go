@@ -123,7 +123,7 @@ func QueryCashMovements(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	movements, err := cashbalance.GetMovements(request.Context(), nil, payload.Page, payload.Size)
+	movements, err := cashbalance.GetMovements(request.Context(), nil, nil, payload.Page, payload.Size)
 
 	if err != nil {
 		slog.Error("Error getting cash balance movements",
@@ -219,6 +219,8 @@ func createInvestorMovement(response http.ResponseWriter, request *http.Request,
 			writeBadRequest(response, request, repository.CbI18nKeyNotInvestor)
 		case errors.Is(err, repository.CbErrInsufficient):
 			writeBadRequest(response, request, repository.CbI18nKeyInsufficient)
+		case errors.Is(err, repository.CbErrInsufficientAvailable):
+			writeBadRequest(response, request, repository.CbI18nKeyInsufficientAvailable)
 		case errors.Is(err, repository.CbErrLimit):
 			writeBadRequest(response, request, repository.CbI18nKeyLimit)
 		default:
@@ -290,6 +292,201 @@ func QueryInvestorMovements(response http.ResponseWriter, request *http.Request)
 		default:
 			slog.Error("Error getting investor cash balance movements",
 				"event", "handlers.QueryInvestorMovements.GetInvestorMovements",
+				"error", err,
+			)
+
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	preview := &controller.EpPreview[controller.MovementsPagePreview]{
+		Success: true,
+		Data:    movements,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Terms (in months) an investment can be opened for
+ */
+func GetCashCycles(response http.ResponseWriter, request *http.Request) {
+	cycles, err := cashbalance.GetActiveCycles(request.Context())
+
+	if err != nil {
+		slog.Error("Error getting investment cycles",
+			"event", "handlers.GetCashCycles.GetActiveCycles",
+			"error", err,
+		)
+
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	preview := &controller.EpPreview[[]*controller.CashCyclePreview]{
+		Success: true,
+		Data:    &cycles,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Paginated investments of an investor, same QUERY method & payload as the movements
+ */
+func QueryInvestorInvestments(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payload, ok := readPayload[controller.MovementsQueryPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	investments, err := cashbalance.GetInvestorInvestments(ctx, id, visibleProfiles(currentSession.User), payload.Page, payload.Size)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.UsrErrNotFound), errors.Is(err, repository.CbErrNotFound):
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		case errors.Is(err, repository.CbErrNotInvestor):
+			writeBadRequest(response, request, repository.CbI18nKeyNotInvestor)
+		default:
+			slog.Error("Error getting investor investments",
+				"event", "handlers.QueryInvestorInvestments.GetInvestorInvestments",
+				"error", err,
+			)
+
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	preview := &controller.EpPreview[controller.InvestmentsPagePreview]{
+		Success: true,
+		Data:    investments,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Opens an investment for an investor & returns its updated balance
+ */
+func CreateInvestorInvestment(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payload, ok := readPayload[controller.NewInvestmentPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	cycleID, err := uuid.Parse(payload.CycleID)
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	balance, err := cashbalance.CreateInvestorInvestment(ctx, id, visibleProfiles(currentSession.User), payload.Amount, cycleID)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.UsrErrNotFound), errors.Is(err, repository.CbErrNotFound):
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		case errors.Is(err, repository.CbErrNotInvestor):
+			writeBadRequest(response, request, repository.CbI18nKeyNotInvestor)
+		case errors.Is(err, repository.CbErrInvestmentExceeds):
+			writeBadRequest(response, request, repository.CbI18nKeyInvestmentExceeds)
+		case errors.Is(err, repository.CbErrCycleNotFound):
+			writeBadRequest(response, request, repository.CbI18nKeyCycleNotFound)
+		default:
+			slog.Error("Error creating investor investment",
+				"event", "handlers.CreateInvestorInvestment.CreateInvestorInvestment",
+				"error", err,
+			)
+
+			http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		}
+
+		return
+	}
+
+	preview := &controller.EpPreview[controller.InvestorBalancePreview]{
+		Success: true,
+		Data:    balance,
+	}
+
+	response.Header().Set(repository.HeadContentType, repository.ValMimeJson)
+	response.WriteHeader(http.StatusCreated)
+	json.NewEncoder(response).Encode(preview)
+}
+
+/**
+ * Paginated movements of one investment of an investor, same QUERY
+ * method & payload as the other movements
+ */
+func QueryInvestmentMovements(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	investmentID, err := uuid.Parse(request.PathValue("investmentId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payload, ok := readPayload[controller.MovementsQueryPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	movements, err := cashbalance.GetInvestmentMovements(ctx, id, investmentID, visibleProfiles(currentSession.User), payload.Page, payload.Size)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.UsrErrNotFound), errors.Is(err, repository.CbErrNotFound), errors.Is(err, repository.CbErrInvestmentNotFound):
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		case errors.Is(err, repository.CbErrNotInvestor):
+			writeBadRequest(response, request, repository.CbI18nKeyNotInvestor)
+		default:
+			slog.Error("Error getting investment movements",
+				"event", "handlers.QueryInvestmentMovements.GetInvestmentMovements",
 				"error", err,
 			)
 

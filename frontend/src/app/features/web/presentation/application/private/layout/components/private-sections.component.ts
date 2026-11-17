@@ -115,6 +115,7 @@ const MENU_GAP = 8;
                            styleClass="w-full border-contrast!"
                            optionLabel="label"
                            optionValue="id"
+                           appendTo="body"
                            [inputId]="section.id + '-' + field.id"
                            [options]="visibleOptions({ options: field.options })"
                            [placeholder]="I18N.FILTER_PLACEHOLDER | translate"

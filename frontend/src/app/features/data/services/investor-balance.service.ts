@@ -68,11 +68,12 @@ export class InvestorBalanceService {
          validate(schema.amount, ({ value }) => {
             const amount: number | null = value();
 
-            if (amount === null || this.cents(amount) <= this.cents(this.balance?.amount ?? 0)) return null;
+            // money locked by active investments can't be withdrawn
+            if (amount === null || this.cents(amount) <= this.cents(this.balance?.available ?? 0)) return null;
 
             return {
-               kind: FORMS_CUSTOM_VALIDATIONS.EXCEEDS_BALANCE,
-               message: FORMS_I18N_KEYS.VAL_EXCEEDS_BALANCE,
+               kind: FORMS_CUSTOM_VALIDATIONS.EXCEEDS_AVAILABLE,
+               message: FORMS_I18N_KEYS.VAL_EXCEEDS_AVAILABLE,
             };
          });
 
@@ -96,6 +97,13 @@ export class InvestorBalanceService {
 
    public get failed(): boolean {
       return this.$balance.error() !== undefined;
+   }
+
+   /**
+    * Stores a balance received from the API (ex: after opening an investment)
+    */
+   public update({ balance }: { balance: InvestorBalance }): void {
+      this.$balance.set(balance);
    }
 
    public open({ id }: { id: string }): void {

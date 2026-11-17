@@ -3,6 +3,7 @@ import { AllowedMethods, ApiContext } from '../../../interfaces/api';
 import { AuthenticationRoutes } from '../../../interfaces/authentication';
 import { CashBalanceRoutes } from '../../../interfaces/cash-balance';
 import { SettingsRoutes } from '../../../interfaces/settings';
+import { InvestmentsRoutes } from '../../../interfaces/investment';
 import { UsersRoutes } from '../../../interfaces/user';
 
 export const DEFAULT_ERR_TITLE: string = 'DEFAULT_ERR_MESSAGE';
@@ -17,7 +18,7 @@ export const ERR_CODE_TITLES: Record<number, string> = {
    500: 'ERR_TITLE_INTERNAL_SERVER_ERROR',
 };
 export const API_ROUTES: Record<
-   Uppercase<AuthenticationRoutes | UsersRoutes | SettingsRoutes | CashBalanceRoutes>,
+   Uppercase<AuthenticationRoutes | UsersRoutes | SettingsRoutes | CashBalanceRoutes | InvestmentsRoutes>,
    string
 > = {
    LOGIN: '/login',
@@ -29,6 +30,8 @@ export const API_ROUTES: Record<
    UPDATEUSER: '/users/',
    REGENERATEPASSWORD: '/users/',
    INVESTORBALANCE: '/users/',
+   INVESTMENTS: '/users/',
+   CYCLES: '/cash-balance/cycles',
    CHANGEPASSWORD: '/users/change-password',
    LOGOUT: '/users/logout',
    SESSIONS: '/users/sessions',
