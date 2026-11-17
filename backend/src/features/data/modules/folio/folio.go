@@ -66,3 +66,16 @@ func NextInvestment(ctx context.Context, tx pgx.Tx) (string, error) {
 
 	return Format(repository.CbInvestmentFolioPrefix, number)
 }
+
+/**
+ * Next incremental folio for loans using a database sequence
+ */
+func NextLoan(ctx context.Context, tx pgx.Tx) (string, error) {
+	var number int64
+
+	if err := tx.QueryRow(ctx, repository.LnQryNextFolio).Scan(&number); err != nil {
+		return "", err
+	}
+
+	return Format(repository.LnFolioPrefix, number)
+}

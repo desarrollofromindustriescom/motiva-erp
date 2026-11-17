@@ -4,6 +4,7 @@ import { AuthenticationRoutes } from '../../../interfaces/authentication';
 import { CashBalanceRoutes } from '../../../interfaces/cash-balance';
 import { SettingsRoutes } from '../../../interfaces/settings';
 import { InvestmentsRoutes } from '../../../interfaces/investment';
+import { LoansRoutes } from '../../../interfaces/loan';
 import { UsersRoutes } from '../../../interfaces/user';
 
 export const DEFAULT_ERR_TITLE: string = 'DEFAULT_ERR_MESSAGE';
@@ -18,7 +19,7 @@ export const ERR_CODE_TITLES: Record<number, string> = {
    500: 'ERR_TITLE_INTERNAL_SERVER_ERROR',
 };
 export const API_ROUTES: Record<
-   Uppercase<AuthenticationRoutes | UsersRoutes | SettingsRoutes | CashBalanceRoutes | InvestmentsRoutes>,
+   Uppercase<AuthenticationRoutes | UsersRoutes | SettingsRoutes | CashBalanceRoutes | InvestmentsRoutes | LoansRoutes>,
    string
 > = {
    LOGIN: '/login',
@@ -48,6 +49,11 @@ export const API_ROUTES: Record<
    DEPOSIT: '/cash-balance/deposit',
    WITHDRAW: '/cash-balance/withdraw',
    MOVEMENTS: '/cash-balance/movements',
+   LOANFUNDS: '/loans/funds',
+   CREATELOAN: '/loans',
+   LISTLOANS: '/loans',
+   GETLOAN: '/loans/',
+   APPROVELOAN: '/loans/',
 };
 export const HTTP_METHODS: Record<AllowedMethods, AllowedMethods> = {
    GET: 'GET',

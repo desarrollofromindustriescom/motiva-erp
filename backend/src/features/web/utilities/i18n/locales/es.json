@@ -37,5 +37,12 @@
    "INVESTMENT_CYCLE_NOT_FOUND": "El plazo de la inversión no existe o no está activo",
    "USER_NOT_INVESTOR": "El usuario no es un inversor",
    "USER_NOT_EDITABLE": "Este tipo de usuario no tiene datos que editar",
-   "USER_GUARANTEE_REMOVAL": "Un prestatario con aval no puede quedarse sin él, solo se puede modificar"
+   "USER_GUARANTEE_REMOVAL": "Un prestatario con aval no puede quedarse sin él, solo se puede modificar",
+   "LOAN_BORROWER_INVALID": "El prestatario no existe o no está activo",
+   "LOAN_PAYMENTS_INVALID": "El número de pagos no es válido para el tipo de préstamo",
+   "LOAN_RATE_NOT_FOUND": "No hay un interés configurado para el número de pagos elegido",
+   "LOAN_AMOUNT_TOO_LARGE": "El monto del préstamo con su interés es demasiado grande",
+   "LOAN_FUNDS_MISMATCH": "Los fondos elegidos deben sumar exactamente el monto del préstamo",
+   "LOAN_FUNDS_INSUFFICIENT": "Alguno de los fondos elegidos ya no tiene saldo suficiente para este préstamo",
+   "LOAN_NOT_PENDING": "El préstamo no existe o ya no está pendiente"
 }

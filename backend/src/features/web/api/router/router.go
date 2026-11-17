@@ -71,6 +71,13 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationApprove), middleware.Authorize(handlers.ApproveCancellation, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationReject), middleware.Authorize(handlers.RejectCancellation, usersProfiles...))
 
+	// Loans module: same profiles as users
+	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoansFunds), middleware.Authorize(handlers.QueryLoanFunds, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoans), middleware.Authorize(handlers.QueryLoans, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoans), middleware.Authorize(handlers.CreateLoan, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoan), middleware.Authorize(handlers.GetLoan, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanApprove), middleware.Authorize(handlers.ApproveLoan, usersProfiles...))
+
 	// Panel of the investor: its own balance
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteInvestorBalance), middleware.Authorize(handlers.GetMyBalance, repository.ProfileInvestor))
 

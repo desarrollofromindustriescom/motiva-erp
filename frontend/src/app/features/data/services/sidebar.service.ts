@@ -3,15 +3,29 @@ import { Observable, Subject } from 'rxjs';
 import { ApplicationModule } from '../../../interfaces/navigation';
 import {
    SidebarFilterValues,
+   SidebarOption,
    SidebarFiltersEvent,
    SidebarSection,
    SidebarSections,
    SidebarSelection,
 } from '../../../interfaces/sidebar';
 import { APPLICATION_MODULES } from '../repository/navigation.repository';
-import { SIDEBAR_FIELDS, SIDEBAR_OPTIONS, SIDEBAR_SECTIONS } from '../repository/sidebar.repository';
+import {
+   SIDEBAR_FIELDS,
+   SIDEBAR_LOAN_FIELDS,
+   SIDEBAR_OPTIONS,
+   SIDEBAR_SECTIONS,
+} from '../repository/sidebar.repository';
+import { LOANS_I18N_KEYS } from '../repository/loans.repository';
 import { USERS_I18N_KEYS } from '../repository/users.repository';
 import { NavigationService } from './navigation.service';
+
+const LOANS_PROFILES = { superadmin: true, administrator: true, manager: true };
+
+// options that are only numbers or names, so the same for every profile
+const option = (id: string, label: string): SidebarOption => ({ id, label, allowed: LOANS_PROFILES });
+const numbers = (from: number, to: number): SidebarOption[] =>
+   Array.from({ length: to - from + 1 }, (_: unknown, index: number) => option(`${from + index}`, `${from + index}`));
 
 /**
  * Centralized definition of the extra sections (actions, filters...) each module shows on the sidebar
@@ -28,6 +42,110 @@ export class SidebarService {
    public readonly filters$: Observable<SidebarFiltersEvent> = this._filters.asObservable();
 
    public readonly sections: SidebarSections = {
+      [APPLICATION_MODULES.LOANS]: [
+         {
+            id: SIDEBAR_SECTIONS.LOANS_ACTIONS,
+            title: LOANS_I18N_KEYS.ACTIONS_TITLE,
+            type: 'actions',
+            options: [
+               {
+                  id: SIDEBAR_OPTIONS.LOANS_NEW_LOAN,
+                  label: LOANS_I18N_KEYS.ACTION_NEW_LOAN,
+                  icon: 'bx-grid-circle-plus',
+                  allowed: { superadmin: true, administrator: true, manager: true },
+               },
+               {
+                  id: SIDEBAR_OPTIONS.LOANS_NEW_AGREEMENT,
+                  label: LOANS_I18N_KEYS.ACTION_NEW_AGREEMENT,
+                  icon: 'bx-discussion',
+                  allowed: { superadmin: true, administrator: true, manager: true },
+               },
+               {
+                  id: SIDEBAR_OPTIONS.LOANS_CALENDAR,
+                  label: LOANS_I18N_KEYS.ACTION_CALENDAR,
+                  icon: 'bx-calendar-check',
+                  allowed: { superadmin: true, administrator: true, manager: true },
+               },
+               {
+                  id: SIDEBAR_OPTIONS.LOANS_EXCEL,
+                  label: LOANS_I18N_KEYS.ACTION_EXCEL,
+                  icon: 'bx-table',
+                  submenu: true,
+                  allowed: { superadmin: true, administrator: true, manager: true },
+               },
+            ],
+         },
+         {
+            id: SIDEBAR_SECTIONS.LOANS_FILTERS,
+            title: LOANS_I18N_KEYS.FILTERS_TITLE,
+            type: 'filters',
+            icon: 'bx-filter',
+            fields: [
+               { id: SIDEBAR_LOAN_FIELDS.SEARCH, label: LOANS_I18N_KEYS.FILTER_SEARCH, type: 'search' },
+               { id: SIDEBAR_LOAN_FIELDS.BORROWERS, label: LOANS_I18N_KEYS.FILTER_BORROWERS, type: 'borrowers' },
+               { id: SIDEBAR_LOAN_FIELDS.ISSUE, label: LOANS_I18N_KEYS.FILTER_ISSUE, type: 'daterange' },
+               { id: SIDEBAR_LOAN_FIELDS.SETTLE, label: LOANS_I18N_KEYS.FILTER_SETTLE, type: 'daterange' },
+               { id: SIDEBAR_LOAN_FIELDS.RATE, label: LOANS_I18N_KEYS.FILTER_RATE, type: 'range', unit: 'percent' },
+               {
+                  id: SIDEBAR_LOAN_FIELDS.PAYMENTS_RANGE,
+                  label: LOANS_I18N_KEYS.FILTER_PAYMENTS_RANGE,
+                  type: 'range',
+                  unit: 'integer',
+               },
+               {
+                  id: SIDEBAR_LOAN_FIELDS.WEEKLY_DAYS,
+                  label: LOANS_I18N_KEYS.FILTER_WEEKLY_DAYS,
+                  type: 'multiselect',
+                  options: [
+                     option('1', LOANS_I18N_KEYS.DAY_MONDAY),
+                     option('2', LOANS_I18N_KEYS.DAY_TUESDAY),
+                     option('3', LOANS_I18N_KEYS.DAY_WEDNESDAY),
+                     option('4', LOANS_I18N_KEYS.DAY_THURSDAY),
+                     option('5', LOANS_I18N_KEYS.DAY_FRIDAY),
+                     option('6', LOANS_I18N_KEYS.DAY_SATURDAY),
+                     option('7', LOANS_I18N_KEYS.DAY_SUNDAY),
+                  ],
+               },
+               {
+                  id: SIDEBAR_LOAN_FIELDS.MONTHLY_DAYS,
+                  label: LOANS_I18N_KEYS.FILTER_MONTHLY_DAYS,
+                  type: 'multiselect',
+                  options: numbers(1, 31),
+               },
+               { id: SIDEBAR_LOAN_FIELDS.WITH_VISITS, label: LOANS_I18N_KEYS.FILTER_WITH_VISITS, type: 'checkbox' },
+               { id: SIDEBAR_LOAN_FIELDS.WITH_MORA, label: LOANS_I18N_KEYS.FILTER_WITH_MORA, type: 'checkbox' },
+               {
+                  id: SIDEBAR_LOAN_FIELDS.TYPE,
+                  label: LOANS_I18N_KEYS.FILTER_TYPE,
+                  type: 'select',
+                  options: [
+                     option('monthly', LOANS_I18N_KEYS.TYPE_MONTHLY),
+                     option('weekly', LOANS_I18N_KEYS.TYPE_WEEKLY),
+                  ],
+               },
+               {
+                  id: SIDEBAR_LOAN_FIELDS.PAYMENTS,
+                  label: LOANS_I18N_KEYS.FILTER_PAYMENTS,
+                  type: 'multiselect',
+                  options: numbers(1, 13),
+               },
+               {
+                  id: SIDEBAR_LOAN_FIELDS.STATUSES,
+                  label: LOANS_I18N_KEYS.FILTER_STATUS,
+                  type: 'multiselect',
+                  options: [
+                     option('pending', LOANS_I18N_KEYS.STATUS_PENDING),
+                     option('active', LOANS_I18N_KEYS.STATUS_ACTIVE),
+                     option('expired', LOANS_I18N_KEYS.STATUS_EXPIRED),
+                     option('finished', LOANS_I18N_KEYS.STATUS_FINISHED),
+                     option('rejected', LOANS_I18N_KEYS.STATUS_REJECTED),
+                  ],
+               },
+               { id: SIDEBAR_LOAN_FIELDS.AMOUNT, label: LOANS_I18N_KEYS.FILTER_AMOUNT, type: 'range', unit: 'money' },
+               { id: SIDEBAR_LOAN_FIELDS.TOTAL, label: LOANS_I18N_KEYS.FILTER_TOTAL, type: 'range', unit: 'money' },
+            ],
+         },
+      ],
       [APPLICATION_MODULES.USERS]: [
          {
             id: SIDEBAR_SECTIONS.USERS_ACTIONS,

@@ -41,9 +41,10 @@ const (
 const (
 	CbInvestmentFolioPrefix string = "IN"
 
-	// amount (cents) the active investments of a balance have locked
+	// amount (cents) the active investments of a balance have locked: the money they hold right
+	// now (current_amount), because the part lent to a loan has already left the balance
 	CbQryInvestedByUser string = `--sql
-		SELECT COALESCE(SUM(cash_balance_details.initial_amount), 0)::bigint
+		SELECT COALESCE(SUM(cash_balance_details.current_amount), 0)::bigint
 		FROM cash_balance_details
 		INNER JOIN status ON cash_balance_details.status_id = status.id
 		INNER JOIN cash_balances ON cash_balance_details.cash_balance_id = cash_balances.id
@@ -52,7 +53,7 @@ const (
 			status.slug = 'active'
 	`
 	CbQryInvestedByBalance string = `--sql
-		SELECT COALESCE(SUM(cash_balance_details.initial_amount), 0)::bigint
+		SELECT COALESCE(SUM(cash_balance_details.current_amount), 0)::bigint
 		FROM cash_balance_details
 		INNER JOIN status ON cash_balance_details.status_id = status.id
 		WHERE

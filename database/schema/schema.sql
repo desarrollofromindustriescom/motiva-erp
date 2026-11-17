@@ -169,6 +169,8 @@ CREATE SEQUENCE IF NOT EXISTS movements_folio_seq;
 
 CREATE SEQUENCE IF NOT EXISTS investments_folio_seq;
 
+CREATE SEQUENCE IF NOT EXISTS loans_folio_seq;
+
 CREATE TABLE IF NOT EXISTS movements (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
    folio CHARACTER(32) NOT NULL,

@@ -24,4 +24,5 @@ var I18nTagsKeys map[string]models.I18nKey = map[string]models.I18nKey{
 	"max":                UsrI18nKeyFieldMaxLength,
 	"oneof":              UsrI18nKeyFieldOneOf,
 	"uuid":               UsrI18nKeyFieldOneOf,
+	"datetime":           UsrI18nKeyFieldOneOf,
 }
