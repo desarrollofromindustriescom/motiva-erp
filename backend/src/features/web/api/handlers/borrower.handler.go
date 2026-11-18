@@ -66,10 +66,12 @@ func QueryMyLoans(response http.ResponseWriter, request *http.Request) {
 	}
 
 	query := &controller.LoansQueryPayload{
-		Page:      payload.Page,
-		Size:      payload.Size,
-		Order:     payload.Order,
-		Borrowers: []string{currentBorrower(request).ID.String()},
+		Page: payload.Page,
+		Size: payload.Size,
+		LoansFiltersPayload: controller.LoansFiltersPayload{
+			Order:     payload.Order,
+			Borrowers: []string{currentBorrower(request).ID.String()},
+		},
 	}
 
 	page, err := loans.GetPage(request.Context(), query)

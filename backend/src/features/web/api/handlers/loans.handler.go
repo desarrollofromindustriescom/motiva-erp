@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"motiva-erp/backend/src/features/data/modules/loans"
 	"motiva-erp/backend/src/features/data/repository"
@@ -335,4 +336,52 @@ func GetLoansCalendar(response http.ResponseWriter, request *http.Request) {
 	days, err := loans.GetCalendar(request.Context())
 
 	writeLoanResult(response, request, "handlers.GetLoansCalendar.GetCalendar", http.StatusOK, &days, err)
+}
+
+/**
+ * Calendar of payments as an Excel file (download)
+ */
+func GetLoansCalendarExcel(response http.ResponseWriter, request *http.Request) {
+	file, err := loans.BuildCalendarExcel(request.Context())
+
+	if err != nil {
+		writeLoanResult[struct{}](response, request, "handlers.GetLoansCalendarExcel.BuildCalendarExcel", http.StatusOK, nil, err)
+		return
+	}
+
+	name := "calendario-de-pagos-" + time.Now().Format("2006-01-02") + ".xlsx"
+
+	response.Header().Set(repository.HeadContentType, repository.LnExcelFileMime)
+	response.Header().Set("Content-Disposition", `attachment; filename="`+name+`"`)
+	response.Header().Set("X-Content-Type-Options", "nosniff")
+	response.Header().Set("Cache-Control", "private, no-store")
+	response.WriteHeader(http.StatusOK)
+	response.Write(file)
+}
+
+/**
+ * Loans of the table as an Excel file (download), with the same filters & order
+ */
+func QueryLoansExcel(response http.ResponseWriter, request *http.Request) {
+	filters, ok := readPayload[controller.LoansFiltersPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	file, err := loans.BuildLoansExcel(request.Context(), filters)
+
+	if err != nil {
+		writeLoanResult[struct{}](response, request, "handlers.QueryLoansExcel.BuildLoansExcel", http.StatusOK, nil, err)
+		return
+	}
+
+	name := "prestamos-" + time.Now().Format("2006-01-02") + ".xlsx"
+
+	response.Header().Set(repository.HeadContentType, repository.LnExcelFileMime)
+	response.Header().Set("Content-Disposition", `attachment; filename="`+name+`"`)
+	response.Header().Set("X-Content-Type-Options", "nosniff")
+	response.Header().Set("Cache-Control", "private, no-store")
+	response.WriteHeader(http.StatusOK)
+	response.Write(file)
 }

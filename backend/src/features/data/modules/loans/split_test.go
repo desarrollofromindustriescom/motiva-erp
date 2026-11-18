@@ -106,3 +106,19 @@ func TestDistributeKeepsTotal(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 }
+
+func TestCompactFolio(t *testing.T) {
+	cases := map[string]string{
+		"LN-00000000000000000000000000005": "LN-00005",
+		"LN-00000000000000000000000000123": "LN-00123",
+		"LN-00000000000000000000000123456": "LN-123456",
+		"LN-0000000000000000000000000000":  "LN-00000",
+		"SINGUION":                         "SINGUION",
+	}
+
+	for folio, want := range cases {
+		if got := compactFolio(folio); got != want {
+			t.Errorf("%s: got %s, want %s", folio, got, want)
+		}
+	}
+}

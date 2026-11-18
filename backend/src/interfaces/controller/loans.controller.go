@@ -83,13 +83,11 @@ type LoanPreview struct {
 }
 
 /**
- * Page query of the loans table. Empty filters aren't applied & all of them
- * can be combined. Dates are days (YYYY-MM-DD), the interest is a percentage
- * & the amounts are in currency units. Order only applies to the folio.
+ * Filters of the loans table (also used for its Excel file). Empty filters aren't applied & all
+ * of them can be combined. Dates are days (YYYY-MM-DD), the interest is a percentage & the
+ * amounts are in currency units. Order only applies to the folio.
  */
-type LoansQueryPayload struct {
-	Page        int      `json:"page" validate:"required,gte=1"`
-	Size        int      `json:"size" validate:"required,gte=1,lte=100"`
+type LoansFiltersPayload struct {
 	Search      string   `json:"search" validate:"omitempty,max=128"`
 	Borrowers   []string `json:"borrowers" validate:"omitempty,max=100,dive,uuid"`
 	IssueFrom   *string  `json:"issue_from" validate:"omitempty,datetime=2006-01-02"`
@@ -112,6 +110,15 @@ type LoansQueryPayload struct {
 	TotalMin    *float64 `json:"total_min" validate:"omitempty,gte=0"`
 	TotalMax    *float64 `json:"total_max" validate:"omitempty,gte=0"`
 	Order       string   `json:"order" validate:"omitempty,oneof=asc desc"`
+}
+
+/**
+ * Page query of the loans table: a page with the filters above
+ */
+type LoansQueryPayload struct {
+	Page int `json:"page" validate:"required,gte=1"`
+	Size int `json:"size" validate:"required,gte=1,lte=100"`
+	LoansFiltersPayload
 }
 
 type LoanBorrowerPreview struct {

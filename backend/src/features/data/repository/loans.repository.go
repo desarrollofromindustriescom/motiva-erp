@@ -715,6 +715,25 @@ const (
 	`
 )
 
+// Excel of the calendar of payments
+const (
+	LnCalendarCurrent string = "Al corriente"
+	LnCalendarOverdue string = "Atrasado"
+	// the most loans one Excel file has
+	LnMaxExcelRows  int    = 10_000
+	LnLoansSheet    string = "Préstamos"
+	LnExcelFileMime string = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+var (
+	LnExcelMoneyFormat   string = `"$"#,##0.00`
+	LnExcelPercentFormat string = `0.00%`
+	// weekdays from Monday to Sunday
+	LnWeekdayNames    = []string{"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"}
+	LnLoansHeaders    = []string{"Folio", "Prestatario", "Estado", "Préstamo", "Total a pagar", "Interés", "No. Pagos"}
+	LnCalendarHeaders = []string{"Prestatario", "Monto a pagar", "Deuda total", "Día de pago", "Teléfono", "Aval", "Teléfono del aval", "Estado"}
+)
+
 // state titles of the table
 var LnStatusTitles map[string]string = map[string]string{
 	"pending":  "Pendiente",

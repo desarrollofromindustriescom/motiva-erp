@@ -3,6 +3,7 @@ export type LoansRoutes =
    | 'createLoan'
    | 'approveLoan'
    | 'listLoans'
+   | 'loansExcel'
    | 'getLoan'
    | 'updateLoan'
    | 'loanPayments'
@@ -12,6 +13,7 @@ export type LoansRoutes =
    | 'mySummary'
    | 'myLoans'
    | 'loansCalendar'
+   | 'loansCalendarExcel'
    | 'payLoanPayment';
 
 export type LoanType = 'weekly' | 'monthly';

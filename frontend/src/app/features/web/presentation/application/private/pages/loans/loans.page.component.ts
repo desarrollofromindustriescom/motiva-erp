@@ -74,9 +74,15 @@ export class LoansPageComponent {
    }
 
    /**
-    * The new loan & the calendar of payments have an action, the other buttons do nothing yet
+    * The new loan, the calendar of payments & the Excel of the table have an action, the other buttons do nothing yet
     */
    public handleAction({ option }: { option: string }): void {
+      if (option === SIDEBAR_OPTIONS.LOANS_EXCEL) {
+         this._list.downloadExcel();
+
+         return;
+      }
+
       if (option === SIDEBAR_OPTIONS.LOANS_CALENDAR) {
          this._calendar.open();
          this._dialogs.newDialog({

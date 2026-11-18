@@ -4,6 +4,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { CalendarDay } from '../../../../../../../interfaces/loan';
 import { LOAN_WEEKDAYS, LOANS_I18N_KEYS } from '../../../../../../data/repository/loans.repository';
 import { LoansCalendarService } from '../../../../../../data/services/loans-calendar.service';
+import { LoaderComponent } from '../../../forms/loader/loader.component';
 import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pipe';
 
 /**
@@ -13,7 +14,7 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
  */
 @Component({
    selector: 'fi-loans-calendar-dialog-component',
-   imports: [CurrencyPipe, TranslatePipe],
+   imports: [CurrencyPipe, TranslatePipe, LoaderComponent],
    template: `
       @let days = $days();
 
@@ -107,10 +108,16 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
 
             <div class="flex w-full justify-end pt-1">
                <button
-                  class="bg-second hover:bg-second-light focus:bg-second-light flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-white transition-all sm:w-auto"
+                  class="bg-second hover:bg-second-light focus:bg-second-light flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
                   type="button"
+                  [disabled]="$downloading()"
+                  (click)="handleExcel()"
                >
-                  <i class="bx bx-table text-xl"></i>
+                  @if ($downloading()) {
+                     <fi-loader-component tone="white" />
+                  } @else {
+                     <i class="bx bx-table text-xl"></i>
+                  }
                   {{ I18N.CALENDAR_EXCEL | translate }}
                </button>
             </div>
@@ -132,6 +139,7 @@ export class LoansCalendarDialogComponent {
    public readonly I18N = LOANS_I18N_KEYS;
    public readonly WEEKDAYS: string[] = LOAN_WEEKDAYS;
    public readonly skeletons: number[] = [1, 2, 3, 4, 5, 6];
+   public readonly $downloading: Signal<boolean> = computed(() => this._calendar.downloading);
 
    // the days that are open: the first day with loans is open from the start
    private readonly $open: WritableSignal<Set<number> | null> = signal(null);
@@ -154,6 +162,10 @@ export class LoansCalendarDialogComponent {
       else open.add(day.weekday);
 
       this.$open.set(open);
+   }
+
+   public handleExcel(): void {
+      this._calendar.downloadExcel();
    }
 
    // the day of the month with two digits: 03

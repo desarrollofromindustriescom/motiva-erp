@@ -613,18 +613,12 @@ func settingByID(ctx context.Context, db querier, id uuid.UUID) (*rate, error) {
 }
 
 /**
- * One page of loans with the combined filters of the table
+ * Arguments of the filters of the loans table for LnQryCount & LnQryGet
  */
-func GetPage(ctx context.Context, payload *controller.LoansQueryPayload) (*controller.LoansPagePreview, error) {
-	pool := database.GetPool()
+func filterArgs(filters *controller.LoansFiltersPayload) ([]any, error) {
+	borrowers := make([]uuid.UUID, 0, len(filters.Borrowers))
 
-	// the loans that are late have their mora before they are listed
-	if err := RefreshMora(ctx, nil); err != nil {
-		return nil, err
-	}
-	borrowers := make([]uuid.UUID, 0, len(payload.Borrowers))
-
-	for _, value := range payload.Borrowers {
+	for _, value := range filters.Borrowers {
 		id, err := uuid.Parse(value)
 
 		if err != nil {
@@ -634,39 +628,28 @@ func GetPage(ctx context.Context, payload *controller.LoansQueryPayload) (*contr
 		borrowers = append(borrowers, id)
 	}
 
-	args := []any{
-		escapeLike(strings.TrimSpace(payload.Search)),
+	return []any{
+		escapeLike(strings.TrimSpace(filters.Search)),
 		borrowers,
-		payload.IssueFrom, payload.IssueTo,
-		payload.SettleFrom, payload.SettleTo,
-		payload.RateMin, payload.RateMax,
-		payload.PaymentsMin, payload.PaymentsMax,
-		orEmpty(payload.WeeklyDays), orEmpty(payload.MonthlyDays),
-		payload.WithVisits, payload.WithMora,
-		payload.Type,
-		orEmpty(payload.Payments),
-		orEmpty(payload.Statuses),
-		payload.AmountMin, payload.AmountMax,
-		payload.TotalMin, payload.TotalMax,
-	}
+		filters.IssueFrom, filters.IssueTo,
+		filters.SettleFrom, filters.SettleTo,
+		filters.RateMin, filters.RateMax,
+		filters.PaymentsMin, filters.PaymentsMax,
+		orEmpty(filters.WeeklyDays), orEmpty(filters.MonthlyDays),
+		filters.WithVisits, filters.WithMora,
+		filters.Type,
+		orEmpty(filters.Payments),
+		orEmpty(filters.Statuses),
+		filters.AmountMin, filters.AmountMax,
+		filters.TotalMin, filters.TotalMax,
+	}, nil
+}
 
-	result := &controller.LoansPagePreview{
-		Items: []*controller.LoanRowPreview{},
-		Page:  payload.Page,
-		Size:  payload.Size,
-	}
-
-	if err := pool.QueryRow(ctx, repository.LnQryCount, args...).Scan(&result.Total); err != nil {
-		return nil, err
-	}
-
-	rows, err := pool.Query(ctx, repository.LnQryGet, append(args, payload.Order, payload.Size, (payload.Page-1)*payload.Size)...)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
+/**
+ * Rows of LnQryGet
+ */
+func scanLoanRows(rows pgx.Rows) ([]*controller.LoanRowPreview, error) {
+	items := []*controller.LoanRowPreview{}
 
 	for rows.Next() {
 		var amount, total, rateValue int64
@@ -676,7 +659,7 @@ func GetPage(ctx context.Context, payload *controller.LoansQueryPayload) (*contr
 			Status:   &controller.LoanStatusPreview{},
 		}
 
-		err = rows.Scan(
+		err := rows.Scan(
 			&item.ID,
 			&item.Folio,
 			&item.Borrower.ID,
@@ -700,10 +683,52 @@ func GetPage(ctx context.Context, payload *controller.LoansQueryPayload) (*contr
 		item.Total = float64(total) / 100
 		item.Rate = float64(rateValue) / 1000
 
-		result.Items = append(result.Items, item)
+		items = append(items, item)
 	}
 
-	return result, rows.Err()
+	return items, rows.Err()
+}
+
+/**
+ * One page of loans with the combined filters of the table
+ */
+func GetPage(ctx context.Context, payload *controller.LoansQueryPayload) (*controller.LoansPagePreview, error) {
+	pool := database.GetPool()
+
+	// the loans that are late have their mora before they are listed
+	if err := RefreshMora(ctx, nil); err != nil {
+		return nil, err
+	}
+
+	args, err := filterArgs(&payload.LoansFiltersPayload)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := &controller.LoansPagePreview{
+		Items: []*controller.LoanRowPreview{},
+		Page:  payload.Page,
+		Size:  payload.Size,
+	}
+
+	if err = pool.QueryRow(ctx, repository.LnQryCount, args...).Scan(&result.Total); err != nil {
+		return nil, err
+	}
+
+	rows, err := pool.Query(ctx, repository.LnQryGet, append(args, payload.Order, payload.Size, (payload.Page-1)*payload.Size)...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	if result.Items, err = scanLoanRows(rows); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // a nil slice would be sent as NULL, the query expects an empty array

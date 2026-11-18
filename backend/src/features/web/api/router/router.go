@@ -73,6 +73,8 @@ func Router() *http.ServeMux {
 
 	// Loans module: same profiles as users
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoansCalendar), middleware.Authorize(handlers.GetLoansCalendar, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoansCalendarExcel), middleware.Authorize(handlers.GetLoansCalendarExcel, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoansExcel), middleware.Authorize(handlers.QueryLoansExcel, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoansFunds), middleware.Authorize(handlers.QueryLoanFunds, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoans), middleware.Authorize(handlers.QueryLoans, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoans), middleware.Authorize(handlers.CreateLoan, usersProfiles...))

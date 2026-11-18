@@ -1,11 +1,13 @@
 import { computed, effect, inject, Injectable, signal, Signal, WritableSignal } from '@angular/core';
-import { HttpContext, httpResource, HttpResourceRef, HttpResourceRequest } from '@angular/common/http';
+import { HttpClient, HttpContext, httpResource, HttpResourceRef, HttpResourceRequest } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { EndpointData } from '../../../interfaces/api';
 import { LoanRow, LoansFilters, LoansOrder, LoansPage } from '../../../interfaces/loan';
 import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
 import { LOANS_PAGE_SIZE } from '../repository/loans.repository';
 import { SIDEBAR_LOAN_FIELDS as FIELD } from '../repository/sidebar.repository';
 import { environment } from '../../../../environments/environment.development';
+import { downloadBlob, fileDate } from '../../web/utilities/files/download';
 import { SessionService } from './session.service';
 
 type Body = Record<string, unknown>;
@@ -30,10 +32,14 @@ function range({ body, value, min, max }: { body: Body; value: string; min: stri
  */
 @Injectable({ providedIn: 'root' })
 export class LoansListService {
+   private readonly _http: HttpClient = inject(HttpClient);
    private readonly _session: SessionService = inject(SessionService);
 
    private readonly route: EndpointData = { route: API_ROUTES.LISTLOANS, method: HTTP_METHODS.QUERY };
 
+   private readonly excel: EndpointData = { route: API_ROUTES.LOANSEXCEL, method: HTTP_METHODS.QUERY };
+
+   private readonly $downloading: WritableSignal<boolean> = signal(false);
    private readonly $active: WritableSignal<boolean> = signal(false);
    private readonly $version: WritableSignal<number> = signal(0);
    private readonly $page: WritableSignal<number> = signal(1);
@@ -69,6 +75,10 @@ export class LoansListService {
 
    public get loading(): boolean {
       return this.$loading();
+   }
+
+   public get downloading(): boolean {
+      return this.$downloading();
    }
 
    public get loans(): LoanRow[] {
@@ -130,6 +140,34 @@ export class LoansListService {
     */
    public reload(): void {
       if (this.$active()) this.$version.update((version: number) => version + 1);
+   }
+
+   /**
+    * Downloads the loans of the table as an Excel file: every loan that matches the filters
+    * applied now (not only the page that is shown) in the order of the table
+    */
+   public async downloadExcel(): Promise<void> {
+      if (this.$downloading()) return;
+
+      const { route, method } = this.excel;
+      const body: Body = this.query({ filters: this.$filters() });
+      const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
+
+      if (this.$order()) body['order'] = this.$order();
+
+      this.$downloading.set(true);
+
+      try {
+         const file: Blob = await firstValueFrom(
+            this._http.request(method, `${environment.apiUrl}${route}`, { body, context, responseType: 'blob' }),
+         );
+
+         downloadBlob({ file, name: `prestamos-${fileDate()}.xlsx` });
+      } catch {
+         // the error interceptor already notified the user
+      } finally {
+         this.$downloading.set(false);
+      }
    }
 
    /**

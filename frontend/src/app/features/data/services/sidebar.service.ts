@@ -70,7 +70,6 @@ export class SidebarService {
                   id: SIDEBAR_OPTIONS.LOANS_EXCEL,
                   label: LOANS_I18N_KEYS.ACTION_EXCEL,
                   icon: 'bx-table',
-                  submenu: true,
                   allowed: { superadmin: true, administrator: true, manager: true },
                },
             ],

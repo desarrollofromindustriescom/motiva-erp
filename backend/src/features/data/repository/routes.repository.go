@@ -38,6 +38,8 @@ const (
 	RouteLoanPay                  string = "/api/loans/{id}/pay"
 	RouteLoanPayments             string = "/api/loans/{id}/payments"
 	RouteLoansCalendar            string = "/api/loans/calendar"
+	RouteLoansCalendarExcel       string = "/api/loans/calendar/excel"
+	RouteLoansExcel               string = "/api/loans/excel"
 	RouteLoansFunds               string = "/api/loans/funds"
 	RouteLoanApprove              string = "/api/loans/{id}/approve"
 	RouteSettings                 string = "/api/settings"
