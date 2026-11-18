@@ -2,7 +2,7 @@
 FROM node:26-alpine AS frontend-build
 
 # corepack is no longer bundled with node >= 25
-RUN npm install -g pnpm@12.11.2
+RUN npm install -g pnpm@12.21.0
 
 WORKDIR /app
 
