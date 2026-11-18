@@ -71,6 +71,9 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationApprove), middleware.Authorize(handlers.ApproveCancellation, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationReject), middleware.Authorize(handlers.RejectCancellation, usersProfiles...))
 
+	// Kpis: only superadmin & administrator, like the settings
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteKpis), middleware.Authorize(handlers.GetKpis, settingsProfiles...))
+
 	// Loans module: same profiles as users
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoansCalendar), middleware.Authorize(handlers.GetLoansCalendar, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoansCalendarExcel), middleware.Authorize(handlers.GetLoansCalendarExcel, usersProfiles...))

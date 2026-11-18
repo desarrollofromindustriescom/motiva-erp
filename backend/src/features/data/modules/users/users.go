@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	mrand "math/rand/v2"
+	"motiva-erp/backend/src/features/data/modules/kpis"
 	"slices"
 	"strings"
 	"unicode"
@@ -296,7 +297,13 @@ func Deactivate(ctx context.Context, requester *models.User, id uuid.UUID, profi
 		return err
 	}
 
-	return tx.Commit(ctx)
+	if err = tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	kpis.Touch()
+
+	return nil
 }
 
 /**
@@ -502,6 +509,10 @@ func Create(ctx context.Context, payload *controller.CreateUserPayload) (*contro
 
 		if err == nil {
 			preview.Username = username
+
+			// investors & borrowers are kpis
+			kpis.Touch()
+
 			return preview, nil
 		}
 

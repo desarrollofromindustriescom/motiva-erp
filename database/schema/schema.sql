@@ -189,3 +189,21 @@ CREATE TABLE IF NOT EXISTS movements (
    status_id UUID NOT NULL REFERENCES status (id) DEFAULT '97469771-106a-4b3e-a2c6-ee0e0d8fa6d5',
    UNIQUE (folio, cash_balance_id)
 );
+
+-- KPIs of the dashboard: the values are calculated from the other tables by the api (when it starts, every few
+-- minutes & after the events that change them) and stored here, so reading them never has to add up everything
+CREATE TABLE IF NOT EXISTS kpi_metrics (
+   slug VARCHAR(64) PRIMARY KEY,
+   -- cents on money (loans_amount, pending_amount), a count on the others
+   VALUE BIGINT NOT NULL,
+   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Loans made on every week (it starts on Monday), by the day they were approved
+CREATE TABLE IF NOT EXISTS kpi_loan_weeks (
+   week_start DATE PRIMARY KEY,
+   loans INTEGER NOT NULL,
+   -- cents
+   amount BIGINT NOT NULL,
+   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

@@ -9,5 +9,5 @@ export const PICTURES = {
 };
 
 export const ICONS = {
-   MOTIVA_LOGO: 'logo.svg',
+   MOTIVA_LOGO: '0072b4fb-50a4-4c5e-b134-d3ee577494ad.svg',
 };

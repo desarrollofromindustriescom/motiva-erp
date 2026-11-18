@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"motiva-erp/backend/src/features/data/database"
 	"motiva-erp/backend/src/features/data/log"
+	"motiva-erp/backend/src/features/data/modules/kpis"
 	"motiva-erp/backend/src/features/data/repository"
 	"motiva-erp/backend/src/features/web/api/router"
 	"motiva-erp/backend/src/features/web/utilities/i18n"
@@ -69,6 +71,13 @@ func main() {
 	}
 
 	defer database.GetPool().Close()
+
+	// the kpis are kept up to date while the api runs
+	kpisCtx, stopKpis := context.WithCancel(context.Background())
+
+	defer stopKpis()
+
+	kpis.Start(kpisCtx)
 
 	mux := router.Router()
 	port := os.Getenv(repository.EnvApiPort)

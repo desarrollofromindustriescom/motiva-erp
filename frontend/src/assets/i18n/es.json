@@ -472,5 +472,18 @@
    "LOANS_DETAIL_SECTION_AGREEMENT_LOANS": "Préstamos del convenio",
    "LOANS_DETAIL_AGREEMENT_DEBT": "Deuda del convenio",
    "LOANS_DETAIL_AGREEMENT_RATE": "Interés por pago",
-   "LOANS_STATUS_CANCELLED": "Cancelado"
+   "LOANS_STATUS_CANCELLED": "Cancelado",
+   "KPIS_AMOUNT_LENT": "Monto prestado",
+   "KPIS_AWAITING_PAYMENT": "En espera de pago",
+   "KPIS_INVESTORS": "Inversores",
+   "KPIS_BORROWERS": "Prestatarios",
+   "KPIS_CHART_TITLE": "Préstamos realizados por semana",
+   "KPIS_CHART_SUBTITLE": "Últimas 12 semanas",
+   "KPIS_CHART_LOANS": "Préstamos",
+   "KPIS_CHART_AMOUNT": "Monto prestado",
+   "KPIS_CHART_WEEK_OF": "Semana del {{date}}",
+   "KPIS_CHART_LABEL": "Gráfica de líneas con los préstamos realizados cada semana",
+   "KPIS_UPDATED": "Actualizado {{date}}",
+   "KPIS_ERROR": "No se pudieron cargar las métricas",
+   "KPIS_RETRY": "Reintentar"
 }

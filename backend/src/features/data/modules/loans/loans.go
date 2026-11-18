@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"motiva-erp/backend/src/features/data/modules/kpis"
 	"slices"
 	"strconv"
 	"strings"
@@ -528,6 +529,8 @@ func save(ctx context.Context, executor *models.User, payload *controller.NewLoa
 		return nil, err
 	}
 
+	kpis.Touch()
+
 	return preview(loanID, number, amount, payload.Type, payload.NoPayments, interest, status), nil
 }
 
@@ -591,6 +594,8 @@ func Approve(ctx context.Context, executor *models.User, loanID uuid.UUID, paylo
 	if err = tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+
+	kpis.Touch()
 
 	return preview(loanID, number, int64(amount), loanType, noPayments, interest, "active"), nil
 }
@@ -1270,6 +1275,8 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 		return nil, err
 	}
 
+	kpis.Touch()
+
 	return GetPayments(ctx, loanID)
 }
 
@@ -1602,6 +1609,8 @@ func AddVisit(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID) ([]*co
 		return nil, err
 	}
 
+	kpis.Touch()
+
 	return GetPayments(ctx, loanID)
 }
 
@@ -1773,6 +1782,8 @@ func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amoun
 	if err = tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+
+	kpis.Touch()
 
 	return GetPayments(ctx, loanID)
 }

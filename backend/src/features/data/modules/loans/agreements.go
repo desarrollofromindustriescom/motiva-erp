@@ -3,6 +3,7 @@ package loans
 import (
 	"context"
 	"errors"
+	"motiva-erp/backend/src/features/data/modules/kpis"
 	"slices"
 	"strings"
 	"time"
@@ -273,6 +274,8 @@ func CreateAgreement(ctx context.Context, executor *models.User, payload *contro
 	if err = tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+
+	kpis.Touch()
 
 	return &controller.AgreementPreview{
 		ID:            agreementID,
