@@ -63,6 +63,13 @@ export class LoanPaymentsService {
       this.$version.update((version: number) => version + 1);
    }
 
+   /**
+    * Requests the payments again only when they are the ones of this loan
+    */
+   public reloadFor({ id }: { id: string }): void {
+      if (this.$id() === id) this.reload();
+   }
+
    public open({ id, folio }: { id: string; folio: string }): void {
       this.$folio.set(folio);
       // the payments of the previous loan aren't shown while the new ones load

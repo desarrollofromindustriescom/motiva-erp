@@ -8,6 +8,7 @@ import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repos
 import { compactFolio } from '../../../../../../data/repository/cash-balance.repository';
 import { SIDEBAR_OPTIONS, SIDEBAR_SECTIONS } from '../../../../../../data/repository/sidebar.repository';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
+import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
 import { LoanDetailService } from '../../../../../../data/services/loan-detail.service';
 import { LoanBorrowersService } from '../../../../../../data/services/loan-borrowers.service';
@@ -16,6 +17,7 @@ import { LoansListService } from '../../../../../../data/services/loans-list.ser
 import { SidebarService } from '../../../../../../data/services/sidebar.service';
 import { LoanPaymentsDialogComponent } from '../../../../common/dialogs/views/loans/loan-payments.dialog.component';
 import { LoanDetailDialogComponent } from '../../../../common/dialogs/views/loans/loan-detail.dialog.component';
+import { LoanPaymentPayDialogComponent } from '../../../../common/dialogs/views/loans/loan-payment-pay.dialog.component';
 import { LoanCreateDialogComponent } from '../../../../common/dialogs/views/loans/loan-create.dialog.component';
 import { LoansTableComponent } from './components/loans-table.component';
 
@@ -28,6 +30,7 @@ import { LoansTableComponent } from './components/loans-table.component';
       (details)="handleDetails({ loan: $event })"
       (edit)="handleEdit({ loan: $event })"
       (payments)="handlePayments({ loan: $event })"
+      (pay)="handlePay({ loan: $event })"
    />`,
 })
 export class LoansPageComponent {
@@ -38,6 +41,7 @@ export class LoansPageComponent {
    private readonly _borrowers: LoanBorrowersService = inject(LoanBorrowersService);
    private readonly _detail: LoanDetailService = inject(LoanDetailService);
    private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
+   private readonly _pay: LoanPaymentPayService = inject(LoanPaymentPayService);
 
    constructor() {
       // filters are never active when entering the page
@@ -113,6 +117,22 @@ export class LoansPageComponent {
          titleParams: { folio: compactFolio(loan.folio) },
          component: LoanPaymentsDialogComponent,
          size: 'lg',
+      });
+   }
+
+   /**
+    * Pays any part of what the loan owes
+    */
+   public handlePay({ loan }: { loan: LoanRow }): void {
+      this._pay.startLoan({ loanId: loan.id }).then((done: boolean) => {
+         if (!done) return;
+
+         this._dialogs.newDialog({
+            title: DIALOG_I18N_KEYS.LOAN_PAY_TITLE,
+            titleParams: { folio: compactFolio(loan.folio) },
+            component: LoanPaymentPayDialogComponent,
+            size: 'sm',
+         });
       });
    }
 }

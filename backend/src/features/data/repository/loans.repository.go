@@ -29,6 +29,7 @@ const (
 	LnI18nKeyPaymentAmount    models.I18nKey = "LOAN_PAYMENT_AMOUNT"
 	LnI18nKeyPaymentNotNext   models.I18nKey = "LOAN_PAYMENT_NOT_NEXT"
 	LnI18nKeyPaymentExceeds   models.I18nKey = "LOAN_PAYMENT_EXCEEDS"
+	LnI18nKeyLoanExceeds      models.I18nKey = "LOAN_DEBT_EXCEEDS"
 	LnI18nKeyVisitNotCurrent  models.I18nKey = "LOAN_VISIT_NOT_CURRENT"
 	LnI18nKeyExtraSetting     models.I18nKey = "LOAN_EXTRA_SETTING"
 
@@ -647,6 +648,7 @@ var (
 	LnErrPaymentAmount    error = errors.New("Payment amount not valid")
 	LnErrPaymentNotNext   error = errors.New("Only the next payment can be paid")
 	LnErrPaymentExceeds   error = errors.New("Payment amount greater than the debt of the payment")
+	LnErrLoanExceeds      error = errors.New("Payment amount greater than the debt of the loan")
 	LnErrVisitNotCurrent  error = errors.New("Only the current payment can have a visit")
 	LnErrExtraSetting     error = errors.New("Extra setting not found")
 	LnErrBorrowerInvalid  error = errors.New("Borrower doesn't exist or isn't active")

@@ -7,8 +7,10 @@ import { USERS_I18N_KEYS } from '../../../../../../data/repository/users.reposit
 import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
 import { compactFolio } from '../../../../../../data/repository/cash-balance.repository';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
+import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
 import { LoanDetailService } from '../../../../../../data/services/loan-detail.service';
+import { LoanPaymentPayDialogComponent } from './loan-payment-pay.dialog.component';
 import { LoanPaymentsDialogComponent } from './loan-payments.dialog.component';
 import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pipe';
 
@@ -69,8 +71,10 @@ interface DetailSection {
 
             <div class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
                <button
-                  class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-white transition-all"
+                  class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-white transition-all disabled:cursor-auto disabled:bg-slate-300"
                   type="button"
+                  [disabled]="!$canPay()"
+                  (click)="handlePay()"
                >
                   <i class="bx bx-dollar text-xl"></i>
                   {{ I18N.BUTTON_PAY | translate }}
@@ -97,6 +101,7 @@ interface DetailSection {
 export class LoanDetailDialogComponent {
    private readonly _detail: LoanDetailService = inject(LoanDetailService);
    private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
+   private readonly _pay: LoanPaymentPayService = inject(LoanPaymentPayService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
 
    private readonly currency: CurrencyPipe = new CurrencyPipe('en-US');
@@ -108,6 +113,11 @@ export class LoanDetailDialogComponent {
    public readonly skeletons: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
    public readonly $loan: Signal<LoanDetail | undefined> = computed(() => this._detail.detail);
+
+   // only a loan that is being paid (on time or late) can receive payments
+   public readonly $canPay: Signal<boolean> = computed(() =>
+      ['active', 'expired'].includes(this.$loan()?.status.slug ?? ''),
+   );
 
    public readonly $sections: Signal<DetailSection[]> = computed(() => {
       const loan: LoanDetail | undefined = this.$loan();
@@ -204,6 +214,26 @@ export class LoanDetailDialogComponent {
 
       return sections;
    });
+
+   /**
+    * Pays any part of what the loan owes, over this dialog so the user can come back to it
+    */
+   public handlePay(): void {
+      const loan: LoanDetail | undefined = this.$loan();
+
+      if (!loan || !this.$canPay()) return;
+
+      this._pay.startLoan({ loanId: loan.id }).then((done: boolean) => {
+         if (!done) return;
+
+         this._dialogs.newDialog({
+            title: DIALOG_I18N_KEYS.LOAN_PAY_TITLE,
+            titleParams: { folio: compactFolio(loan.folio) },
+            component: LoanPaymentPayDialogComponent,
+            size: 'sm',
+         });
+      });
+   }
 
    /**
     * Opens the payments over this dialog, so the user can come back to it

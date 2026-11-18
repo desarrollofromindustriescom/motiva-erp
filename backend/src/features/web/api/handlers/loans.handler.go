@@ -40,6 +40,8 @@ func writeLoanResult[T any](response http.ResponseWriter, request *http.Request,
 			writeBadRequest(response, request, repository.LnI18nKeyPaymentAmount)
 		case errors.Is(err, repository.LnErrPaymentNotNext):
 			writeBadRequest(response, request, repository.LnI18nKeyPaymentNotNext)
+		case errors.Is(err, repository.LnErrLoanExceeds):
+			writeBadRequest(response, request, repository.LnI18nKeyLoanExceeds)
 		case errors.Is(err, repository.LnErrPaymentExceeds):
 			writeBadRequest(response, request, repository.LnI18nKeyPaymentExceeds)
 		case errors.Is(err, repository.LnErrVisitNotCurrent):
@@ -299,4 +301,29 @@ func GetLoanPaymentBreakdown(response http.ResponseWriter, request *http.Request
 	breakdown, err := loans.GetBreakdown(request.Context(), loanID, paymentID)
 
 	writeLoanResult(response, request, "handlers.GetLoanPaymentBreakdown.GetBreakdown", http.StatusOK, breakdown, err)
+}
+
+/**
+ * Pays any part of what a loan owes
+ */
+func PayLoan(response http.ResponseWriter, request *http.Request) {
+	loanID, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payload, ok := readPayload[controller.PayLoanPaymentPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	payments, err := loans.PayLoan(ctx, currentSession.User, loanID, payload.Amount)
+
+	writeLoanResult(response, request, "handlers.PayLoan.PayLoan", http.StatusCreated, &payments, err)
 }

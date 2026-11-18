@@ -1576,3 +1576,109 @@ func GetBreakdown(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID) (*
 
 	return result, rows.Err()
 }
+
+/**
+ * Pays any part of what the loan owes, in one transaction (see planLoanPayment): the current
+ * payment is paid first & what is left goes to the last payments as capital. Every part is
+ * saved as a payment detail with its own deposits, like a payment made to that payment; the
+ * payments paid in full are executed & the loan is finished when nothing is owed anymore.
+ * Returns the payments of the loan updated.
+ */
+func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amount float64) ([]*controller.LoanPaymentPreview, error) {
+	cents, ok := toCents(amount)
+
+	if !ok || cents <= 0 {
+		return nil, repository.LnErrPaymentAmount
+	}
+
+	tx, err := database.GetPool().Begin(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback(ctx)
+
+	if _, err = tx.Exec(ctx, repository.LnQryLockExtras); err != nil {
+		return nil, err
+	}
+
+	var loanAmount, rateValue int64
+
+	if err = tx.QueryRow(ctx, repository.LnQryLockActive, loanID).Scan(new(uuid.UUID), &loanAmount, &rateValue); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.LnErrNotActive
+		}
+
+		return nil, err
+	}
+
+	if err = accrueMora(ctx, tx, &loanID); err != nil {
+		return nil, err
+	}
+
+	rows, err := loadPayments(ctx, tx, loanID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// the payments that aren't paid in full, in order: the first one is the current payment
+	owed := []*paymentRow{}
+	debts := []int64{}
+
+	var total int64
+
+	for _, row := range rows {
+		if row.paid < row.amount {
+			owed = append(owed, row)
+			debts = append(debts, row.debt())
+			total += row.debt()
+		}
+	}
+
+	if len(owed) == 0 {
+		return nil, repository.LnErrNotActive
+	}
+
+	if cents > total {
+		return nil, repository.LnErrLoanExceeds
+	}
+
+	loanTotal, _ := quote(loanAmount, rateValue, 1)
+	now := time.Now()
+	paidInFull := 0
+
+	for _, item := range planLoanPayment(cents, debts, owed[0].overdue) {
+		target := owed[item.position]
+
+		if _, err = tx.Exec(ctx, repository.LnQryInsertPaymentDetail, int(item.amount), item.kind, now, target.preview.ID); err != nil {
+			return nil, err
+		}
+
+		if err = depositPayment(ctx, tx, executor, loanID, target.preview.ID, item.amount, loanAmount, loanTotal); err != nil {
+			return nil, err
+		}
+
+		if item.amount == target.debt() {
+			paidInFull++
+
+			if _, err = tx.Exec(ctx, repository.LnQryExecutePayment, target.preview.ID); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// nothing is owed anymore
+	if paidInFull == len(owed) {
+		if _, err = tx.Exec(ctx, repository.LnQryFinish, loanID); err != nil {
+			return nil, err
+		}
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return GetPayments(ctx, loanID)
+}

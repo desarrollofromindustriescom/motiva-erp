@@ -350,7 +350,7 @@
    "LOANS_TOOLTIP_DETAILS": "Detalles",
    "LOANS_TOOLTIP_PAYMENTS": "Pagos",
    "LOANS_TOOLTIP_EDIT": "Continuar préstamo",
-   "LOANS_TOOLTIP_PAY": "Registrar pago",
+   "LOANS_TOOLTIP_PAY": "Abonar a préstamo",
    "LOANS_STATUS_PENDING": "Pendiente",
    "LOANS_STATUS_ACTIVE": "Al corriente",
    "LOANS_STATUS_REJECTED": "Rechazado",
@@ -426,5 +426,7 @@
    "LOANS_BREAKDOWN_BASE": "Pago base",
    "LOANS_BREAKDOWN_MORA": "Mora (semanas de retraso)",
    "LOANS_BREAKDOWN_VISITS": "Visitas",
-   "LOANS_BREAKDOWN_TOTAL": "Total"
+   "LOANS_BREAKDOWN_TOTAL": "Total",
+   "DIALOG_LOAN_PAY_TITLE": "Abonar al préstamo {{folio}}",
+   "DIALOG_CONFIRM_PAY_LOAN": "Se pagará primero el pago actual y lo que sobre se aplicará a los últimos pagos como abono a capital"
 }

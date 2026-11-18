@@ -132,7 +132,7 @@ export class LoansTableComponent {
    public readonly STATUS_COLORS: Record<string, string> = LOAN_STATUS_COLORS;
    public readonly $size: number = this._list.size;
 
-   // the details & the payments are always available, continuing a loan only while it is pending
+   // the details & the payments are always available, continuing a loan only while it is pending & paying it while it is active
    public readonly actions: RowAction[] = [
       { id: 'details', icon: 'bx-file-detail', tooltip: LOANS_I18N_KEYS.TOOLTIP_DETAILS },
       { id: 'payments', icon: 'bx-currency-notes', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAYMENTS },
@@ -143,6 +143,7 @@ export class LoansTableComponent {
    public $details: OutputEmitterRef<LoanRow> = output({ alias: 'details' });
    public $edit: OutputEmitterRef<LoanRow> = output({ alias: 'edit' });
    public $payments: OutputEmitterRef<LoanRow> = output({ alias: 'payments' });
+   public $pay: OutputEmitterRef<LoanRow> = output({ alias: 'pay' });
 
    public readonly $loans: Signal<LoanRow[]> = computed(() => this._list.loans);
    public readonly $total: Signal<number> = computed(() => this._list.total);
@@ -155,12 +156,18 @@ export class LoansTableComponent {
    }
 
    public enabled({ action, loan }: { action: RowAction; loan: LoanRow }): boolean {
-      return action.id !== 'edit' || loan.status.slug === 'pending';
+      if (action.id === 'edit') return loan.status.slug === 'pending';
+
+      // only a loan that is being paid (on time or late) can receive payments
+      if (action.id === 'pay') return ['active', 'expired'].includes(loan.status.slug);
+
+      return true;
    }
 
    public handleAction({ action, loan }: { action: RowAction; loan: LoanRow }): void {
       if (action.id === 'details') this.$details.emit(loan);
       if (action.id === 'payments') this.$payments.emit(loan);
+      if (action.id === 'pay') this.$pay.emit(loan);
       if (action.id === 'edit') this.$edit.emit(loan);
    }
 
