@@ -10,6 +10,14 @@ const (
 	ValFormDataMaxRequestSize int64 = 10 << 20
 	ValFormDataMaxFileSize    int64 = 9 << 20
 
+	// the images are only read here (never decoded), but they are decoded later by whoever uses them, so
+	// the sides can't be huge
+	ValImageMaxSide int = 6000
+
+	// the type of an accepted image, also the extension it is stored with (.jpg & .jpeg are the same format)
+	ValImagePNG  string = "png"
+	ValImageJPEG string = "jpg"
+
 	ValKeySecurePassword string = "securepassword"
 	ValKeyPercentage     string = "percentage"
 	ValKeyMonetary       string = "monetary"
@@ -38,6 +46,7 @@ var (
 	ValErrFileSize            error = errors.New("File too large")
 	ValErrFileOpenTest        error = errors.New("Error opening file")
 	ValErrUnsupportedFile     error = errors.New("Unsupported file type")
+	ValErrImageTooLarge       error = errors.New("Image sides too large")
 	ValErrInvalidDataType     error = errors.New("Invalid data type")
 	ValErrPayloadDecode       error = errors.New("Request payload decode error")
 	ValErrContentTypeMismatch error = errors.New("Content type mismatch")

@@ -6,17 +6,18 @@ import { IftaLabelModule } from 'primeng/iftalabel';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SignalForm } from '../../../../../../../interfaces/alias';
-import { FieldsLoanPayment } from '../../../../../../../interfaces/loan';
+import { FieldsLoanPayment, LoanPaymentMethod } from '../../../../../../../interfaces/loan';
 import { FORMS_I18N_KEYS } from '../../../../../../data/repository/forms.repository';
 import { LOANS_I18N_KEYS } from '../../../../../../data/repository/loans.repository';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
 import { FieldErrorsComponent } from '../../../forms/field-errors/field-errors.component';
 import { LoaderComponent } from '../../../forms/loader/loader.component';
+import { LoanReceiptFieldsComponent } from './loan-receipt-fields.component';
 
 /**
- * Payment to a payment of a loan: the debt of the payment (read only) & the amount to pay,
- * which can be all of the debt (one click) or less
+ * Payment to a payment of a loan: the debt of the payment (read only), the amount to pay, which can be
+ * all of the debt (one click) or less, & how it is paid (cash or a transfer with the image of its receipt)
  */
 @Component({
    selector: 'fi-loan-payment-pay-dialog-component',
@@ -29,6 +30,7 @@ import { LoaderComponent } from '../../../forms/loader/loader.component';
       InputTextModule,
       FieldErrorsComponent,
       LoaderComponent,
+      LoanReceiptFieldsComponent,
    ],
    template: `
       @let form = $form;
@@ -81,6 +83,16 @@ import { LoaderComponent } from '../../../forms/loader/loader.component';
             {{ I18N.PAYMENT_FULL | translate }} →
          </button>
 
+         <fi-loan-receipt-fields-component
+            class="pt-2"
+            [payment]="form.payment().value()"
+            [file]="$file()"
+            [fileError]="$fileError()"
+            [disabled]="saving"
+            (paymentChange)="handlePayment($event)"
+            (fileChange)="handleFile($event)"
+         />
+
          <div class="flex w-full flex-col-reverse items-center gap-2 pt-2 sm:flex-row sm:justify-end">
             <button
                class="w-full cursor-pointer rounded-lg bg-red-500 px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
@@ -115,6 +127,16 @@ export class LoanPaymentPayDialogComponent {
    public readonly $form: SignalForm<FieldsLoanPayment> = this._pay.form;
    public readonly $saving: Signal<boolean> = computed(() => this._pay.saving);
    public readonly $debt: Signal<number> = computed(() => this._pay.debt);
+   public readonly $file: Signal<File | null> = computed(() => this._pay.file);
+   public readonly $fileError: Signal<string | null> = computed(() => this._pay.fileError);
+
+   public handlePayment(value: LoanPaymentMethod): void {
+      this.$form.payment().value.set(value);
+   }
+
+   public handleFile(file: File): void {
+      this._pay.selectFile({ file });
+   }
 
    public handleAll(): void {
       this._pay.payAll();

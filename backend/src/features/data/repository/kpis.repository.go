@@ -49,7 +49,7 @@ const (
 			(
 				SELECT COALESCE(SUM(owed.debt), 0)
 				FROM (
-					SELECT payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) AS debt
+					SELECT payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) AS debt
 					FROM payments
 					INNER JOIN owners ON COALESCE(payments.loan_id, payments.agreement_id) = owners.id
 				) AS owed

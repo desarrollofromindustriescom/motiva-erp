@@ -4,11 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"math"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"motiva-erp/backend/src/features/data/modules/loans"
 	"motiva-erp/backend/src/features/data/repository"
+	"motiva-erp/backend/src/features/web/utilities/validation"
 	"motiva-erp/backend/src/interfaces/controller"
 	"motiva-erp/backend/src/interfaces/models"
 
@@ -57,6 +63,16 @@ func writeLoanResult[T any](response http.ResponseWriter, request *http.Request,
 			writeBadRequest(response, request, repository.LnI18nKeyVisitNotCurrent)
 		case errors.Is(err, repository.LnErrExtraSetting):
 			writeBadRequest(response, request, repository.LnI18nKeyExtraSetting)
+		case errors.Is(err, repository.LnErrTicketNotFound):
+			http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		case errors.Is(err, repository.LnErrDepositPending):
+			writeBadRequest(response, request, repository.LnI18nKeyDepositPending)
+		case errors.Is(err, repository.LnErrDepositAnswered):
+			writeBadRequest(response, request, repository.LnI18nKeyDepositAnswered)
+		case errors.Is(err, repository.LnErrTicketExists):
+			writeBadRequest(response, request, repository.LnI18nKeyTicketExists)
+		case errors.Is(err, repository.LnErrTicketStatus):
+			writeBadRequest(response, request, repository.LnI18nKeyTicketStatus)
 		case errors.Is(err, repository.LnErrNotPending):
 			writeBadRequest(response, request, repository.LnI18nKeyNotPending)
 		default:
@@ -223,7 +239,7 @@ func PayLoanPayment(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	payload, ok := readPayload[controller.PayLoanPaymentPayload](response, request)
+	amount, receipt, ok := readPaymentForm(response, request)
 
 	if !ok {
 		return
@@ -232,7 +248,7 @@ func PayLoanPayment(response http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 	currentSession := ctx.Value("session").(*models.Session)
 
-	payments, err := loans.PayPayment(ctx, currentSession.User, loanID, paymentID, payload.Amount)
+	payments, err := loans.PayPayment(ctx, currentSession.User, loanID, paymentID, amount, receipt)
 
 	writeLoanResult(response, request, "handlers.PayLoanPayment.PayPayment", http.StatusCreated, &payments, err)
 }
@@ -323,7 +339,7 @@ func PayLoan(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	payload, ok := readPayload[controller.PayLoanPaymentPayload](response, request)
+	amount, receipt, ok := readPaymentForm(response, request)
 
 	if !ok {
 		return
@@ -332,7 +348,7 @@ func PayLoan(response http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 	currentSession := ctx.Value("session").(*models.Session)
 
-	payments, err := loans.PayLoan(ctx, currentSession.User, loanID, payload.Amount)
+	payments, err := loans.PayLoan(ctx, currentSession.User, loanID, amount, receipt)
 
 	writeLoanResult(response, request, "handlers.PayLoan.PayLoan", http.StatusCreated, &payments, err)
 }
@@ -432,4 +448,287 @@ func CreateAgreement(response http.ResponseWriter, request *http.Request) {
 	agreement, err := loans.CreateAgreement(ctx, currentSession.User, payload)
 
 	writeLoanResult(response, request, "handlers.CreateAgreement.CreateAgreement", http.StatusCreated, agreement, err)
+}
+
+/**
+ * Reads how something was paid from a multipart form: "payment" (cash or transfer) & the image of
+ * the receipt in "file", that only transfers have (png, jpg or jpeg). It writes the response of
+ * the problem & returns false when the data isn't valid.
+ */
+func readReceipt(response http.ResponseWriter, request *http.Request, form *multipart.Form) (*loans.Receipt, bool) {
+	payment := ""
+
+	if values := form.Value["payment"]; len(values) == 1 {
+		payment = strings.TrimSpace(values[0])
+	}
+
+	if payment == "" {
+		writeMissingFields(response, request, []string{"payment"})
+		return nil, false
+	}
+
+	if payment != repository.LnPaymentCash && payment != repository.LnPaymentTransfer {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return nil, false
+	}
+
+	receipt := &loans.Receipt{Method: payment}
+
+	if payment == repository.LnPaymentCash {
+		// there is no receipt of cash
+		if len(form.File["file"]) > 0 {
+			writeBadRequest(response, request, repository.LnI18nKeyTicketUnexpected)
+			return nil, false
+		}
+
+		return receipt, true
+	}
+
+	kind, err := validation.ValidateImage(form, "file")
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ValErrFileLength):
+			writeMissingFields(response, request, []string{"file"})
+		case errors.Is(err, repository.ValErrFileSize):
+			writeBadRequest(response, request, repository.CcI18nKeyFileTooLarge)
+		case errors.Is(err, repository.ValErrImageTooLarge):
+			writeBadRequest(response, request, repository.LnI18nKeyTicketTooLarge)
+		case errors.Is(err, repository.ValErrUnsupportedFile):
+			writeBadRequest(response, request, repository.LnI18nKeyTicketNotImage)
+		default:
+			http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		}
+
+		return nil, false
+	}
+
+	receipt.Kind = kind
+	receipt.Header = form.File["file"][0]
+
+	return receipt, true
+}
+
+/**
+ * Reads a payment of money from a multipart form: "amount", "payment" & the receipt of a transfer
+ * in "file" (see readReceipt)
+ */
+func readPaymentForm(response http.ResponseWriter, request *http.Request) (float64, *loans.Receipt, bool) {
+	allowed := &models.FormDataContent{
+		Values: map[string]bool{"amount": true, "payment": true},
+		Files:  map[string]bool{"file": true},
+	}
+
+	if err := validation.RequestDataValidation(response, request, allowed); err != nil {
+		writeFormDataError(response, err)
+		return 0, nil, false
+	}
+
+	form := request.MultipartForm
+	text := ""
+
+	if values := form.Value["amount"]; len(values) == 1 {
+		text = strings.TrimSpace(values[0])
+	}
+
+	if text == "" {
+		writeMissingFields(response, request, []string{"amount"})
+		return 0, nil, false
+	}
+
+	amount, err := strconv.ParseFloat(text, 64)
+
+	if err != nil || math.IsNaN(amount) || math.IsInf(amount, 0) || amount <= 0 || amount > 100000 {
+		writeBadRequest(response, request, repository.LnI18nKeyPaymentAmount)
+		return 0, nil, false
+	}
+
+	receipt, ok := readReceipt(response, request, form)
+
+	return amount, receipt, ok
+}
+
+/**
+ * Registers how a loan was handed to the borrower from a multipart form: "payment" (cash or
+ * transfer) & the image of the receipt in "file", that only transfers have (png, jpg or jpeg).
+ * It is only a record & it can be done once. Returns the detail of the loan.
+ */
+func RegisterLoanTicket(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	allowed := &models.FormDataContent{
+		Values: map[string]bool{"payment": true},
+		Files:  map[string]bool{"file": true},
+	}
+
+	if err = validation.RequestDataValidation(response, request, allowed); err != nil {
+		writeFormDataError(response, err)
+		return
+	}
+
+	receipt, ok := readReceipt(response, request, request.MultipartForm)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+
+	if err = loans.RegisterTicket(ctx, id, receipt.Method, receipt.Kind, receipt.Header); err != nil {
+		writeLoanResult[controller.LoanDetailPreview](response, request, "handlers.RegisterLoanTicket.RegisterTicket", http.StatusCreated, nil, err)
+		return
+	}
+
+	loan, err := loans.GetByID(ctx, id)
+
+	writeLoanResult(response, request, "handlers.RegisterLoanTicket.GetByID", http.StatusCreated, loan, err)
+}
+
+/**
+ * Shows an image of a receipt inline
+ */
+func serveTicket(response http.ResponseWriter, request *http.Request, event string, path string, mime string, err error) {
+	if err != nil {
+		writeLoanResult[struct{}](response, request, event, http.StatusOK, nil, err)
+		return
+	}
+
+	file, err := os.Open(path)
+
+	if err != nil {
+		http.Error(response, repository.HttpNotFound, http.StatusNotFound)
+		return
+	}
+
+	defer file.Close()
+
+	info, err := file.Stat()
+
+	if err != nil {
+		http.Error(response, repository.HttpInternalServerError, http.StatusInternalServerError)
+		return
+	}
+
+	response.Header().Set(repository.HeadContentType, mime)
+	response.Header().Set("Content-Disposition", `inline; filename="comprobante"`)
+	response.Header().Set("X-Content-Type-Options", "nosniff")
+	response.Header().Set("Cache-Control", "private, no-store")
+
+	http.ServeContent(response, request, "comprobante", info.ModTime(), file)
+}
+
+/**
+ * Image of the receipt of a loan, shown inline by the detail dialog
+ */
+func GetLoanTicket(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	path, mime, err := loans.GetTicketPath(request.Context(), id)
+
+	serveTicket(response, request, "handlers.GetLoanTicket.GetTicketPath", path, mime, err)
+}
+
+/**
+ * Image of the receipt of a payment made to a payment of a loan
+ */
+func getDepositTicket(response http.ResponseWriter, request *http.Request, loanID uuid.UUID) {
+	paymentID, err := uuid.Parse(request.PathValue("paymentId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	depositID, err := uuid.Parse(request.PathValue("depositId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	path, mime, err := loans.GetDepositTicketPath(request.Context(), loanID, paymentID, depositID)
+
+	serveTicket(response, request, "handlers.getDepositTicket.GetDepositTicketPath", path, mime, err)
+}
+
+func GetLoanDepositTicket(response http.ResponseWriter, request *http.Request) {
+	loanID, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	getDepositTicket(response, request, loanID)
+}
+
+/**
+ * Same as GetLoanDepositTicket, only for the loans of the borrower
+ */
+func GetMyLoanDepositTicket(response http.ResponseWriter, request *http.Request) {
+	id, ok := ownLoanID(response, request)
+
+	if !ok {
+		return
+	}
+
+	getDepositTicket(response, request, id)
+}
+
+/**
+ * Pending payment of a payment of a loan, accepted or rejected by an administrator. Returns the
+ * payments of the loan updated.
+ */
+func answerDeposit(response http.ResponseWriter, request *http.Request, accept bool) {
+	loanID, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	paymentID, err := uuid.Parse(request.PathValue("paymentId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	depositID, err := uuid.Parse(request.PathValue("depositId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	ctx := request.Context()
+
+	var payments []*controller.LoanPaymentPreview
+
+	if accept {
+		currentSession := ctx.Value("session").(*models.Session)
+		payments, err = loans.AcceptDeposit(ctx, currentSession.User, loanID, paymentID, depositID)
+	} else {
+		payments, err = loans.RejectDeposit(ctx, loanID, paymentID, depositID)
+	}
+
+	writeLoanResult(response, request, "handlers.answerDeposit", http.StatusOK, &payments, err)
+}
+
+func AcceptLoanDeposit(response http.ResponseWriter, request *http.Request) {
+	answerDeposit(response, request, true)
+}
+
+func RejectLoanDeposit(response http.ResponseWriter, request *http.Request) {
+	answerDeposit(response, request, false)
 }

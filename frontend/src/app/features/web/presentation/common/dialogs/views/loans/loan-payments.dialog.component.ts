@@ -103,6 +103,10 @@ export class LoanPaymentsDialogComponent {
    public readonly I18N = LOANS_I18N_KEYS;
    public readonly STYLES = LOAN_PAYMENT_STYLES;
    public readonly ACTIONS = LOAN_PAYMENT_ACTIONS;
+   // a borrower reports a payment (it stays pending until an administrator accepts it) & reads the payments made & the breakdown
+   public readonly BORROWER_ACTIONS = LOAN_PAYMENT_ACTIONS.filter((action) =>
+      ['pay', 'settle', 'details'].includes(action.id),
+   );
    public readonly READ_ACTIONS = LOAN_PAYMENT_ACTIONS.filter((action) => ['settle', 'details'].includes(action.id));
    public readonly PAID_ACTIONS = LOAN_PAYMENT_ACTIONS.filter((action) => action.paid);
    public readonly skeletons: number[] = [1, 2, 3, 4, 5, 6];
@@ -113,10 +117,9 @@ export class LoanPaymentsDialogComponent {
     * Every payment has its actions, the ones paid in full only have some of them
     */
    public actions(payment: LoanPayment): typeof LOAN_PAYMENT_ACTIONS {
-      // a borrower can only read: the payments made to the payment & its breakdown
-      if (this._session.session?.profile === 'borrower') return this.READ_ACTIONS;
-
       const paid: boolean = payment.state === 'paid' || payment.state === 'capital';
+
+      if (this._session.session?.profile === 'borrower') return paid ? this.READ_ACTIONS : this.BORROWER_ACTIONS;
 
       return paid ? this.PAID_ACTIONS : this.ACTIONS;
    }

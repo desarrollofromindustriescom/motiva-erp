@@ -5,9 +5,11 @@ export type LoansRoutes =
    | 'listLoans'
    | 'loansExcel'
    | 'getLoan'
+   | 'loanTicket'
    | 'updateLoan'
    | 'loanPayments'
    | 'loanDeposits'
+   | 'answerLoanDeposit'
    | 'loanBreakdown'
    | 'addLoanVisit'
    | 'mySummary'
@@ -85,6 +87,8 @@ export interface LoanRow {
    rate: number;
    no_payments: number;
    created_at: string;
+   // how the loan was handed over, null until it is registered
+   payment: LoanPaymentMethod | null;
 }
 
 export interface LoansPage {
@@ -94,7 +98,14 @@ export interface LoansPage {
    size: number;
 }
 
-export type LoanActionId = 'details' | 'payments' | 'edit' | 'pay';
+export type LoanActionId = 'details' | 'ticket' | 'payments' | 'edit' | 'pay';
+
+// how a loan was handed to the borrower: the receipt (an image) only exists for transfers
+export type LoanPaymentMethod = 'cash' | 'transfer';
+
+export interface FieldsLoanTicket {
+   payment: LoanPaymentMethod;
+}
 
 /**
  * What one place (the general cash balance or an investor) lent to a loan & what has happened
@@ -155,6 +166,9 @@ export interface LoanDetail {
    // the loans an agreement was made of & the agreement a cancelled loan went to
    agreement_loans: AgreementLoanRef[];
    agreement: { id: string; folio: string } | null;
+   // how the loan was handed over (null until it is registered) & if the image of its receipt was uploaded
+   payment: LoanPaymentMethod | null;
+   has_ticket: boolean;
 }
 
 export type LoanPaymentState = 'paid' | 'expired' | 'partial' | 'pending' | 'capital';
@@ -174,7 +188,10 @@ export interface LoanPayment {
 
 export interface FieldsLoanPayment {
    amount: number | null;
+   payment: LoanPaymentMethod;
 }
+
+export type LoanDepositStatus = 'pending' | 'aproved' | 'rejected';
 
 export type LoanDepositType = 'regular' | 'late' | 'capital';
 
@@ -186,6 +203,11 @@ export interface LoanDeposit {
    date: string;
    type: LoanDepositType;
    amount: number;
+   // how it was paid (null in the payments made before it was asked) & if it has the image of the receipt
+   payment: LoanPaymentMethod | null;
+   has_ticket: boolean;
+   // pending (reported by the borrower, it doesn't count as paid until it is accepted), aproved or rejected
+   status: LoanDepositStatus;
 }
 
 export interface LoanDepositsPage {

@@ -139,9 +139,10 @@ export class LoansTableComponent {
    public readonly STATUS_COLORS: Record<string, string> = LOAN_STATUS_COLORS;
    public readonly $size: number = this._list.size;
 
-   // the details & the payments are always available, continuing a loan only while it is pending & paying it while it is active
+   // the details & the payments are always available, the payment is registered once, continuing a loan only while it is pending & paying it while it is active
    public readonly actions: RowAction[] = [
       { id: 'details', icon: 'bx-file-detail', tooltip: LOANS_I18N_KEYS.TOOLTIP_DETAILS },
+      { id: 'ticket', icon: 'bx-receipt', tooltip: LOANS_I18N_KEYS.TOOLTIP_TICKET },
       { id: 'payments', icon: 'bx-currency-notes', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAYMENTS },
       { id: 'edit', icon: 'bx-pen', tooltip: LOANS_I18N_KEYS.TOOLTIP_EDIT },
       { id: 'pay', icon: 'bx-dollar-circle', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAY },
@@ -149,6 +150,7 @@ export class LoansTableComponent {
 
    public $details: OutputEmitterRef<LoanRow> = output({ alias: 'details' });
    public $edit: OutputEmitterRef<LoanRow> = output({ alias: 'edit' });
+   public $ticket: OutputEmitterRef<LoanRow> = output({ alias: 'ticket' });
    public $payments: OutputEmitterRef<LoanRow> = output({ alias: 'payments' });
    public $pay: OutputEmitterRef<LoanRow> = output({ alias: 'pay' });
 
@@ -165,6 +167,13 @@ export class LoansTableComponent {
    public enabled({ action, loan }: { action: RowAction; loan: LoanRow }): boolean {
       if (action.id === 'edit') return loan.status.slug === 'pending';
 
+      // how it was handed over is registered once, & only for a loan that was approved
+      if (action.id === 'ticket') {
+         return (
+            loan.kind === 'loan' && !loan.payment && !['pending', 'rejected', 'cancelled'].includes(loan.status.slug)
+         );
+      }
+
       // only a loan that is being paid (on time or late) can receive payments
       if (action.id === 'pay') return ['active', 'expired'].includes(loan.status.slug);
 
@@ -173,6 +182,7 @@ export class LoansTableComponent {
 
    public handleAction({ action, loan }: { action: RowAction; loan: LoanRow }): void {
       if (action.id === 'details') this.$details.emit(loan);
+      if (action.id === 'ticket') this.$ticket.emit(loan);
       if (action.id === 'payments') this.$payments.emit(loan);
       if (action.id === 'pay') this.$pay.emit(loan);
       if (action.id === 'edit') this.$edit.emit(loan);

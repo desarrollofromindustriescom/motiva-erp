@@ -9,6 +9,51 @@ import (
 const (
 	LnFolioPrefix string = "LN"
 
+	// how a loan was handed to the borrower & the folder (inside the uploads one) of the images of its receipts
+	// status of a payment a borrower reports: it counts as paid only when it is accepted ("aproved")
+	LnDepositAccepted string = "aproved"
+	LnDepositPending  string = "pending"
+	LnDepositRejected string = "rejected"
+
+	LnPaymentCash     string = "cash"
+	LnPaymentTransfer string = "transfer"
+	LnTicketsDir      string = "tickets"
+
+	// the loan row locked, with its status & what was registered
+	LnQryLockTicket string = `--sql
+		SELECT
+			status.slug,
+			loans.payment IS NOT NULL
+		FROM loans
+		INNER JOIN status ON loans.status_id = status.id
+		WHERE loans.id = $1
+		FOR UPDATE OF loans
+	`
+	LnQrySetTicket string = `--sql
+		UPDATE loans
+		SET
+			payment = $2::loan_payment_method,
+			ticket = $3
+		WHERE id = $1
+	`
+	// how the payment was registered (null until then) & the name of the image
+	LnQryGetTicket string = `--sql
+		SELECT
+			loans.payment::text,
+			loans.ticket
+		FROM loans
+		WHERE loans.id = $1
+	`
+	LnQryRowsPayment string = `--sql
+		SELECT
+			loans.id,
+			loans.payment::text
+		FROM loans
+		WHERE
+			loans.id = ANY($1) AND
+			loans.payment IS NOT NULL
+	`
+
 	LnTypeWeekly  string = "weekly"
 	LnTypeMonthly string = "monthly"
 
@@ -32,6 +77,13 @@ const (
 	LnI18nKeyLoanExceeds      models.I18nKey = "LOAN_DEBT_EXCEEDS"
 	LnI18nKeyVisitNotCurrent  models.I18nKey = "LOAN_VISIT_NOT_CURRENT"
 	LnI18nKeyExtraSetting     models.I18nKey = "LOAN_EXTRA_SETTING"
+	LnI18nKeyDepositPending   models.I18nKey = "LOAN_DEPOSIT_PENDING"
+	LnI18nKeyDepositAnswered  models.I18nKey = "LOAN_DEPOSIT_ANSWERED"
+	LnI18nKeyTicketExists     models.I18nKey = "LOAN_TICKET_EXISTS"
+	LnI18nKeyTicketStatus     models.I18nKey = "LOAN_TICKET_STATUS"
+	LnI18nKeyTicketNotImage   models.I18nKey = "LOAN_TICKET_NOT_IMAGE"
+	LnI18nKeyTicketTooLarge   models.I18nKey = "LOAN_TICKET_TOO_LARGE"
+	LnI18nKeyTicketUnexpected models.I18nKey = "LOAN_TICKET_UNEXPECTED_FILE"
 
 	LnQryNextFolio string = `--sql
 		SELECT nextval('loans_folio_seq')
@@ -269,7 +321,7 @@ const lnEntries string = `--sql
 					WHERE
 						payments.loan_id = loans.id AND
 						payments.expected_payment_date::date < CURRENT_DATE AND
-						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
+						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) < payments.amount
 				) THEN 'expired'
 				ELSE status.slug
 			END AS slug,
@@ -297,7 +349,7 @@ const lnEntries string = `--sql
 					WHERE
 						payments.agreement_id = agreements.id AND
 						payments.expected_payment_date::date < CURRENT_DATE AND
-						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
+						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) < payments.amount
 				) THEN 'expired'
 				ELSE status.slug
 			END,
@@ -390,7 +442,7 @@ const lnFromOne string = `--sql
 					WHERE
 						payments.loan_id = loans.id AND
 						payments.expected_payment_date::date < CURRENT_DATE AND
-						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
+						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) < payments.amount
 				) THEN 'expired'
 				ELSE status.slug
 			END AS slug,
@@ -492,20 +544,75 @@ const (
 		SELECT 1 FROM payments WHERE id = $1 AND COALESCE(loan_id, agreement_id) = $2
 	`
 	LnQryDepositsTotal string = `--sql
-		SELECT COUNT(*), COALESCE(SUM(amount), 0)::bigint
+		SELECT COUNT(*), COALESCE(SUM(amount) FILTER (WHERE status_id = '052c0113-4293-4619-880a-f158aecdd476'), 0)::bigint
 		FROM payment_details
 		WHERE payment_id = $1
 	`
 	LnQryDeposits string = `--sql
-		SELECT id, payment_date, type::text, amount
+		SELECT
+			payment_details.id,
+			payment_details.payment_date,
+			payment_details.type::text,
+			payment_details.amount,
+			payment_details.payment_type::text,
+			payment_details.ticket IS NOT NULL,
+			status.slug
 		FROM payment_details
-		WHERE payment_id = $1
-		ORDER BY payment_date ASC, id ASC
+		INNER JOIN status ON payment_details.status_id = status.id
+		WHERE payment_details.payment_id = $1
+		ORDER BY payment_details.payment_date ASC, payment_details.id ASC
 		LIMIT $2 OFFSET $3
 	`
 	LnQryInsertPaymentDetail string = `--sql
-		INSERT INTO payment_details (amount, type, payment_date, payment_id)
-		VALUES ($1, $2::loan_payment_type, $3, $4)
+		INSERT INTO payment_details (amount, type, payment_date, payment_id, payment_type, ticket, status_id)
+		VALUES ($1, $2::loan_payment_type, $3, $4, $5::loan_payment_method, $6, (SELECT id FROM status WHERE slug = $7))
+	`
+	// a payment of a payment that a borrower reported & wasn't answered yet
+	LnQryPendingDeposits string = `--sql
+		SELECT COUNT(*)
+		FROM payment_details
+		INNER JOIN status ON payment_details.status_id = status.id
+		WHERE
+			payment_details.payment_id = $1 AND
+			status.slug = 'pending'
+	`
+	// the pending payment of a payment of a loan, locked while it is answered: its amount & the receipt
+	LnQryLockDeposit string = `--sql
+		SELECT
+			payment_details.amount,
+			status.slug
+		FROM payment_details
+		INNER JOIN status ON payment_details.status_id = status.id
+		INNER JOIN payments ON payment_details.payment_id = payments.id
+		WHERE
+			payment_details.id = $1 AND
+			payments.id = $2 AND
+			COALESCE(payments.loan_id, payments.agreement_id) = $3
+		FOR UPDATE OF payment_details
+	`
+	LnQryRejectDeposit string = `--sql
+		UPDATE payment_details
+		SET status_id = (SELECT id FROM status WHERE slug = 'rejected')
+		WHERE id = $1
+	`
+	// accepting sets the day it was accepted, so the payments keep the order they were applied in
+	LnQryAnswerDeposit string = `--sql
+		UPDATE payment_details
+		SET
+			status_id = (SELECT id FROM status WHERE slug = $2),
+			type = $3::loan_payment_type,
+			payment_date = $4
+		WHERE id = $1
+	`
+	// the receipt of a payment made to a payment of a loan
+	LnQryDepositTicket string = `--sql
+		SELECT payment_details.ticket
+		FROM payment_details
+		INNER JOIN payments ON payment_details.payment_id = payments.id
+		WHERE
+			payment_details.id = $1 AND
+			payments.id = $2 AND
+			COALESCE(payments.loan_id, payments.agreement_id) = $3
 	`
 	LnQryExecutePayment string = `--sql
 		UPDATE payments
@@ -545,7 +652,7 @@ const (
 				status.slug = 'active' AND
 				($1::uuid IS NULL OR loans.id = $1::uuid) AND
 				payments.expected_payment_date::date < CURRENT_DATE AND
-				COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
+				COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) < payments.amount
 		), added AS (
 			INSERT INTO payment_extras (extra_amount, concept, settings_id, payment_id)
 			SELECT
@@ -635,7 +742,7 @@ const (
 		)
 		SELECT COUNT(*), COALESCE(SUM(owed.debt), 0)::bigint
 		FROM (
-			SELECT payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) AS debt
+			SELECT payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) AS debt
 			FROM payments
 			INNER JOIN owners ON COALESCE(payments.loan_id, payments.agreement_id) = owners.id
 			WHERE owners.user_id = $1
@@ -658,14 +765,14 @@ const (
 			WHERE status.slug = 'active'
 		)
 		SELECT
-			payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0),
+			payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0),
 			payments.expected_payment_date,
 			owners.type
 		FROM payments
 		INNER JOIN owners ON COALESCE(payments.loan_id, payments.agreement_id) = owners.id
 		WHERE
 			owners.user_id = $1 AND
-			payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0)
+			payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0)
 		ORDER BY payments.expected_payment_date ASC, payments.id ASC
 		LIMIT 1
 	`
@@ -703,16 +810,16 @@ const (
 		CROSS JOIN LATERAL (
 			SELECT
 				payments.expected_payment_date,
-				payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) AS debt
+				payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) AS debt
 			FROM payments
 			WHERE
 				COALESCE(payments.loan_id, payments.agreement_id) = owners.id AND
-				payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0)
+				payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0)
 			ORDER BY payments.expected_payment_date ASC, payments.id ASC
 			LIMIT 1
 		) AS current
 		CROSS JOIN LATERAL (
-			SELECT SUM(payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0))::bigint AS debt
+			SELECT SUM(payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0))::bigint AS debt
 			FROM payments
 			WHERE COALESCE(payments.loan_id, payments.agreement_id) = owners.id
 		) AS totals
@@ -740,7 +847,7 @@ const (
 			COALESCE(BOOL_OR(payment_details.type = 'capital'), FALSE),
 			payments.expected_payment_date::date < CURRENT_DATE
 		FROM payments
-		LEFT JOIN payment_details ON payment_details.payment_id = payments.id
+		LEFT JOIN payment_details ON payment_details.payment_id = payments.id AND payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476'
 		WHERE COALESCE(payments.loan_id, payments.agreement_id) = $1
 		GROUP BY payments.id
 		ORDER BY payments.expected_payment_date ASC, payments.id ASC
@@ -769,8 +876,8 @@ const (
 	// payments already fulfilled (paid in full) & what has been paid back (every payment detail)
 	LnQryPaid string = `--sql
 		SELECT
-			COUNT(*) FILTER (WHERE COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) >= payments.amount),
-			COALESCE(SUM((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id)), 0)::bigint
+			COUNT(*) FILTER (WHERE COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) >= payments.amount),
+			COALESCE(SUM((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id)), 0)::bigint
 		FROM payments
 		WHERE COALESCE(payments.loan_id, payments.agreement_id) = $1
 	`
@@ -805,7 +912,9 @@ const (
 			)::bigint
 		FROM payment_details
 		INNER JOIN payments ON payment_details.payment_id = payments.id
-		WHERE COALESCE(payments.loan_id, payments.agreement_id) = $1
+		WHERE
+			COALESCE(payments.loan_id, payments.agreement_id) = $1 AND
+			payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476'
 		ORDER BY payment_details.payment_date ASC, payment_details.id ASC
 	`
 
@@ -868,4 +977,9 @@ var (
 	LnErrFundsMismatch    error = errors.New("Funds don't add up to the loan amount")
 	LnErrFundsInsufficent error = errors.New("Funds greater than what is available")
 	LnErrNotPending       error = errors.New("Loan doesn't exist or isn't pending")
+	LnErrTicketExists     error = errors.New("The payment of the loan was already registered")
+	LnErrTicketStatus     error = errors.New("The payment of a loan can only be registered once it was approved")
+	LnErrTicketNotFound   error = errors.New("Loan has no ticket")
+	LnErrDepositPending   error = errors.New("The payment already has a pending deposit")
+	LnErrDepositAnswered  error = errors.New("The deposit was already answered")
 )

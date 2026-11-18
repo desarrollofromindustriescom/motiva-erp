@@ -3,6 +3,9 @@ package validation
 import (
 	"bytes"
 	"errors"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -12,7 +15,11 @@ import (
 	"motiva-erp/backend/src/interfaces/models"
 )
 
-var pdfMagic []byte = []byte("%PDF-")
+var (
+	pdfMagic  []byte = []byte("%PDF-")
+	pngMagic  []byte = []byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'}
+	jpegMagic []byte = []byte{0xFF, 0xD8, 0xFF}
+)
 
 /**
  * Function to validate content in request form data
@@ -96,6 +103,67 @@ func RequestDataValidation(response http.ResponseWriter, request *http.Request, 
 }
 
 /**
+ * Opens the only file of a form field, checking the field has exactly one file & its size isn't exceeded
+ */
+func singleFile(form *multipart.Form, key string, event string) (multipart.File, error) {
+	files := form.File[key]
+
+	if len(files) == 0 || len(files) > 1 {
+		slog.Error("Files length isn't expected",
+			"event", event+".len",
+			"key", key,
+			"length", len(files),
+		)
+
+		return nil, repository.ValErrFileLength
+	}
+
+	header := files[0]
+
+	if header.Size > repository.ValFormDataMaxFileSize {
+		slog.Error("File too large",
+			"event", event+".Size",
+			"size", header.Size,
+		)
+
+		return nil, repository.ValErrFileSize
+	}
+
+	file, err := header.Open()
+
+	if err != nil {
+		slog.Error("Error verifying file open operation",
+			"event", event+".Open",
+		)
+
+		return nil, repository.ValErrFileOpenTest
+	}
+
+	return file, nil
+}
+
+/**
+ * Reads the first bytes of a file, a file shorter than that is an unsupported one
+ */
+func readHead(file multipart.File, size int, event string) ([]byte, error) {
+	head := make([]byte, size)
+
+	if _, err := io.ReadFull(file, head); err != nil {
+		slog.Error("Error reading file head",
+			"event", event+".ReadFull",
+		)
+
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			return nil, repository.ValErrUnsupportedFile
+		}
+
+		return nil, err
+	}
+
+	return head, nil
+}
+
+/**
  * Function to validate form data file is a valid pdf
  * - Only one file in form field
  * - Files size isn't exceed
@@ -103,52 +171,17 @@ func RequestDataValidation(response http.ResponseWriter, request *http.Request, 
  * - Verify file type is pdf
  */
 func ValidatePDF(form *multipart.Form, key string) error {
-	files := form.File[key]
-
-	if len(files) == 0 || len(files) > 1 {
-		slog.Error("Files length isn't expected",
-			"event", "validation.ValidatePDF.len",
-			"key", key,
-			"length", len(files),
-		)
-
-		return repository.ValErrFileLength
-	}
-
-	header := files[0]
-
-	if header.Size > repository.ValFormDataMaxFileSize {
-		slog.Error("File too large",
-			"event", "validation.ValidatePDF.Size",
-			"size", header.Size,
-		)
-
-		return repository.ValErrFileSize
-	}
-
-	file, err := header.Open()
+	file, err := singleFile(form, key, "validation.ValidatePDF")
 
 	if err != nil {
-		slog.Error("Error verifying file open operation",
-			"event", "validation.ValidatePDF.Open",
-		)
-
-		return repository.ValErrFileOpenTest
+		return err
 	}
 
 	defer file.Close()
 
-	head := make([]byte, len(pdfMagic))
+	head, err := readHead(file, len(pdfMagic), "validation.ValidatePDF")
 
-	if _, err := io.ReadFull(file, head); err != nil {
-		slog.Error("Error reading file head",
-			"event", "validation.ValidatePDF.ReadFull",
-		)
-
-		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-			return repository.ValErrUnsupportedFile
-		}
-
+	if err != nil {
 		return err
 	}
 
@@ -161,4 +194,86 @@ func ValidatePDF(form *multipart.Form, key string) error {
 	}
 
 	return nil
+}
+
+/**
+ * Function to validate form data file is a png or jpg (jpeg) image, returns its type
+ * (repository.ValImagePNG or ValImageJPEG, the extension to store it with)
+ * - Only one file in form field
+ * - Files size isn't exceed
+ * - The type is the one of the content, never the one of the name or of the header of the request:
+ *   the first bytes have to be the signature of a png or of a jpeg
+ * - The header of the image has to be readable & agree with that signature, a file that only starts like
+ *   an image but isn't one is refused
+ * - Its sides can't be larger than repository.ValImageMaxSide
+ */
+func ValidateImage(form *multipart.Form, key string) (string, error) {
+	file, err := singleFile(form, key, "validation.ValidateImage")
+
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	head, err := readHead(file, len(pngMagic), "validation.ValidateImage")
+
+	if err != nil {
+		return "", err
+	}
+
+	var (
+		kind   string
+		format string
+	)
+
+	switch {
+	case bytes.Equal(head, pngMagic):
+		kind, format = repository.ValImagePNG, "png"
+	case bytes.HasPrefix(head, jpegMagic):
+		kind, format = repository.ValImageJPEG, "jpeg"
+	default:
+		slog.Error("Error into file head, image head mismatch",
+			"event", "validation.ValidateImage.Equal",
+		)
+
+		return "", repository.ValErrUnsupportedFile
+	}
+
+	if _, err = file.Seek(0, io.SeekStart); err != nil {
+		slog.Error("Error going back to the start of the file",
+			"event", "validation.ValidateImage.Seek",
+		)
+
+		return "", repository.ValErrFileOpenTest
+	}
+
+	// only the header is decoded (its size & type), not the pixels
+	config, detected, err := image.DecodeConfig(file)
+
+	if err != nil || detected != format {
+		slog.Error("Image header isn't valid",
+			"event", "validation.ValidateImage.DecodeConfig",
+			"detected", detected,
+			"expected", format,
+		)
+
+		return "", repository.ValErrUnsupportedFile
+	}
+
+	if config.Width < 1 || config.Height < 1 {
+		return "", repository.ValErrUnsupportedFile
+	}
+
+	if config.Width > repository.ValImageMaxSide || config.Height > repository.ValImageMaxSide {
+		slog.Error("Image sides too large",
+			"event", "validation.ValidateImage.Sides",
+			"width", config.Width,
+			"height", config.Height,
+		)
+
+		return "", repository.ValErrImageTooLarge
+	}
+
+	return kind, nil
 }

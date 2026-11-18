@@ -1,4 +1,10 @@
-import { LoanDepositType, LoanPaymentState, LoanType } from '../../../interfaces/loan';
+import {
+   LoanDepositStatus,
+   LoanDepositType,
+   LoanPaymentMethod,
+   LoanPaymentState,
+   LoanType,
+} from '../../../interfaces/loan';
 import { UserProfile } from '../../../interfaces/user';
 
 // same limits the backend validates
@@ -13,6 +19,26 @@ export const LOAN_BORROWERS_PAGE_SIZE: number = 20;
 export const LOAN_BORROWERS_SEARCH_DELAY: number = 300;
 
 export const LOANS_PAGE_SIZE: number = 10;
+
+// image of the receipt of a transfer (same limit the backend validates)
+export const LOAN_TICKET_FILE_MAX_MB: number = 9;
+export const LOAN_TICKET_FILE_MAX_BYTES: number = LOAN_TICKET_FILE_MAX_MB * 1024 * 1024;
+export const LOAN_TICKET_EXTENSIONS: string[] = ['.png', '.jpg', '.jpeg'];
+export const LOAN_TICKET_MIME_TYPES: string[] = ['image/png', 'image/jpeg'];
+
+/**
+ * Checks the image of a receipt before sending it (the backend verifies its content again): it has to be
+ * png or jpg & can't exceed the limit. Returns the translation key of the problem, or null if it is fine.
+ */
+export function receiptFileError({ file }: { file: File }): string | null {
+   const name: string = file.name.toLowerCase();
+   const isImage: boolean =
+      LOAN_TICKET_MIME_TYPES.includes(file.type) || LOAN_TICKET_EXTENSIONS.some((ext: string) => name.endsWith(ext));
+
+   if (!isImage) return LOANS_I18N_KEYS.TICKET_FILE_NOT_IMAGE;
+
+   return file.size > LOAN_TICKET_FILE_MAX_BYTES ? LOANS_I18N_KEYS.TICKET_FILE_TOO_LARGE : null;
+}
 
 // a borrower only reads its own loans, from endpoints with the same shape as the ones of the loans module
 export const LOANS_BORROWER_ROUTE: string = '/borrower/loans/';
@@ -70,6 +96,16 @@ export const LOANS_I18N_KEYS = {
    DEPOSITS_HEAD_DATE: 'LOANS_DEPOSITS_HEAD_DATE',
    DEPOSITS_HEAD_TYPE: 'LOANS_DEPOSITS_HEAD_TYPE',
    DEPOSITS_HEAD_AMOUNT: 'LOANS_DEPOSITS_HEAD_AMOUNT',
+   DEPOSITS_HEAD_STATUS: 'LOANS_DEPOSITS_HEAD_STATUS',
+   DEPOSIT_STATUS_PENDING: 'LOANS_DEPOSIT_STATUS_PENDING',
+   DEPOSIT_STATUS_ACCEPTED: 'LOANS_DEPOSIT_STATUS_ACCEPTED',
+   DEPOSIT_STATUS_REJECTED: 'LOANS_DEPOSIT_STATUS_REJECTED',
+   DEPOSIT_ACCEPT: 'LOANS_DEPOSIT_ACCEPT',
+   DEPOSIT_REJECT: 'LOANS_DEPOSIT_REJECT',
+   DEPOSITS_HEAD_PAYMENT: 'LOANS_DEPOSITS_HEAD_PAYMENT',
+   DEPOSITS_HEAD_RECEIPT: 'LOANS_DEPOSITS_HEAD_RECEIPT',
+   DEPOSITS_VIEW_RECEIPT: 'LOANS_DEPOSITS_VIEW_RECEIPT',
+   RECEIPT_EMPTY: 'LOANS_RECEIPT_EMPTY',
    DEPOSITS_TOTAL: 'LOANS_DEPOSITS_TOTAL',
    DEPOSITS_EMPTY: 'LOANS_DEPOSITS_EMPTY',
    DEPOSIT_REGULAR: 'LOANS_DEPOSIT_REGULAR',
@@ -136,7 +172,22 @@ export const LOANS_I18N_KEYS = {
    HEAD_PAYMENTS: 'LOANS_HEAD_PAYMENTS',
    EMPTY: 'LOANS_EMPTY',
    TOOLTIP_DETAILS: 'LOANS_TOOLTIP_DETAILS',
+   TOOLTIP_TICKET: 'LOANS_TOOLTIP_TICKET',
    TOOLTIP_PAYMENTS: 'LOANS_TOOLTIP_PAYMENTS',
+   TICKET_FIELD_PAYMENT: 'LOANS_TICKET_FIELD_PAYMENT',
+   TICKET_CASH: 'LOANS_TICKET_CASH',
+   TICKET_TRANSFER: 'LOANS_TICKET_TRANSFER',
+   TICKET_DROP_TITLE: 'LOANS_TICKET_DROP_TITLE',
+   TICKET_DROP_HINT: 'LOANS_TICKET_DROP_HINT',
+   TICKET_DROP_ONLY_IMAGES: 'LOANS_TICKET_DROP_ONLY_IMAGES',
+   TICKET_FILE_CHANGE: 'LOANS_TICKET_FILE_CHANGE',
+   TICKET_FILE_REQUIRED: 'LOANS_TICKET_FILE_REQUIRED',
+   TICKET_FILE_NOT_IMAGE: 'LOANS_TICKET_FILE_NOT_IMAGE',
+   TICKET_FILE_TOO_LARGE: 'LOANS_TICKET_FILE_TOO_LARGE',
+   TICKET_BUTTON: 'LOANS_TICKET_BUTTON',
+   DETAIL_SECTION_PAYMENT: 'LOANS_DETAIL_SECTION_PAYMENT',
+   DETAIL_PAYMENT_METHOD: 'LOANS_DETAIL_PAYMENT_METHOD',
+   DETAIL_TICKET_ALT: 'LOANS_DETAIL_TICKET_ALT',
    TOOLTIP_EDIT: 'LOANS_TOOLTIP_EDIT',
    TOOLTIP_PAY: 'LOANS_TOOLTIP_PAY',
    STATUS_PENDING: 'LOANS_STATUS_PENDING',
@@ -233,6 +284,28 @@ export const LOAN_DEPOSIT_TYPE_I18N_KEYS: Record<LoanDepositType, string> = {
    regular: LOANS_I18N_KEYS.DEPOSIT_REGULAR,
    late: LOANS_I18N_KEYS.DEPOSIT_LATE,
    capital: LOANS_I18N_KEYS.DEPOSIT_CAPITAL,
+};
+
+export const LOAN_DEPOSIT_STATUS_I18N_KEYS: Record<LoanDepositStatus, string> = {
+   pending: LOANS_I18N_KEYS.DEPOSIT_STATUS_PENDING,
+   aproved: LOANS_I18N_KEYS.DEPOSIT_STATUS_ACCEPTED,
+   rejected: LOANS_I18N_KEYS.DEPOSIT_STATUS_REJECTED,
+};
+
+export const LOAN_DEPOSIT_STATUS_COLORS: Record<LoanDepositStatus, string> = {
+   pending: 'bg-slate-500',
+   aproved: 'bg-green-600',
+   rejected: 'bg-red-500',
+};
+
+export const LOAN_PAYMENT_METHOD_I18N_KEYS: Record<LoanPaymentMethod, string> = {
+   cash: LOANS_I18N_KEYS.TICKET_CASH,
+   transfer: LOANS_I18N_KEYS.TICKET_TRANSFER,
+};
+
+export const LOAN_PAYMENT_METHOD_COLORS: Record<LoanPaymentMethod, string> = {
+   cash: 'bg-amber-500',
+   transfer: 'bg-sky-600',
 };
 
 export const LOAN_DEPOSIT_TYPE_COLORS: Record<LoanDepositType, string> = {

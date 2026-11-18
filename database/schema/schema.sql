@@ -108,7 +108,15 @@ CREATE TABLE IF NOT EXISTS loans (
    rate_settings_id UUID REFERENCES settings (id),
    request_user_id UUID NOT NULL REFERENCES users (id),
    resolution_user_id UUID REFERENCES users (id),
-   status_id UUID NOT NULL REFERENCES status (id) DEFAULT '71408795-67e0-46a0-821d-ccdc6e126d59'
+   -- how the loan was handed over, null until it is registered (it isn't asked when the loan is created)
+   payment loan_payment_method,
+   -- name (without extension) of the image of the transfer receipt, only when payment is transfer
+   ticket UUID,
+   status_id UUID NOT NULL REFERENCES status (id) DEFAULT '71408795-67e0-46a0-821d-ccdc6e126d59',
+   CONSTRAINT loans_ticket_transfer CHECK (
+      ticket IS NULL OR
+      payment = 'transfer'
+   )
 );
 
 CREATE TABLE IF NOT EXISTS loan_details (
@@ -156,7 +164,16 @@ CREATE TABLE IF NOT EXISTS payment_details (
    amount INTEGER NOT NULL,
    type loan_payment_type NOT NULL,
    payment_date TIMESTAMP NOT NULL,
-   payment_id UUID NOT NULL REFERENCES payments (id)
+   payment_id UUID NOT NULL REFERENCES payments (id),
+   -- how it was paid & the image (name without extension) of the receipt of a transfer, null in the ones made before they were asked
+   payment_type loan_payment_method,
+   ticket UUID,
+   -- a payment a borrower reports is pending until an administrator accepts (aproved) or rejects it, only the accepted ones count as paid
+   status_id UUID NOT NULL REFERENCES status (id) DEFAULT '052c0113-4293-4619-880a-f158aecdd476',
+   CONSTRAINT payment_details_ticket_transfer CHECK (
+      ticket IS NULL OR
+      payment_type = 'transfer'
+   )
 );
 
 CREATE TABLE IF NOT EXISTS payment_extras (

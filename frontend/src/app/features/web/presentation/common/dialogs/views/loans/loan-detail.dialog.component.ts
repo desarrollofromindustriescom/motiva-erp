@@ -1,5 +1,6 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, inject, Signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, Signal } from '@angular/core';
+import { SafeUrl } from '@angular/platform-browser';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AgreementLoanRef, LoanDetail, LoanLender } from '../../../../../../../interfaces/loan';
 import { LOANS_I18N_KEYS } from '../../../../../../data/repository/loans.repository';
@@ -10,6 +11,7 @@ import { DialogsService } from '../../../../../../data/services/dialogs.service'
 import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
 import { SessionService } from '../../../../../../data/services/session.service';
+import { LoanTicketService } from '../../../../../../data/services/loan-ticket.service';
 import { LoanDetailService } from '../../../../../../data/services/loan-detail.service';
 import { LoanPaymentPayDialogComponent } from './loan-payment-pay.dialog.component';
 import { LoanPaymentsDialogComponent } from './loan-payments.dialog.component';
@@ -29,6 +31,8 @@ interface DetailSection {
    // amounts are aligned to the right
    amounts: boolean;
    rows: DetailRow[];
+   // the image of the receipt of the transfer goes under the rows
+   ticket?: boolean;
 }
 
 /**
@@ -67,6 +71,21 @@ interface DetailSection {
                         </div>
                      }
                   </dl>
+
+                  @if (section.ticket && $ticket(); as ticket) {
+                     <a
+                        class="mt-2 block w-full overflow-hidden rounded-lg border border-slate-300"
+                        target="_blank"
+                        rel="noopener"
+                        [href]="ticket"
+                     >
+                        <img
+                           class="max-h-80 w-full object-contain"
+                           [src]="ticket"
+                           [alt]="I18N.DETAIL_TICKET_ALT | translate"
+                        />
+                     </a>
+                  }
                </section>
             }
 
@@ -110,6 +129,7 @@ export class LoanDetailDialogComponent {
    private readonly _pay: LoanPaymentPayService = inject(LoanPaymentPayService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
    private readonly _session: SessionService = inject(SessionService);
+   private readonly _ticket: LoanTicketService = inject(LoanTicketService);
 
    private readonly currency: CurrencyPipe = new CurrencyPipe('en-US');
    private readonly date: DatePipe = new DatePipe('en-US');
@@ -120,6 +140,20 @@ export class LoanDetailDialogComponent {
    public readonly skeletons: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
    public readonly $loan: Signal<LoanDetail | undefined> = computed(() => this._detail.detail);
+   public readonly $ticket: Signal<SafeUrl | null> = computed(() => this._ticket.image);
+
+   constructor() {
+      // the image of the receipt is only requested when the loan has one (the borrower doesn't see it)
+      effect(() => {
+         const loan: LoanDetail | undefined = this.$loan();
+
+         if (loan?.kind === 'loan' && loan.has_ticket && !this.$readOnly) {
+            this._ticket.loadImage({ loanId: loan.id });
+         }
+      });
+
+      inject(DestroyRef).onDestroy(() => this._ticket.clearImage());
+   }
 
    // a borrower can only read its loans, it doesn't register payments
    public readonly $readOnly: boolean = this._session.session?.profile === 'borrower';
@@ -209,6 +243,22 @@ export class LoanDetailDialogComponent {
                { label: LOANS_I18N_KEYS.DETAIL_PAID, value: this.money(investor.paid) },
                { label: LOANS_I18N_KEYS.DETAIL_RECEIVED_INVESTOR, value: this.money(investor.received) },
                { label: LOANS_I18N_KEYS.DETAIL_COMMISSION_KEPT, value: this.money(investor.commission) },
+            ],
+         });
+      }
+
+      // how the loan was handed to the borrower, with the image of the receipt of a transfer
+      if (loan.payment) {
+         sections.push({
+            title: LOANS_I18N_KEYS.DETAIL_SECTION_PAYMENT,
+            amounts: false,
+            ticket: loan.payment === 'transfer',
+            rows: [
+               {
+                  label: LOANS_I18N_KEYS.DETAIL_PAYMENT_METHOD,
+                  value: loan.payment === 'transfer' ? LOANS_I18N_KEYS.TICKET_TRANSFER : LOANS_I18N_KEYS.TICKET_CASH,
+                  translate: true,
+               },
             ],
          });
       }

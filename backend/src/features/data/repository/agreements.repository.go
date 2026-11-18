@@ -34,10 +34,10 @@ const (
 			WHERE
 				payments.loan_id = loans.id AND
 				payments.expected_payment_date::date < CURRENT_DATE AND
-				payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0)
+				payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0)
 		) AS late
 		CROSS JOIN LATERAL (
-			SELECT COALESCE(SUM(payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0)), 0)::bigint AS total
+			SELECT COALESCE(SUM(payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0)), 0)::bigint AS total
 			FROM payments
 			WHERE payments.loan_id = loans.id
 		) AS debt
@@ -87,7 +87,7 @@ const (
 					WHERE
 						payments.agreement_id = agreements.id AND
 						payments.expected_payment_date::date < CURRENT_DATE AND
-						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
+						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476' AND payment_details.payment_id = payments.id), 0) < payments.amount
 				) THEN 'expired'
 				ELSE status.slug
 			END,

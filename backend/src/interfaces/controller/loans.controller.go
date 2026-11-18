@@ -144,6 +144,8 @@ type LoanRowPreview struct {
 	Rate       float64              `json:"rate"`
 	NoPayments int                  `json:"no_payments"`
 	CreatedAt  time.Time            `json:"created_at"`
+	// how the loan was handed over (cash or transfer), null until it is registered
+	Payment *string `json:"payment"`
 }
 
 type LoansPagePreview struct {
@@ -223,6 +225,9 @@ type LoanDetailPreview struct {
 	// the loans of an agreement, & the agreement a cancelled loan went to
 	AgreementLoans []*AgreementLoanRefPreview `json:"agreement_loans"`
 	Agreement      *AgreementRefPreview       `json:"agreement"`
+	// how the loan was handed over (cash or transfer, null until it is registered) & if it has the image of the receipt
+	Payment   *string `json:"payment"`
+	HasTicket bool    `json:"has_ticket"`
 }
 
 /**
@@ -247,13 +252,6 @@ type LoanPaymentPreview struct {
 }
 
 /**
- * Money paid to the debt of a payment (it can be all of it or less)
- */
-type PayLoanPaymentPayload struct {
-	Amount float64 `json:"amount" validate:"required,monetary"`
-}
-
-/**
  * A payment made to a payment of a loan: regular (on time), late or capital
  */
 type LoanDepositPreview struct {
@@ -261,6 +259,11 @@ type LoanDepositPreview struct {
 	Date   time.Time `json:"date"`
 	Type   string    `json:"type"`
 	Amount float64   `json:"amount"`
+	// how it was paid (cash or transfer, null in the ones made before it was asked) & if it has the image of the receipt
+	Payment   *string `json:"payment"`
+	HasTicket bool    `json:"has_ticket"`
+	// pending (reported by the borrower, doesn't count as paid), aproved or rejected
+	Status string `json:"status"`
 }
 
 type LoanDepositsPagePreview struct {

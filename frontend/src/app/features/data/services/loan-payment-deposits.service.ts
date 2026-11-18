@@ -55,6 +55,11 @@ export class LoanPaymentDepositsService {
       });
    }
 
+   // the loan & the payment whose payments are shown
+   public get current(): { loanId: string | null; paymentId: string | null } {
+      return { loanId: this.$loanId(), paymentId: this.$paymentId() };
+   }
+
    public get loading(): boolean {
       return this.$loading();
    }
@@ -89,6 +94,13 @@ export class LoanPaymentDepositsService {
       this.$loanId.set(loanId);
       this.$paymentId.set(paymentId);
       this.$page.set(1);
+      this.$version.update((version: number) => version + 1);
+   }
+
+   /**
+    * Requests the current page again (ex: after answering a pending payment)
+    */
+   public reload(): void {
       this.$version.update((version: number) => version + 1);
    }
 

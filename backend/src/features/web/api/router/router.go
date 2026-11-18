@@ -85,11 +85,13 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoans), middleware.Authorize(handlers.CreateLoan, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoan), middleware.Authorize(handlers.GetLoan, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoanPayments), middleware.Authorize(handlers.GetLoanPayments, usersProfiles...))
-	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanPaymentPay), middleware.Authorize(handlers.PayLoanPayment, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoanPaymentDeposits), middleware.Authorize(handlers.QueryLoanPaymentDeposits, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanPaymentVisits), middleware.Authorize(handlers.AddLoanPaymentVisit, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoanPaymentBreakdown), middleware.Authorize(handlers.GetLoanPaymentBreakdown, usersProfiles...))
-	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanPay), middleware.Authorize(handlers.PayLoan, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoanDepositTicket), middleware.Authorize(handlers.GetLoanDepositTicket, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanDepositAccept), middleware.Authorize(handlers.AcceptLoanDeposit, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanDepositReject), middleware.Authorize(handlers.RejectLoanDeposit, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoanTicket), middleware.Authorize(handlers.GetLoanTicket, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteLoan), middleware.Authorize(handlers.UpdateLoan, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanApprove), middleware.Authorize(handlers.ApproveLoan, usersProfiles...))
 
@@ -101,6 +103,7 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteMyLoan), middleware.Authorize(handlers.GetMyLoan, borrower))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteMyLoanPayments), middleware.Authorize(handlers.GetMyLoanPayments, borrower))
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteMyLoanDeposits), middleware.Authorize(handlers.QueryMyLoanPaymentDeposits, borrower))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteMyLoanDepositTicket), middleware.Authorize(handlers.GetMyLoanDepositTicket, borrower))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteMyLoanBreakdown), middleware.Authorize(handlers.GetMyLoanPaymentBreakdown, borrower))
 
 	// Panel of the investor: its own balance
@@ -116,6 +119,27 @@ func Router() *http.ServeMux {
 	root.Handle(
 		fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellations),
 		middleware.Pipeline(middleware.Authorize(handlers.CreateCancellation, usersProfiles...), streamConfig),
+	)
+
+	root.Handle(
+		fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanTicket),
+		middleware.Pipeline(middleware.Authorize(handlers.RegisterLoanTicket, usersProfiles...), streamConfig),
+	)
+
+	// the payments carry the receipt of a transfer too
+	for route, handler := range map[string]http.HandlerFunc{
+		repository.RouteLoanPaymentPay: handlers.PayLoanPayment,
+		repository.RouteLoanPay:        handlers.PayLoan,
+	} {
+		root.Handle(
+			fmt.Sprintf("%s %s", http.MethodPost, route),
+			middleware.Pipeline(middleware.Authorize(handler, usersProfiles...), streamConfig),
+		)
+	}
+
+	root.Handle(
+		fmt.Sprintf("%s %s", http.MethodPost, repository.RouteMyLoanPaymentPay),
+		middleware.Pipeline(middleware.Authorize(handlers.RequestMyLoanPayment, repository.ProfileBorrower), streamConfig),
 	)
 
 	return root

@@ -696,6 +696,46 @@ func scanLoanRows(rows pgx.Rows) ([]*controller.LoanRowPreview, error) {
 }
 
 /**
+ * Sets how every loan of the rows was handed over (agreements & loans without it keep null)
+ */
+func loadRowsPayment(ctx context.Context, items []*controller.LoanRowPreview) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	ids := make([]uuid.UUID, len(items))
+	byID := make(map[uuid.UUID]*controller.LoanRowPreview, len(items))
+
+	for index, item := range items {
+		ids[index] = item.ID
+		byID[item.ID] = item
+	}
+
+	rows, err := database.GetPool().Query(ctx, repository.LnQryRowsPayment, ids)
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			id      uuid.UUID
+			payment string
+		)
+
+		if err = rows.Scan(&id, &payment); err != nil {
+			return err
+		}
+
+		byID[id].Payment = &payment
+	}
+
+	return rows.Err()
+}
+
+/**
  * One page of loans with the combined filters of the table
  */
 func GetPage(ctx context.Context, payload *controller.LoansQueryPayload) (*controller.LoansPagePreview, error) {
@@ -731,6 +771,10 @@ func GetPage(ctx context.Context, payload *controller.LoansQueryPayload) (*contr
 	defer rows.Close()
 
 	if result.Items, err = scanLoanRows(rows); err != nil {
+		return nil, err
+	}
+
+	if err = loadRowsPayment(ctx, result.Items); err != nil {
 		return nil, err
 	}
 
@@ -860,6 +904,14 @@ func GetByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, 
 	detail.Current = float64(paid) / 100
 
 	detail.AgreementLoans = []*controller.AgreementLoanRefPreview{}
+
+	var ticket *uuid.UUID
+
+	if err = pool.QueryRow(ctx, repository.LnQryGetTicket, id).Scan(&detail.Payment, &ticket); err != nil {
+		return nil, err
+	}
+
+	detail.HasTicket = ticket != nil
 
 	// a loan that was cancelled says which agreement it went to
 	var agreement controller.AgreementRefPreview
@@ -1175,11 +1227,98 @@ func GetPayments(ctx context.Context, id uuid.UUID) ([]*controller.LoanPaymentPr
  *   gets back its money (current amount) & its gain (current reward)
  * Returns the payments of the loan updated.
  */
-func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, paymentID uuid.UUID, amount float64) ([]*controller.LoanPaymentPreview, error) {
-	cents, ok := toCents(amount)
+func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, paymentID uuid.UUID, amount float64, receipt *Receipt) ([]*controller.LoanPaymentPreview, error) {
+	return payPayment(ctx, executor, loanID, paymentID, paymentRequest{amount: amount, receipt: receipt})
+}
 
-	if !ok || cents <= 0 {
-		return nil, repository.LnErrPaymentAmount
+/**
+ * A borrower reports a payment to the next payment of its loan: it is saved as a pending payment detail, so it
+ * doesn't count as paid (nothing is deposited & the payment doesn't change) until an administrator accepts it.
+ * The same checks of a payment apply, & a payment can only have one pending payment at a time.
+ */
+func RequestPayment(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID, amount float64, receipt *Receipt) ([]*controller.LoanPaymentPreview, error) {
+	return payPayment(ctx, nil, loanID, paymentID, paymentRequest{amount: amount, receipt: receipt, pending: true})
+}
+
+/**
+ * An administrator accepts a pending payment: from now on it is a payment like any other (the same
+ * checks apply, the money is deposited & it counts as paid) & it is dated the day it was accepted
+ */
+func AcceptDeposit(ctx context.Context, executor *models.User, loanID uuid.UUID, paymentID uuid.UUID, depositID uuid.UUID) ([]*controller.LoanPaymentPreview, error) {
+	return payPayment(ctx, executor, loanID, paymentID, paymentRequest{deposit: &depositID})
+}
+
+/**
+ * An administrator rejects a pending payment: it stays registered but never counts as paid
+ */
+func RejectDeposit(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID, depositID uuid.UUID) ([]*controller.LoanPaymentPreview, error) {
+	tx, err := database.GetPool().Begin(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback(ctx)
+
+	if _, err = lockDeposit(ctx, tx, loanID, paymentID, depositID); err != nil {
+		return nil, err
+	}
+
+	if _, err = tx.Exec(ctx, repository.LnQryRejectDeposit, depositID); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return GetPayments(ctx, loanID)
+}
+
+/**
+ * Locks a pending payment of a payment of a loan & returns its amount in cents
+ */
+func lockDeposit(ctx context.Context, tx pgx.Tx, loanID uuid.UUID, paymentID uuid.UUID, depositID uuid.UUID) (int64, error) {
+	var (
+		amount int64
+		status string
+	)
+
+	if err := tx.QueryRow(ctx, repository.LnQryLockDeposit, depositID, paymentID, loanID).Scan(&amount, &status); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, repository.LnErrNotFound
+		}
+
+		return 0, err
+	}
+
+	if status != repository.LnDepositPending {
+		return 0, repository.LnErrDepositAnswered
+	}
+
+	return amount, nil
+}
+
+/**
+ * What is done to a payment of a loan: a new payment (amount & its receipt), a new one that stays pending
+ * until it is answered (a borrower reported it) or the acceptance of a pending one (deposit)
+ */
+type paymentRequest struct {
+	amount  float64
+	receipt *Receipt
+	pending bool
+	deposit *uuid.UUID
+}
+
+func payPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, paymentID uuid.UUID, request paymentRequest) ([]*controller.LoanPaymentPreview, error) {
+	var cents int64
+
+	if request.deposit == nil {
+		var ok bool
+
+		if cents, ok = toCents(request.amount); !ok || cents <= 0 {
+			return nil, repository.LnErrPaymentAmount
+		}
 	}
 
 	tx, err := database.GetPool().Begin(ctx)
@@ -1202,6 +1341,13 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 	}
 
 	loanAmount, rateValue := owner.amount, owner.rate
+
+	// a pending payment is paid with what its borrower reported
+	if request.deposit != nil {
+		if cents, err = lockDeposit(ctx, tx, loanID, paymentID, *request.deposit); err != nil {
+			return nil, err
+		}
+	}
 
 	// the debt of the payment includes the mora of the days that have passed
 	if err = accrueMora(ctx, tx, &loanID); err != nil {
@@ -1246,8 +1392,48 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 		kind = "late"
 	}
 
-	if _, err = tx.Exec(ctx, repository.LnQryInsertPaymentDetail, int(cents), kind, time.Now(), paymentID); err != nil {
+	// the receipt is stored after the checks, & removed if anything fails from here
+	stored, err := storeReceipt(request.receipt)
+
+	if err != nil {
 		return nil, err
+	}
+
+	defer stored.discard()
+
+	switch {
+	case request.deposit != nil:
+		// it counts from the day it is accepted, so the payments keep the order they were applied in
+		if _, err = tx.Exec(ctx, repository.LnQryAnswerDeposit, *request.deposit, repository.LnDepositAccepted, kind, time.Now()); err != nil {
+			return nil, err
+		}
+	case request.pending:
+		var waiting int
+
+		if err = tx.QueryRow(ctx, repository.LnQryPendingDeposits, paymentID).Scan(&waiting); err != nil {
+			return nil, err
+		}
+
+		if waiting > 0 {
+			return nil, repository.LnErrDepositPending
+		}
+
+		// nothing else happens until it is accepted
+		if _, err = tx.Exec(ctx, repository.LnQryInsertPaymentDetail, int(cents), kind, time.Now(), paymentID, stored.method(), stored.ticket(), repository.LnDepositPending); err != nil {
+			return nil, err
+		}
+
+		if err = tx.Commit(ctx); err != nil {
+			return nil, err
+		}
+
+		stored.keep()
+
+		return GetPayments(ctx, loanID)
+	default:
+		if _, err = tx.Exec(ctx, repository.LnQryInsertPaymentDetail, int(cents), kind, time.Now(), paymentID, stored.method(), stored.ticket(), repository.LnDepositAccepted); err != nil {
+			return nil, err
+		}
 	}
 
 	total, _ := quote(loanAmount, rateValue, 1)
@@ -1275,6 +1461,7 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 		return nil, err
 	}
 
+	stored.keep()
 	kpis.Touch()
 
 	return GetPayments(ctx, loanID)
@@ -1475,7 +1662,7 @@ func GetPaymentDeposits(ctx context.Context, loanID uuid.UUID, paymentID uuid.UU
 
 		item := &controller.LoanDepositPreview{}
 
-		if err = rows.Scan(&item.ID, &item.Date, &item.Type, &amount); err != nil {
+		if err = rows.Scan(&item.ID, &item.Date, &item.Type, &amount, &item.Payment, &item.HasTicket, &item.Status); err != nil {
 			return nil, err
 		}
 
@@ -1687,7 +1874,7 @@ func GetBreakdown(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID) (*
  * payments paid in full are executed & the loan is finished when nothing is owed anymore.
  * Returns the payments of the loan updated.
  */
-func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amount float64) ([]*controller.LoanPaymentPreview, error) {
+func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amount float64, receipt *Receipt) ([]*controller.LoanPaymentPreview, error) {
 	cents, ok := toCents(amount)
 
 	if !ok || cents <= 0 {
@@ -1746,6 +1933,14 @@ func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amoun
 		return nil, repository.LnErrLoanExceeds
 	}
 
+	stored, err := storeReceipt(receipt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer stored.discard()
+
 	loanTotal, _ := quote(loanAmount, rateValue, 1)
 	now := time.Now()
 	paidInFull := 0
@@ -1753,7 +1948,7 @@ func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amoun
 	for _, item := range planLoanPayment(cents, debts, owed[0].overdue) {
 		target := owed[item.position]
 
-		if _, err = tx.Exec(ctx, repository.LnQryInsertPaymentDetail, int(item.amount), item.kind, now, target.preview.ID); err != nil {
+		if _, err = tx.Exec(ctx, repository.LnQryInsertPaymentDetail, int(item.amount), item.kind, now, target.preview.ID, stored.method(), stored.ticket(), repository.LnDepositAccepted); err != nil {
 			return nil, err
 		}
 
@@ -1783,6 +1978,7 @@ func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amoun
 		return nil, err
 	}
 
+	stored.keep()
 	kpis.Touch()
 
 	return GetPayments(ctx, loanID)

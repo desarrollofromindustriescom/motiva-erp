@@ -11,12 +11,14 @@ import { DialogsService } from '../../../../../../data/services/dialogs.service'
 import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
 import { AgreementCreationService } from '../../../../../../data/services/agreement-creation.service';
 import { LoansCalendarService } from '../../../../../../data/services/loans-calendar.service';
+import { LoanTicketService } from '../../../../../../data/services/loan-ticket.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
 import { LoanDetailService } from '../../../../../../data/services/loan-detail.service';
 import { LoanBorrowersService } from '../../../../../../data/services/loan-borrowers.service';
 import { LoanCreationService } from '../../../../../../data/services/loan-creation.service';
 import { LoansListService } from '../../../../../../data/services/loans-list.service';
 import { SidebarService } from '../../../../../../data/services/sidebar.service';
+import { LoanTicketDialogComponent } from '../../../../common/dialogs/views/loans/loan-ticket.dialog.component';
 import { LoanPaymentsDialogComponent } from '../../../../common/dialogs/views/loans/loan-payments.dialog.component';
 import { LoanDetailDialogComponent } from '../../../../common/dialogs/views/loans/loan-detail.dialog.component';
 import { LoanPaymentPayDialogComponent } from '../../../../common/dialogs/views/loans/loan-payment-pay.dialog.component';
@@ -33,6 +35,7 @@ import { LoansTableComponent } from './components/loans-table.component';
       class="flex flex-auto flex-col"
       (details)="handleDetails({ loan: $event })"
       (edit)="handleEdit({ loan: $event })"
+      (ticket)="handleTicket({ loan: $event })"
       (payments)="handlePayments({ loan: $event })"
       (pay)="handlePay({ loan: $event })"
    />`,
@@ -48,6 +51,7 @@ export class LoansPageComponent {
    private readonly _calendar: LoansCalendarService = inject(LoansCalendarService);
    private readonly _agreement: AgreementCreationService = inject(AgreementCreationService);
    private readonly _pay: LoanPaymentPayService = inject(LoanPaymentPayService);
+   private readonly _ticket: LoanTicketService = inject(LoanTicketService);
 
    constructor() {
       // filters are never active when entering the page
@@ -141,6 +145,19 @@ export class LoansPageComponent {
             component: LoanCreateDialogComponent,
             size: 'lg',
          });
+      });
+   }
+
+   /**
+    * Registers how the loan was handed to the borrower (cash or transfer with its receipt)
+    */
+   public handleTicket({ loan }: { loan: LoanRow }): void {
+      this._ticket.start({ loanId: loan.id });
+      this._dialogs.newDialog({
+         title: DIALOG_I18N_KEYS.LOAN_TICKET_TITLE,
+         titleParams: { folio: compactFolio(loan.folio) },
+         component: LoanTicketDialogComponent,
+         size: 'sm',
       });
    }
 

@@ -8,12 +8,14 @@ import { FieldsLoanPayment, LoanPayment } from '../../../interfaces/loan';
 import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
 import { DIALOG_I18N_KEYS } from '../repository/dialog.repository';
 import { FORMS_CUSTOM_VALIDATIONS, FORMS_I18N_KEYS } from '../repository/forms.repository';
+import { LOANS_I18N_KEYS, loansRoute, receiptFileError } from '../repository/loans.repository';
 import { environment } from '../../../../environments/environment.development';
 import { monetaryRules } from '../../web/utilities/validators/numeric.validators';
 import { DialogsService } from './dialogs.service';
 import { LoanDetailService } from './loan-detail.service';
 import { LoanPaymentsService } from './loan-payments.service';
 import { LoansListService } from './loans-list.service';
+import { SessionService } from './session.service';
 
 const cents = (value: number): number => Math.round(value * 100);
 
@@ -29,6 +31,7 @@ export class LoanPaymentPayService {
    private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
    private readonly _detail: LoanDetailService = inject(LoanDetailService);
    private readonly _list: LoansListService = inject(LoansListService);
+   private readonly _session: SessionService = inject(SessionService);
 
    private readonly route: EndpointData = { route: API_ROUTES.PAYLOANPAYMENT, method: HTTP_METHODS.POST };
 
@@ -38,7 +41,10 @@ export class LoanPaymentPayService {
    // what the whole loan owes (only for a payment to the loan)
    private readonly $loanDebt: WritableSignal<number> = signal(0);
    private readonly $saving: WritableSignal<boolean> = signal(false);
-   private readonly $model: WritableSignal<FieldsLoanPayment> = signal({ amount: null });
+   private readonly $model: WritableSignal<FieldsLoanPayment> = signal({ amount: null, payment: 'cash' });
+   // image of the receipt of a transfer & the translation key of its problem, shown once one was chosen or the user tried to pay
+   private readonly $file: WritableSignal<File | null> = signal(null);
+   private readonly $fileError: WritableSignal<string | null> = signal(null);
 
    // what is still owed: by the payment (its amount minus what has been paid) or by the whole loan
    private readonly $debt: Signal<number> = computed(() => {
@@ -61,6 +67,7 @@ export class LoanPaymentPayService {
          });
 
          disabled(schema.amount, { when: () => this.$saving() });
+         disabled(schema.payment, { when: () => this.$saving() });
       },
    );
 
@@ -70,6 +77,14 @@ export class LoanPaymentPayService {
 
    public get saving(): boolean {
       return this.$saving();
+   }
+
+   public get file(): File | null {
+      return this.$file();
+   }
+
+   public get fileError(): string | null {
+      return this.$fileError();
    }
 
    public get debt(): number {
@@ -84,7 +99,7 @@ export class LoanPaymentPayService {
       this.$payment.set(payment);
       this.$loanDebt.set(0);
       this.$saving.set(false);
-      this.$form().reset({ amount: null });
+      this.reset();
    }
 
    /**
@@ -116,7 +131,7 @@ export class LoanPaymentPayService {
          this.$payment.set(null);
          this.$loanDebt.set(debt / 100);
          this.$saving.set(false);
-         this.$form().reset({ amount: null });
+         this.reset();
 
          return true;
       } catch {
@@ -125,6 +140,22 @@ export class LoanPaymentPayService {
       } finally {
          this._dialogs.loading = false;
       }
+   }
+
+   private reset(): void {
+      this.$form().reset({ amount: null, payment: 'cash' });
+      this.$file.set(null);
+      this.$fileError.set(null);
+   }
+
+   /**
+    * Takes the chosen image of the receipt if it's valid (the backend verifies its content again)
+    */
+   public selectFile({ file }: { file: File }): void {
+      const error: string | null = receiptFileError({ file });
+
+      this.$file.set(error ? null : file);
+      this.$fileError.set(error);
    }
 
    /**
@@ -143,19 +174,40 @@ export class LoanPaymentPayService {
       const loanId: string | null = this.$loanId();
       const payment: LoanPayment | null = this.$payment();
 
+      const file: File | null = this.$file();
+      const transfer: boolean = this.$model().payment === 'transfer';
+      // a borrower only reports the payment, an administrator has to accept it
+      const borrower: boolean = this._session.session?.profile === 'borrower';
+
       if (!loanId) return;
 
+      if (transfer && !file && !this.$fileError()) this.$fileError.set(LOANS_I18N_KEYS.TICKET_FILE_REQUIRED);
+
       submit(this.$form, async () => {
+         if (transfer && !file) return;
+
          try {
             await this._dialogs.confirmation({
-               message: payment ? DIALOG_I18N_KEYS.CONFIRM_PAY_LOAN_PAYMENT : DIALOG_I18N_KEYS.CONFIRM_PAY_LOAN,
+               message: !payment
+                  ? DIALOG_I18N_KEYS.CONFIRM_PAY_LOAN
+                  : borrower
+                    ? DIALOG_I18N_KEYS.CONFIRM_PAY_LOAN_PAYMENT_BORROWER
+                    : DIALOG_I18N_KEYS.CONFIRM_PAY_LOAN_PAYMENT,
             });
          } catch {
             return;
          }
 
-         const { route, method } = this.route;
-         const { amount } = this.$form().value();
+         const { method } = this.route;
+         const route: string = loansRoute({ route: this.route.route, profile: this._session.session?.profile });
+         const { amount, payment: how } = this.$form().value();
+         const body: FormData = new FormData();
+
+         body.append('amount', String(amount));
+         body.append('payment', how);
+
+         // there is no receipt of cash
+         if (how === 'transfer' && file) body.append('file', file);
 
          this.$saving.set(true);
          this._dialogs.loading = true;
@@ -166,7 +218,7 @@ export class LoanPaymentPayService {
                   method,
                   // the payment that is paid, or the whole loan
                   `${environment.apiUrl}${route}${loanId}/${payment ? `payments/${payment.id}/` : ''}pay`,
-                  { body: { amount } },
+                  { body },
                ),
             );
 
@@ -183,7 +235,7 @@ export class LoanPaymentPayService {
             this._dialogs.loading = false;
          }
       }).then((state: boolean) => {
-         if (state) return;
+         if (state && (!transfer || file)) return;
 
          this._dialogs.alert({
             severity: 'error',

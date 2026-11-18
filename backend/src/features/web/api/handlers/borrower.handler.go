@@ -164,3 +164,33 @@ func GetMyLoanPaymentBreakdown(response http.ResponseWriter, request *http.Reque
 
 	writeLoanResult(response, request, "handlers.GetMyLoanPaymentBreakdown.GetBreakdown", http.StatusOK, breakdown, err)
 }
+
+/**
+ * The borrower reports a payment to the next payment of its loan (form data like the one of an
+ * administrator: amount, payment & the receipt of a transfer). It stays pending until an
+ * administrator accepts it, so the payment doesn't change yet.
+ */
+func RequestMyLoanPayment(response http.ResponseWriter, request *http.Request) {
+	id, ok := ownLoanID(response, request)
+
+	if !ok {
+		return
+	}
+
+	paymentID, err := uuid.Parse(request.PathValue("paymentId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	amount, receipt, ok := readPaymentForm(response, request)
+
+	if !ok {
+		return
+	}
+
+	payments, err := loans.RequestPayment(request.Context(), id, paymentID, amount, receipt)
+
+	writeLoanResult(response, request, "handlers.RequestMyLoanPayment.RequestPayment", http.StatusCreated, &payments, err)
+}
