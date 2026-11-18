@@ -1,11 +1,5 @@
 package repository
 
-import (
-	"errors"
-
-	"motiva-erp/backend/src/interfaces/models"
-)
-
 const (
 	StgUnitPercentage string = "percentage"
 	StgUnitMonetary   string = "monetary"
@@ -41,8 +35,4 @@ const (
 
 	StgPrefixMonthly string = "monthly_loan"
 	StgPrefixWeekly  string = "weekly_loan"
-
-	StgI18nKeyInvestorAboveGeneral models.I18nKey = "SETTINGS_INVESTOR_ABOVE_GENERAL"
 )
-
-var StgErrInvestorAboveGeneral error = errors.New("Investor percentage above general percentage")

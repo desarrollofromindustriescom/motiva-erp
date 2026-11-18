@@ -54,6 +54,9 @@ export const API_ROUTES: Record<
    LISTLOANS: '/loans',
    GETLOAN: '/loans/',
    UPDATELOAN: '/loans/',
+   LOANPAYMENTS: '/loans/',
+   LOANDEPOSITS: '/loans/',
+   PAYLOANPAYMENT: '/loans/',
    APPROVELOAN: '/loans/',
 };
 export const HTTP_METHODS: Record<AllowedMethods, AllowedMethods> = {

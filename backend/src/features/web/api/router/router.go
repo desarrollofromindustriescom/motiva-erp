@@ -76,6 +76,9 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoans), middleware.Authorize(handlers.QueryLoans, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoans), middleware.Authorize(handlers.CreateLoan, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoan), middleware.Authorize(handlers.GetLoan, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoanPayments), middleware.Authorize(handlers.GetLoanPayments, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanPaymentPay), middleware.Authorize(handlers.PayLoanPayment, usersProfiles...))
+	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoanPaymentDeposits), middleware.Authorize(handlers.QueryLoanPaymentDeposits, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteLoan), middleware.Authorize(handlers.UpdateLoan, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanApprove), middleware.Authorize(handlers.ApproveLoan, usersProfiles...))
 

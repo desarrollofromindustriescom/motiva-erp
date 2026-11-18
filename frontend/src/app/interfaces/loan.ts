@@ -1,4 +1,13 @@
-export type LoansRoutes = 'loanFunds' | 'createLoan' | 'approveLoan' | 'listLoans' | 'getLoan' | 'updateLoan';
+export type LoansRoutes =
+   | 'loanFunds'
+   | 'createLoan'
+   | 'approveLoan'
+   | 'listLoans'
+   | 'getLoan'
+   | 'updateLoan'
+   | 'loanPayments'
+   | 'loanDeposits'
+   | 'payLoanPayment';
 
 export type LoanType = 'weekly' | 'monthly';
 
@@ -75,7 +84,10 @@ export interface LoansPage {
 export type LoanActionId = 'details' | 'payments' | 'edit' | 'pay';
 
 /**
- * What one place (the general cash balance or an investor) lent to a loan & what it has got back
+ * What one place (the general cash balance or an investor) lent to a loan & what has happened
+ * with the payments made to it: its share of them (paid), what entered its balance (received)
+ * & the commission (for an investor what was kept from its share, for the general cash balance
+ * what it got from the shares of the investors)
  */
 export interface LoanLender {
    // only investors have them
@@ -83,10 +95,9 @@ export interface LoanLender {
    username: string | null;
    lent: number;
    debt: number;
-   paid_capital: number;
-   paid_interest_investor: number;
-   paid_interest_commission: number;
-   current: number;
+   paid: number;
+   received: number;
+   commission: number;
 }
 
 export interface LoanDetail {
@@ -114,4 +125,44 @@ export interface LoanDetail {
    };
    general: LoanLender | null;
    investors: LoanLender[];
+}
+
+export type LoanPaymentState = 'paid' | 'expired' | 'partial' | 'pending' | 'capital';
+
+export interface LoanPayment {
+   id: string;
+   number: number;
+   amount: number;
+   paid: number;
+   expected_date: string;
+   // only the payments paid in full have it
+   paid_date: string | null;
+   state: LoanPaymentState;
+   // the first payment that isn't paid in full: the only one that can receive a payment
+   is_next: boolean;
+}
+
+export interface FieldsLoanPayment {
+   amount: number | null;
+}
+
+export type LoanDepositType = 'regular' | 'late' | 'capital';
+
+/**
+ * A payment made to a payment of a loan
+ */
+export interface LoanDeposit {
+   id: string;
+   date: string;
+   type: LoanDepositType;
+   amount: number;
+}
+
+export interface LoanDepositsPage {
+   items: LoanDeposit[];
+   total: number;
+   // sum of all the payments made, not only the ones of the page
+   sum: number;
+   page: number;
+   size: number;
 }

@@ -132,7 +132,7 @@ export class LoansTableComponent {
    public readonly STATUS_COLORS: Record<string, string> = LOAN_STATUS_COLORS;
    public readonly $size: number = this._list.size;
 
-   // the details are always available, continuing a loan only while it is pending
+   // the details & the payments are always available, continuing a loan only while it is pending
    public readonly actions: RowAction[] = [
       { id: 'details', icon: 'bx-file-detail', tooltip: LOANS_I18N_KEYS.TOOLTIP_DETAILS },
       { id: 'payments', icon: 'bx-currency-notes', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAYMENTS },
@@ -142,6 +142,7 @@ export class LoansTableComponent {
 
    public $details: OutputEmitterRef<LoanRow> = output({ alias: 'details' });
    public $edit: OutputEmitterRef<LoanRow> = output({ alias: 'edit' });
+   public $payments: OutputEmitterRef<LoanRow> = output({ alias: 'payments' });
 
    public readonly $loans: Signal<LoanRow[]> = computed(() => this._list.loans);
    public readonly $total: Signal<number> = computed(() => this._list.total);
@@ -159,6 +160,7 @@ export class LoansTableComponent {
 
    public handleAction({ action, loan }: { action: RowAction; loan: LoanRow }): void {
       if (action.id === 'details') this.$details.emit(loan);
+      if (action.id === 'payments') this.$payments.emit(loan);
       if (action.id === 'edit') this.$edit.emit(loan);
    }
 

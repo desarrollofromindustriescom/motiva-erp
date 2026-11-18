@@ -298,8 +298,8 @@ func takeFunds(ctx context.Context, tx pgx.Tx, executor *models.User, loanID uui
 			return err
 		}
 
-		// the general cash has no investor percentage, the loan one applies
-		if _, err = tx.Exec(ctx, repository.LnQryInsertDetail, int(taken.general), interest.id, nil, balanceID, loanID); err != nil {
+		// the general cash has no investor percentage
+		if _, err = tx.Exec(ctx, repository.LnQryInsertDetail, int(taken.general), nil, nil, balanceID, loanID); err != nil {
 			return err
 		}
 	}
@@ -799,7 +799,549 @@ func GetByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, 
 	detail.PaidInterest = float64(interest) / 100
 	detail.Current = float64(paid) / 100
 
+	return detail, loadLenders(ctx, detail, id, amount, rateValue)
+}
+
+type lenderGroup struct {
+	preview *controller.LoanLenderPreview
+	balance uuid.UUID
+	lent    int64
+}
+
+/**
+ * Fills the places that lent money to the loan with what each one lent, owes & has got.
+ * The share of each one is calculated like every payment was split (same rounding), what the
+ * investors received is what really entered their balances & the rest of their shares is commission.
+ */
+func loadLenders(ctx context.Context, detail *controller.LoanDetailPreview, id uuid.UUID, amount int64, rateValue int64) error {
+	pool := database.GetPool()
+
 	rows, err := pool.Query(ctx, repository.LnQryLenders, id)
+
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	// one group for the general cash balance & one for every investor, in the order of the payment split
+	groups := []*lenderGroup{}
+	byBalance := map[uuid.UUID]*lenderGroup{}
+
+	for rows.Next() {
+		var (
+			fullname, username *string
+			lent               int64
+			balance            uuid.UUID
+		)
+
+		if err = rows.Scan(&fullname, &username, &lent, &balance); err != nil {
+			return err
+		}
+
+		group, exists := byBalance[balance]
+
+		if !exists {
+			group = &lenderGroup{balance: balance, preview: &controller.LoanLenderPreview{Fullname: fullname, Username: username}}
+			byBalance[balance] = group
+			groups = append(groups, group)
+		}
+
+		group.lent += lent
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	rows.Close()
+
+	// what each group has been paid: every payment made is divided between them
+	lents := make([]int64, len(groups))
+	shares := make([]int64, len(groups))
+
+	for i, group := range groups {
+		lents[i] = group.lent
+	}
+
+	payments, err := pool.Query(ctx, repository.LnQryLoanDeposits, id)
+
+	if err != nil {
+		return err
+	}
+
+	defer payments.Close()
+
+	for payments.Next() {
+		var value int64
+
+		if err = payments.Scan(&value); err != nil {
+			return err
+		}
+
+		for i, part := range distribute(value, lents) {
+			shares[i] += part
+		}
+	}
+
+	if err = payments.Err(); err != nil {
+		return err
+	}
+
+	payments.Close()
+
+	deposited := map[uuid.UUID]int64{}
+
+	totals, err := pool.Query(ctx, repository.LnQryDepositedByBalance, id)
+
+	if err != nil {
+		return err
+	}
+
+	defer totals.Close()
+
+	for totals.Next() {
+		var (
+			balance uuid.UUID
+			value   int64
+		)
+
+		if err = totals.Scan(&balance, &value); err != nil {
+			return err
+		}
+
+		deposited[balance] = value
+	}
+
+	if err = totals.Err(); err != nil {
+		return err
+	}
+
+	var (
+		generalPaid, commission int64
+		generalLent             int64
+		hasGeneral              bool
+	)
+
+	for i, group := range groups {
+		lender := group.preview
+
+		lender.Lent = float64(group.lent) / 100
+		lender.Debt = float64((group.lent*(rateScale+rateValue)+rateScale/2)/rateScale) / 100
+		lender.Paid = float64(shares[i]) / 100
+
+		if lender.Username == nil {
+			hasGeneral = true
+			generalPaid += shares[i]
+			generalLent += group.lent
+
+			continue
+		}
+
+		received := deposited[group.balance]
+		kept := max(shares[i]-received, 0)
+
+		lender.Received = float64(received) / 100
+		lender.Commission = float64(kept) / 100
+		commission += kept
+
+		detail.Investors = append(detail.Investors, lender)
+	}
+
+	// the general cash balance shows up when it lent money or when it got commissions
+	if hasGeneral || commission > 0 {
+		detail.General = &controller.LoanLenderPreview{
+			Lent:       float64(generalLent) / 100,
+			Debt:       float64((generalLent*(rateScale+rateValue)+rateScale/2)/rateScale) / 100,
+			Paid:       float64(generalPaid) / 100,
+			Received:   float64(generalPaid+commission) / 100,
+			Commission: float64(commission) / 100,
+		}
+	}
+
+	return nil
+}
+
+type paymentRow struct {
+	preview *controller.LoanPaymentPreview
+	// cents, what the payment costs & what has been paid to it
+	amount int64
+	paid   int64
+	// its day has passed
+	overdue bool
+}
+
+type rowsQuerier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+func (row *paymentRow) debt() int64 {
+	return row.amount - row.paid
+}
+
+/**
+ * Payments of a loan in order, each one with the state it is in. The next one is the
+ * first that isn't paid in full, it is the only one that can receive a payment.
+ */
+func loadPayments(ctx context.Context, db rowsQuerier, id uuid.UUID) ([]*paymentRow, error) {
+	rows, err := db.Query(ctx, repository.LnQryPayments, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	payments := []*paymentRow{}
+	next := true
+
+	for rows.Next() {
+		var (
+			lastPaid   *time.Time
+			hasCapital bool
+		)
+
+		row := &paymentRow{preview: &controller.LoanPaymentPreview{Number: len(payments) + 1}}
+
+		if err = rows.Scan(&row.preview.ID, &row.amount, &row.preview.ExpectedDate, &row.paid, &lastPaid, &hasCapital, &row.overdue); err != nil {
+			return nil, err
+		}
+
+		row.preview.Amount = float64(row.amount) / 100
+		row.preview.Paid = float64(row.paid) / 100
+
+		switch {
+		case row.paid >= row.amount && hasCapital:
+			row.preview.State, row.preview.PaidDate = "capital", lastPaid
+		case row.paid >= row.amount:
+			row.preview.State, row.preview.PaidDate = "paid", lastPaid
+		case row.paid > 0:
+			row.preview.State = "partial"
+		case row.overdue:
+			row.preview.State = "expired"
+		default:
+			row.preview.State = "pending"
+		}
+
+		if row.paid < row.amount && next {
+			row.preview.IsNext = true
+			next = false
+		}
+
+		payments = append(payments, row)
+	}
+
+	return payments, rows.Err()
+}
+
+func previews(rows []*paymentRow) []*controller.LoanPaymentPreview {
+	result := make([]*controller.LoanPaymentPreview, 0, len(rows))
+
+	for _, row := range rows {
+		result = append(result, row.preview)
+	}
+
+	return result
+}
+
+/**
+ * Payments of a loan in order, each one with the state it is in
+ */
+func GetPayments(ctx context.Context, id uuid.UUID) ([]*controller.LoanPaymentPreview, error) {
+	pool := database.GetPool()
+
+	if err := pool.QueryRow(ctx, repository.LnQryExists, id).Scan(new(int)); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.LnErrNotFound
+		}
+
+		return nil, err
+	}
+
+	rows, err := loadPayments(ctx, pool, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return previews(rows), nil
+}
+
+/**
+ * Pays part or all of the debt of the next payment of an active loan, in one transaction:
+ * - the loan is locked so two payments can't be made at the same time
+ * - only the next payment (the first that isn't paid in full) can be paid, never more than it owes
+ * - it is saved as a payment detail: late when the day of the payment has passed, regular if not
+ * - when the payment is paid in full it is marked as executed, & when it was the last one
+ *   the loan is finished
+ * - the money enters the balances of the places that lent it (see splitPayment): one deposit
+ *   for the general cash balance, one for the commission & one for every investment, which also
+ *   gets back its money (current amount) & its gain (current reward)
+ * Returns the payments of the loan updated.
+ */
+func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, paymentID uuid.UUID, amount float64) ([]*controller.LoanPaymentPreview, error) {
+	cents, ok := toCents(amount)
+
+	if !ok || cents <= 0 {
+		return nil, repository.LnErrPaymentAmount
+	}
+
+	tx, err := database.GetPool().Begin(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback(ctx)
+
+	var loanAmount, rateValue int64
+
+	if err = tx.QueryRow(ctx, repository.LnQryLockActive, loanID).Scan(new(uuid.UUID), &loanAmount, &rateValue); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.LnErrNotActive
+		}
+
+		return nil, err
+	}
+
+	rows, err := loadPayments(ctx, tx, loanID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var target *paymentRow
+
+	pending := 0
+
+	for _, row := range rows {
+		if row.preview.ID == paymentID {
+			target = row
+		}
+
+		if row.paid < row.amount {
+			pending++
+		}
+	}
+
+	if target == nil {
+		return nil, repository.LnErrNotFound
+	}
+
+	if !target.preview.IsNext {
+		return nil, repository.LnErrPaymentNotNext
+	}
+
+	if cents > target.debt() {
+		return nil, repository.LnErrPaymentExceeds
+	}
+
+	kind := "regular"
+
+	if target.overdue {
+		kind = "late"
+	}
+
+	if _, err = tx.Exec(ctx, repository.LnQryInsertPaymentDetail, int(cents), kind, time.Now(), paymentID); err != nil {
+		return nil, err
+	}
+
+	total, _ := quote(loanAmount, rateValue, 1)
+
+	if err = depositPayment(ctx, tx, executor, loanID, paymentID, cents, loanAmount, total); err != nil {
+		return nil, err
+	}
+
+	if cents == target.debt() {
+		if _, err = tx.Exec(ctx, repository.LnQryExecutePayment, paymentID); err != nil {
+			return nil, err
+		}
+
+		// it was the last payment that wasn't paid
+		if pending == 1 {
+			if _, err = tx.Exec(ctx, repository.LnQryFinish, loanID); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return GetPayments(ctx, loanID)
+}
+
+/**
+ * Deposits the money of a payment in the balances of the places that lent the loan.
+ * The general cash balance is locked first & the investors after it, always in the same
+ * order, like when the money of a loan is taken.
+ */
+func depositPayment(ctx context.Context, tx pgx.Tx, executor *models.User, loanID uuid.UUID, paymentID uuid.UUID, cents int64, loanAmount int64, total int64) error {
+	rows, err := tx.Query(ctx, repository.LnQryLoanLenders, loanID)
+
+	if err != nil {
+		return err
+	}
+
+	lenders := []lender{}
+
+	for rows.Next() {
+		var item lender
+
+		if err = rows.Scan(&item.lent, &item.balanceID, &item.investmentID, &item.userID, &item.percentage, &item.weight); err != nil {
+			rows.Close()
+			return err
+		}
+
+		lenders = append(lenders, item)
+	}
+
+	rows.Close()
+
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	result := splitPayment(cents, loanAmount, total, lenders)
+
+	var (
+		noOwner   *uuid.UUID
+		generalID uuid.UUID
+		generalAt int
+	)
+
+	if err = tx.QueryRow(ctx, repository.CbQryLockBalance, noOwner).Scan(&generalID, &generalAt); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return repository.CbErrNotFound
+		}
+
+		return err
+	}
+
+	deposit := func(balanceID uuid.UUID, investmentID *uuid.UUID, amount int64) error {
+		number, err := folio.NextMovement(ctx, tx)
+
+		if err != nil {
+			return err
+		}
+
+		_, err = tx.Exec(ctx, repository.LnQryInsertDeposit, number, int(amount), balanceID, investmentID, paymentID, executor.ID)
+
+		return err
+	}
+
+	now := time.Now()
+	generalNext := int64(generalAt) + result.general + result.commission
+
+	if generalNext > int64(repository.CbMaxAmountCents) {
+		return repository.CbErrLimit
+	}
+
+	if result.general > 0 {
+		if err = deposit(generalID, nil, result.general); err != nil {
+			return err
+		}
+	}
+
+	if result.commission > 0 {
+		if err = deposit(generalID, nil, result.commission); err != nil {
+			return err
+		}
+	}
+
+	if _, err = tx.Exec(ctx, repository.CbQryUpdateBalance, int(generalNext), now, generalID); err != nil {
+		return err
+	}
+
+	// the balances of the investors, locked in order of their id
+	received := map[uuid.UUID]int64{}
+	order := []uuid.UUID{}
+
+	for _, item := range result.investments {
+		if _, exists := received[item.balanceID]; !exists {
+			order = append(order, item.balanceID)
+		}
+
+		received[item.balanceID] += item.amount
+	}
+
+	owners := map[uuid.UUID]uuid.UUID{}
+
+	for _, item := range lenders {
+		if item.userID != nil {
+			owners[item.balanceID] = *item.userID
+		}
+	}
+
+	slices.SortFunc(order, func(a, b uuid.UUID) int { return strings.Compare(owners[a].String(), owners[b].String()) })
+
+	for _, balanceID := range order {
+		var (
+			lockedID uuid.UUID
+			current  int
+			owner    = owners[balanceID]
+		)
+
+		if err = tx.QueryRow(ctx, repository.CbQryLockBalance, &owner).Scan(&lockedID, &current); err != nil {
+			return err
+		}
+
+		next := int64(current) + received[balanceID]
+
+		if next > int64(repository.CbMaxAmountCents) {
+			return repository.CbErrLimit
+		}
+
+		for _, item := range result.investments {
+			if item.balanceID != balanceID || item.amount <= 0 {
+				continue
+			}
+
+			investmentID := item.investmentID
+
+			if err = deposit(balanceID, &investmentID, item.amount); err != nil {
+				return err
+			}
+
+			if _, err = tx.Exec(ctx, repository.LnQryReturnInvestment, int(item.amount), int(item.reward), now, investmentID); err != nil {
+				return err
+			}
+		}
+
+		if _, err = tx.Exec(ctx, repository.CbQryUpdateBalance, int(next), now, balanceID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+/**
+ * Page of the payments made to one payment of a loan (oldest first) with the sum of all of them
+ */
+func GetPaymentDeposits(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID, page int, size int) (*controller.LoanDepositsPagePreview, error) {
+	pool := database.GetPool()
+
+	if err := pool.QueryRow(ctx, repository.LnQryPaymentOfLoan, paymentID, loanID).Scan(new(int)); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.LnErrNotFound
+		}
+
+		return nil, err
+	}
+
+	var sum int64
+
+	result := &controller.LoanDepositsPagePreview{Items: []*controller.LoanDepositPreview{}, Page: page, Size: size}
+
+	if err := pool.QueryRow(ctx, repository.LnQryDepositsTotal, paymentID).Scan(&result.Total, &sum); err != nil {
+		return nil, err
+	}
+
+	result.Sum = float64(sum) / 100
+
+	rows, err := pool.Query(ctx, repository.LnQryDeposits, paymentID, size, (page-1)*size)
 
 	if err != nil {
 		return nil, err
@@ -808,37 +1350,17 @@ func GetByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, 
 	defer rows.Close()
 
 	for rows.Next() {
-		var lent, investorRate int64
+		var amount int64
 
-		lender := &controller.LoanLenderPreview{}
+		item := &controller.LoanDepositPreview{}
 
-		if err = rows.Scan(&lender.Fullname, &lender.Username, &lent, &investorRate); err != nil {
+		if err = rows.Scan(&item.ID, &item.Date, &item.Type, &amount); err != nil {
 			return nil, err
 		}
 
-		lenderCapital := proportion(capital, lent, amount)
-		lenderInterest := proportion(interest, lent, amount)
-
-		// the general cash balance keeps all of its interest as commission
-		investorInterest := int64(0)
-
-		if lender.Username != nil && rateValue > 0 {
-			investorInterest = proportion(lenderInterest, min(investorRate, rateValue), rateValue)
-		}
-
-		lender.Lent = float64(lent) / 100
-		lender.Debt = float64((lent*(rateScale+rateValue)+rateScale/2)/rateScale) / 100
-		lender.PaidCapital = float64(lenderCapital) / 100
-		lender.PaidInterestInvestor = float64(investorInterest) / 100
-		lender.PaidInterestCommission = float64(lenderInterest-investorInterest) / 100
-		lender.Current = float64(lenderCapital+lenderInterest) / 100
-
-		if lender.Username == nil {
-			detail.General = lender
-		} else {
-			detail.Investors = append(detail.Investors, lender)
-		}
+		item.Amount = float64(amount) / 100
+		result.Items = append(result.Items, item)
 	}
 
-	return detail, rows.Err()
+	return result, rows.Err()
 }

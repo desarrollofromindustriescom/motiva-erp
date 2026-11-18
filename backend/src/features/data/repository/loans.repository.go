@@ -25,6 +25,10 @@ const (
 	LnI18nKeyFundsMismatch    models.I18nKey = "LOAN_FUNDS_MISMATCH"
 	LnI18nKeyFundsInsufficent models.I18nKey = "LOAN_FUNDS_INSUFFICIENT"
 	LnI18nKeyNotPending       models.I18nKey = "LOAN_NOT_PENDING"
+	LnI18nKeyNotActive        models.I18nKey = "LOAN_NOT_ACTIVE"
+	LnI18nKeyPaymentAmount    models.I18nKey = "LOAN_PAYMENT_AMOUNT"
+	LnI18nKeyPaymentNotNext   models.I18nKey = "LOAN_PAYMENT_NOT_NEXT"
+	LnI18nKeyPaymentExceeds   models.I18nKey = "LOAN_PAYMENT_EXCEEDS"
 
 	LnQryNextFolio string = `--sql
 		SELECT nextval('loans_folio_seq')
@@ -253,11 +257,10 @@ const lnFrom string = `--sql
 				WHEN status.slug = 'active' AND EXISTS (
 					SELECT 1
 					FROM payments
-					INNER JOIN status AS payment_status ON payments.status_id = payment_status.id
 					WHERE
 						payments.loan_id = loans.id AND
-						payment_status.slug = 'pending' AND
-						payments.expected_payment_date::date < CURRENT_DATE
+						payments.expected_payment_date::date < CURRENT_DATE AND
+						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
 				) THEN 'expired'
 				ELSE status.slug
 			END AS slug,
@@ -335,11 +338,10 @@ const lnFromOne string = `--sql
 				WHEN status.slug = 'active' AND EXISTS (
 					SELECT 1
 					FROM payments
-					INNER JOIN status AS payment_status ON payments.status_id = payment_status.id
 					WHERE
 						payments.loan_id = loans.id AND
-						payment_status.slug = 'pending' AND
-						payments.expected_payment_date::date < CURRENT_DATE
+						payments.expected_payment_date::date < CURRENT_DATE AND
+						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
 				) THEN 'expired'
 				ELSE status.slug
 			END AS slug,
@@ -376,6 +378,116 @@ const (
 )
 
 const (
+	// the loan is locked so its payments are paid one by one
+	LnQryLockActive string = `--sql
+		SELECT
+			loans.id,
+			loans.amount,
+			COALESCE(settings.value, 0)
+		FROM loans
+		INNER JOIN status ON loans.status_id = status.id
+		LEFT JOIN settings ON loans.rate_settings_id = settings.id
+		WHERE
+			loans.id = $1 AND
+			status.slug = 'active'
+		FOR UPDATE OF loans
+	`
+
+	// where the money of a loan came from: the general cash has no user, investor percentage or
+	// investment; an investor has a row for each investment it lent from (with the weight of its term)
+	LnQryLoanLenders string = `--sql
+		SELECT
+			loan_details.amount,
+			loan_details.cash_balance_id,
+			loan_details.cash_balance_detail_id,
+			cash_balances.user_id,
+			COALESCE(investor_rate.value, 0),
+			COALESCE(cash_balance_cycles.weight, 1)
+		FROM loan_details
+		INNER JOIN cash_balances ON loan_details.cash_balance_id = cash_balances.id
+		LEFT JOIN settings AS investor_rate ON loan_details.percentage_settings_id = investor_rate.id
+		LEFT JOIN cash_balance_details ON loan_details.cash_balance_detail_id = cash_balance_details.id
+		LEFT JOIN cash_balance_cycles ON cash_balance_details.cash_balance_cycle_id = cash_balance_cycles.id
+		WHERE loan_details.loan_id = $1
+		ORDER BY cash_balances.user_id ASC NULLS FIRST, loan_details.id ASC
+	`
+
+	// money of a payment that enters a balance (the investment gets back what it lent & its gain)
+	LnQryInsertDeposit string = `--sql
+		INSERT INTO movements (
+			folio,
+			amount,
+			type,
+			cash_balance_id,
+			cash_balance_detail_id,
+			origin_payment_id,
+			user_id
+		) VALUES (
+			$1, $2, 'deposit'::movement_type, $3, $4, $5, $6
+		)
+	`
+
+	LnQryReturnInvestment string = `--sql
+		UPDATE cash_balance_details
+		SET
+			current_amount = current_amount + $1,
+			current_reward = current_reward + $2,
+			last_update = $3
+		WHERE id = $4
+	`
+
+	LnQryPaymentOfLoan string = `--sql
+		SELECT 1 FROM payments WHERE id = $1 AND loan_id = $2
+	`
+	LnQryDepositsTotal string = `--sql
+		SELECT COUNT(*), COALESCE(SUM(amount), 0)::bigint
+		FROM payment_details
+		WHERE payment_id = $1
+	`
+	LnQryDeposits string = `--sql
+		SELECT id, payment_date, type::text, amount
+		FROM payment_details
+		WHERE payment_id = $1
+		ORDER BY payment_date ASC, id ASC
+		LIMIT $2 OFFSET $3
+	`
+	LnQryInsertPaymentDetail string = `--sql
+		INSERT INTO payment_details (amount, type, payment_date, payment_id)
+		VALUES ($1, $2::loan_payment_type, $3, $4)
+	`
+	LnQryExecutePayment string = `--sql
+		UPDATE payments
+		SET status_id = (SELECT id FROM status WHERE slug = 'executed')
+		WHERE id = $1
+	`
+	LnQryFinish string = `--sql
+		UPDATE loans
+		SET status_id = (SELECT id FROM status WHERE slug = 'finished')
+		WHERE id = $1
+	`
+
+	LnQryExists string = `--sql
+		SELECT 1 FROM loans WHERE id = $1
+	`
+
+	// payments of a loan with what each one has got: the last payment date, whether part of it
+	// was paid to capital (to reduce the number of payments) & whether its day has passed
+	LnQryPayments string = `--sql
+		SELECT
+			payments.id,
+			payments.amount,
+			payments.expected_payment_date,
+			COALESCE(SUM(payment_details.amount), 0)::bigint,
+			MAX(payment_details.payment_date),
+			COALESCE(BOOL_OR(payment_details.type = 'capital'), FALSE),
+			payments.expected_payment_date::date < CURRENT_DATE
+		FROM payments
+		LEFT JOIN payment_details ON payment_details.payment_id = payments.id
+		WHERE payments.loan_id = $1
+		GROUP BY payments.id
+		ORDER BY payments.expected_payment_date ASC, payments.id ASC
+	`
+
 	LnQryGetByID string = `--sql
 		SELECT
 			loans.id,
@@ -396,13 +508,12 @@ const (
 			borrowers.address` + lnFromOne + `
 	`
 
-	// payments already fulfilled & what has been paid back (every payment detail)
+	// payments already fulfilled (paid in full) & what has been paid back (every payment detail)
 	LnQryPaid string = `--sql
 		SELECT
-			COUNT(*) FILTER (WHERE status.slug = 'executed'),
+			COUNT(*) FILTER (WHERE COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) >= payments.amount),
 			COALESCE(SUM((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id)), 0)::bigint
 		FROM payments
-		INNER JOIN status ON payments.status_id = status.id
 		WHERE payments.loan_id = $1
 	`
 
@@ -411,15 +522,35 @@ const (
 		SELECT
 			users.fullname,
 			users.username,
-			SUM(loan_details.amount)::bigint,
-			MAX(investor_rate.value)
+			loan_details.amount,
+			loan_details.cash_balance_id
 		FROM loan_details
 		INNER JOIN cash_balances ON loan_details.cash_balance_id = cash_balances.id
-		INNER JOIN settings AS investor_rate ON loan_details.percentage_settings_id = investor_rate.id
 		LEFT JOIN users ON cash_balances.user_id = users.id
 		WHERE loan_details.loan_id = $1
-		GROUP BY users.id, users.fullname, users.username
-		ORDER BY users.fullname ASC NULLS FIRST
+		ORDER BY cash_balances.user_id ASC NULLS FIRST, loan_details.id ASC
+	`
+
+	// every payment made to the payments of a loan, in the order they were made
+	LnQryLoanDeposits string = `--sql
+		SELECT payment_details.amount
+		FROM payment_details
+		INNER JOIN payments ON payment_details.payment_id = payments.id
+		WHERE payments.loan_id = $1
+		ORDER BY payment_details.payment_date ASC, payment_details.id ASC
+	`
+
+	// what the payments of a loan have deposited in every balance
+	LnQryDepositedByBalance string = `--sql
+		SELECT
+			movements.cash_balance_id,
+			SUM(movements.amount)::bigint
+		FROM movements
+		INNER JOIN payments ON movements.origin_payment_id = payments.id
+		WHERE
+			payments.loan_id = $1 AND
+			movements.type = 'deposit'
+		GROUP BY movements.cash_balance_id
 	`
 )
 
@@ -434,6 +565,10 @@ var LnStatusTitles map[string]string = map[string]string{
 
 var (
 	LnErrNotFound         error = errors.New("Loan not found")
+	LnErrNotActive        error = errors.New("Loan isn't active")
+	LnErrPaymentAmount    error = errors.New("Payment amount not valid")
+	LnErrPaymentNotNext   error = errors.New("Only the next payment can be paid")
+	LnErrPaymentExceeds   error = errors.New("Payment amount greater than the debt of the payment")
 	LnErrBorrowerInvalid  error = errors.New("Borrower doesn't exist or isn't active")
 	LnErrPaymentsInvalid  error = errors.New("Number of payments not allowed for the loan type")
 	LnErrRateNotFound     error = errors.New("Interest rate of the loan not found")

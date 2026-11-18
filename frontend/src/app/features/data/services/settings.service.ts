@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal, Signal, WritableSignal } from '@angular/core';
 import { HttpClient, HttpContext, httpResource, HttpResourceRef, HttpResourceRequest } from '@angular/common/http';
-import { applyEach, disabled, form, submit, validate } from '@angular/forms/signals';
+import { applyEach, disabled, form, submit } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { EndpointData } from '../../../interfaces/api';
 import { FormSchema } from '../../../interfaces/alias';
@@ -23,10 +23,15 @@ import {
    SETTINGS_MONTHLY_PERIODS,
    SETTINGS_WEEKLY_PERIODS,
 } from '../repository/settings.repository';
-import { FORMS_CUSTOM_VALIDATIONS, FORMS_I18N_KEYS } from '../repository/forms.repository';
+import { FORMS_I18N_KEYS } from '../repository/forms.repository';
 import { DIALOG_I18N_KEYS } from '../repository/dialog.repository';
 import { environment } from '../../../../environments/environment.development';
-import { monetaryRules, percentageRules, weeksRules } from '../../web/utilities/validators/numeric.validators';
+import {
+   investorPercentageRules,
+   monetaryRules,
+   percentageRules,
+   weeksRules,
+} from '../../web/utilities/validators/numeric.validators';
 import { SessionService } from './session.service';
 import { DialogsService } from './dialogs.service';
 
@@ -365,26 +370,15 @@ export class SettingsService {
     * Rules for the lists of investor/general percentages
     */
    private ratesSchema(schema: FormSchema<FieldsRates>, group: 'monthly' | 'weekly'): void {
+      // the investor receives part of its share of every payment, so it can't be more than all of it
       applyEach(schema.investor, (item) => {
-         percentageRules(item);
+         investorPercentageRules(item);
          disabled(item, { when: () => this.$updating()[group] });
       });
 
       applyEach(schema.general, (item) => {
          percentageRules(item);
          disabled(item, { when: () => this.$updating()[group] });
-
-         validate(item, ({ value, valueOf, index }) => {
-            const investor: NumberField = valueOf(schema.investor)[index()];
-            const general: NumberField = value();
-
-            if (investor === null || general === null || investor <= general) return null;
-
-            return {
-               kind: FORMS_CUSTOM_VALIDATIONS.INVESTOR_ABOVE_GENERAL,
-               message: FORMS_I18N_KEYS.VAL_INVESTOR_ABOVE_GENERAL,
-            };
-         });
       });
    }
 }

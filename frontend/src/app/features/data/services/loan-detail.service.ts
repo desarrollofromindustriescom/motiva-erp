@@ -49,6 +49,13 @@ export class LoanDetailService {
       return this.$loan.error() !== undefined;
    }
 
+   /**
+    * Requests the detail again when it's the one of this loan (ex: after paying one of its payments)
+    */
+   public reload({ id }: { id: string }): void {
+      if (this.$id() === id) this.$version.update((version: number) => version + 1);
+   }
+
    public open({ id }: { id: string }): void {
       // the previous loan isn't shown while the new one loads
       this.$id.set(null);

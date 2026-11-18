@@ -46,6 +46,13 @@ export function percentageRules(path: NumberPath): void {
    numericRules(path, PERCENTAGE_RANGE);
 }
 
+/**
+ * Percentage of its share of every payment that an investor receives: 100% at most
+ */
+export function investorPercentageRules(path: NumberPath): void {
+   numericRules(path, { ...PERCENTAGE_RANGE, max: 100 });
+}
+
 export function monetaryRules(path: NumberPath): void {
    numericRules(path, MONETARY_RANGE);
 }

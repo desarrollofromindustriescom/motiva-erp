@@ -34,6 +34,14 @@ func writeLoanResult[T any](response http.ResponseWriter, request *http.Request,
 			writeBadRequest(response, request, repository.LnI18nKeyFundsMismatch)
 		case errors.Is(err, repository.LnErrFundsInsufficent):
 			writeBadRequest(response, request, repository.LnI18nKeyFundsInsufficent)
+		case errors.Is(err, repository.LnErrNotActive):
+			writeBadRequest(response, request, repository.LnI18nKeyNotActive)
+		case errors.Is(err, repository.LnErrPaymentAmount):
+			writeBadRequest(response, request, repository.LnI18nKeyPaymentAmount)
+		case errors.Is(err, repository.LnErrPaymentNotNext):
+			writeBadRequest(response, request, repository.LnI18nKeyPaymentNotNext)
+		case errors.Is(err, repository.LnErrPaymentExceeds):
+			writeBadRequest(response, request, repository.LnI18nKeyPaymentExceeds)
 		case errors.Is(err, repository.LnErrNotPending):
 			writeBadRequest(response, request, repository.LnI18nKeyNotPending)
 		default:
@@ -164,4 +172,81 @@ func UpdateLoan(response http.ResponseWriter, request *http.Request) {
 	loan, err := loans.Update(ctx, currentSession.User, id, payload)
 
 	writeLoanResult(response, request, "handlers.UpdateLoan.Update", http.StatusOK, loan, err)
+}
+
+/**
+ * Payments of one loan with their state (payments dialog)
+ */
+func GetLoanPayments(response http.ResponseWriter, request *http.Request) {
+	id, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payments, err := loans.GetPayments(request.Context(), id)
+
+	writeLoanResult(response, request, "handlers.GetLoanPayments.GetPayments", http.StatusOK, &payments, err)
+}
+
+/**
+ * Pays part or all of the debt of the next payment of a loan
+ */
+func PayLoanPayment(response http.ResponseWriter, request *http.Request) {
+	loanID, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	paymentID, err := uuid.Parse(request.PathValue("paymentId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payload, ok := readPayload[controller.PayLoanPaymentPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	payments, err := loans.PayPayment(ctx, currentSession.User, loanID, paymentID, payload.Amount)
+
+	writeLoanResult(response, request, "handlers.PayLoanPayment.PayPayment", http.StatusCreated, &payments, err)
+}
+
+/**
+ * Payments made to one payment of a loan (paginated, same QUERY method as the other lists)
+ */
+func QueryLoanPaymentDeposits(response http.ResponseWriter, request *http.Request) {
+	loanID, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	paymentID, err := uuid.Parse(request.PathValue("paymentId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payload, ok := readPayload[controller.LoanDepositsQueryPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	deposits, err := loans.GetPaymentDeposits(request.Context(), loanID, paymentID, payload.Page, payload.Size)
+
+	writeLoanResult(response, request, "handlers.QueryLoanPaymentDeposits.GetPaymentDeposits", http.StatusOK, deposits, err)
 }

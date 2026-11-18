@@ -4,7 +4,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { LoanDetail, LoanLender } from '../../../../../../../interfaces/loan';
 import { LOANS_I18N_KEYS } from '../../../../../../data/repository/loans.repository';
 import { USERS_I18N_KEYS } from '../../../../../../data/repository/users.repository';
+import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
+import { compactFolio } from '../../../../../../data/repository/cash-balance.repository';
+import { DialogsService } from '../../../../../../data/services/dialogs.service';
+import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
 import { LoanDetailService } from '../../../../../../data/services/loan-detail.service';
+import { LoanPaymentsDialogComponent } from './loan-payments.dialog.component';
 import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pipe';
 
 interface DetailRow {
@@ -73,6 +78,7 @@ interface DetailSection {
                <button
                   class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-white transition-all"
                   type="button"
+                  (click)="handlePayments()"
                >
                   <i class="bx bx-wallet text-xl"></i>
                   {{ I18N.BUTTON_PAYMENTS | translate }}
@@ -90,6 +96,8 @@ interface DetailSection {
 })
 export class LoanDetailDialogComponent {
    private readonly _detail: LoanDetailService = inject(LoanDetailService);
+   private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
+   private readonly _dialogs: DialogsService = inject(DialogsService);
 
    private readonly currency: CurrencyPipe = new CurrencyPipe('en-US');
    private readonly date: DatePipe = new DatePipe('en-US');
@@ -140,7 +148,7 @@ export class LoanDetailDialogComponent {
          },
       ];
 
-      // the cash balance of the company has no investor, so all of its interest is commission
+      // the general cash balance: its own share of the payments & the commission of the investors
       if (loan.general) {
          sections.push({
             title: LOANS_I18N_KEYS.DETAIL_SECTION_GENERAL,
@@ -148,16 +156,14 @@ export class LoanDetailDialogComponent {
             rows: [
                { label: LOANS_I18N_KEYS.DETAIL_LENT, value: this.money(loan.general.lent) },
                { label: LOANS_I18N_KEYS.DETAIL_DEBT, value: this.money(loan.general.debt) },
-               { label: LOANS_I18N_KEYS.DETAIL_PAID_CAPITAL, value: this.money(loan.general.paid_capital) },
-               {
-                  label: LOANS_I18N_KEYS.DETAIL_PAID_INTEREST,
-                  value: this.money(loan.general.paid_interest_commission),
-               },
-               { label: LOANS_I18N_KEYS.DETAIL_CURRENT, value: this.money(loan.general.current) },
+               { label: LOANS_I18N_KEYS.DETAIL_PAID, value: this.money(loan.general.paid) },
+               { label: LOANS_I18N_KEYS.DETAIL_COMMISSION_RECEIVED, value: this.money(loan.general.commission) },
+               { label: LOANS_I18N_KEYS.DETAIL_CURRENT, value: this.money(loan.general.received) },
             ],
          });
       }
 
+      // an investor receives part of its share of every payment, the rest is commission
       for (const investor of loan.investors) {
          sections.push({
             title: LOANS_I18N_KEYS.DETAIL_SECTION_INVESTOR,
@@ -166,16 +172,9 @@ export class LoanDetailDialogComponent {
             rows: [
                { label: LOANS_I18N_KEYS.DETAIL_LENT, value: this.money(investor.lent) },
                { label: LOANS_I18N_KEYS.DETAIL_DEBT, value: this.money(investor.debt) },
-               { label: LOANS_I18N_KEYS.DETAIL_PAID_CAPITAL, value: this.money(investor.paid_capital) },
-               {
-                  label: LOANS_I18N_KEYS.DETAIL_PAID_INTEREST_INVESTOR,
-                  value: this.money(investor.paid_interest_investor),
-               },
-               {
-                  label: LOANS_I18N_KEYS.DETAIL_PAID_INTEREST_COMMISSION,
-                  value: this.money(investor.paid_interest_commission),
-               },
-               { label: LOANS_I18N_KEYS.DETAIL_CURRENT, value: this.money(investor.current) },
+               { label: LOANS_I18N_KEYS.DETAIL_PAID, value: this.money(investor.paid) },
+               { label: LOANS_I18N_KEYS.DETAIL_RECEIVED_INVESTOR, value: this.money(investor.received) },
+               { label: LOANS_I18N_KEYS.DETAIL_COMMISSION_KEPT, value: this.money(investor.commission) },
             ],
          });
       }
@@ -205,6 +204,23 @@ export class LoanDetailDialogComponent {
 
       return sections;
    });
+
+   /**
+    * Opens the payments over this dialog, so the user can come back to it
+    */
+   public handlePayments(): void {
+      const loan: LoanDetail | undefined = this.$loan();
+
+      if (!loan) return;
+
+      this._payments.open({ id: loan.id, folio: compactFolio(loan.folio) });
+      this._dialogs.newDialog({
+         title: DIALOG_I18N_KEYS.LOAN_PAYMENTS_TITLE,
+         titleParams: { folio: compactFolio(loan.folio) },
+         component: LoanPaymentsDialogComponent,
+         size: 'lg',
+      });
+   }
 
    private money(value: number): string {
       return `${this.currency.transform(value)} MXN`;

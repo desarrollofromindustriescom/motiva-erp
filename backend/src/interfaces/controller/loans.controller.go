@@ -145,20 +145,22 @@ type LoansPagePreview struct {
 }
 
 /**
- * What one place (the general cash balance or an investor) lent to a loan & how much of
- * the loan has been paid back to it. Everything is in currency units.
+ * What one place (the general cash balance or an investor) lent to a loan & what has
+ * happened with the payments made to it. Everything is in currency units.
+ * - paid: its share of what the borrower has paid (proportional to what it lent)
+ * - an investor: received is what went to its balance & commission what was kept from its share
+ * - the general cash balance: commission is what it got from the shares of the investors &
+ *   received is everything that went to its balance (its own share plus that commission)
  */
 type LoanLenderPreview struct {
 	// only investors have them, the general cash balance has none
-	Fullname *string `json:"fullname"`
-	Username *string `json:"username"`
-	Lent     float64 `json:"lent"`
-	Debt     float64 `json:"debt"`
-	// paid back without interest, & the interest split between the investor & the commission
-	PaidCapital            float64 `json:"paid_capital"`
-	PaidInterestInvestor   float64 `json:"paid_interest_investor"`
-	PaidInterestCommission float64 `json:"paid_interest_commission"`
-	Current                float64 `json:"current"`
+	Fullname   *string `json:"fullname"`
+	Username   *string `json:"username"`
+	Lent       float64 `json:"lent"`
+	Debt       float64 `json:"debt"`
+	Paid       float64 `json:"paid"`
+	Received   float64 `json:"received"`
+	Commission float64 `json:"commission"`
 }
 
 type LoanBorrowerDetailPreview struct {
@@ -189,4 +191,56 @@ type LoanDetailPreview struct {
 	// the general cash balance when it lent money & every investor that did
 	General   *LoanLenderPreview   `json:"general"`
 	Investors []*LoanLenderPreview `json:"investors"`
+}
+
+/**
+ * One payment of a loan. The state follows what has been paid:
+ * - paid: paid in full (on time or late)
+ * - capital: paid in full with money paid to capital, to reduce the number of payments
+ * - partial: something was paid but not all of it
+ * - expired: its day has passed & nothing was paid
+ * - pending: the rest (the next one & the ones to come)
+ * Only the paid & capital ones have a payment date.
+ */
+type LoanPaymentPreview struct {
+	ID           uuid.UUID  `json:"id"`
+	Number       int        `json:"number"`
+	Amount       float64    `json:"amount"`
+	Paid         float64    `json:"paid"`
+	ExpectedDate time.Time  `json:"expected_date"`
+	PaidDate     *time.Time `json:"paid_date"`
+	State        string     `json:"state"`
+	// the first payment that isn't paid in full: the only one that can receive a payment
+	IsNext bool `json:"is_next"`
+}
+
+/**
+ * Money paid to the debt of a payment (it can be all of it or less)
+ */
+type PayLoanPaymentPayload struct {
+	Amount float64 `json:"amount" validate:"required,monetary"`
+}
+
+/**
+ * A payment made to a payment of a loan: regular (on time), late or capital
+ */
+type LoanDepositPreview struct {
+	ID     uuid.UUID `json:"id"`
+	Date   time.Time `json:"date"`
+	Type   string    `json:"type"`
+	Amount float64   `json:"amount"`
+}
+
+type LoanDepositsPagePreview struct {
+	Items []*LoanDepositPreview `json:"items"`
+	Total int                   `json:"total"`
+	// sum of all the payments made, not only the ones of the page
+	Sum  float64 `json:"sum"`
+	Page int     `json:"page"`
+	Size int     `json:"size"`
+}
+
+type LoanDepositsQueryPayload struct {
+	Page int `json:"page" validate:"required,gte=1"`
+	Size int `json:"size" validate:"required,gte=1,lte=100"`
 }

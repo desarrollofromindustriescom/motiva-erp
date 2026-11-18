@@ -1,4 +1,4 @@
-import { LoanType } from '../../../interfaces/loan';
+import { LoanDepositType, LoanPaymentState, LoanType } from '../../../interfaces/loan';
 
 // same limits the backend validates
 export const LOAN_MAX_PAYMENTS: Record<LoanType, number> = { monthly: 3, weekly: 13 };
@@ -8,9 +8,29 @@ export const LOAN_BORROWERS_PAGE_SIZE: number = 20;
 export const LOAN_BORROWERS_SEARCH_DELAY: number = 300;
 
 export const LOANS_PAGE_SIZE: number = 10;
+export const LOAN_DEPOSITS_PAGE_SIZE: number = 5;
 
 export const LOANS_I18N_KEYS = {
    MODULE_TITLE: 'LOANS_MODULE_TITLE',
+   PAYMENT_EXPECTED: 'LOANS_PAYMENT_EXPECTED',
+   DEPOSITS_HEAD_DATE: 'LOANS_DEPOSITS_HEAD_DATE',
+   DEPOSITS_HEAD_TYPE: 'LOANS_DEPOSITS_HEAD_TYPE',
+   DEPOSITS_HEAD_AMOUNT: 'LOANS_DEPOSITS_HEAD_AMOUNT',
+   DEPOSITS_TOTAL: 'LOANS_DEPOSITS_TOTAL',
+   DEPOSITS_EMPTY: 'LOANS_DEPOSITS_EMPTY',
+   DEPOSIT_REGULAR: 'LOANS_DEPOSIT_REGULAR',
+   DEPOSIT_LATE: 'LOANS_DEPOSIT_LATE',
+   DEPOSIT_CAPITAL: 'LOANS_DEPOSIT_CAPITAL',
+   PAYMENT_DEBT: 'LOANS_PAYMENT_DEBT',
+   PAYMENT_AMOUNT: 'LOANS_PAYMENT_AMOUNT',
+   PAYMENT_FULL: 'LOANS_PAYMENT_FULL',
+   PAYMENT_DEPOSIT: 'LOANS_PAYMENT_DEPOSIT',
+   PAYMENT_PAID_DATE: 'LOANS_PAYMENT_PAID_DATE',
+   PAYMENT_EMPTY: 'LOANS_PAYMENT_EMPTY',
+   PAYMENT_PAY: 'LOANS_PAYMENT_PAY',
+   PAYMENT_SETTLE: 'LOANS_PAYMENT_SETTLE',
+   PAYMENT_VISIT: 'LOANS_PAYMENT_VISIT',
+   PAYMENT_DETAILS: 'LOANS_PAYMENT_DETAILS',
    DETAIL_FOLIO: 'LOANS_DETAIL_FOLIO',
    DETAIL_RATE: 'LOANS_DETAIL_RATE',
    DETAIL_TYPE: 'LOANS_DETAIL_TYPE',
@@ -29,8 +49,10 @@ export const LOANS_I18N_KEYS = {
    DETAIL_DEBT: 'LOANS_DETAIL_DEBT',
    DETAIL_PAID_CAPITAL: 'LOANS_DETAIL_PAID_CAPITAL',
    DETAIL_PAID_INTEREST: 'LOANS_DETAIL_PAID_INTEREST',
-   DETAIL_PAID_INTEREST_INVESTOR: 'LOANS_DETAIL_PAID_INTEREST_INVESTOR',
-   DETAIL_PAID_INTEREST_COMMISSION: 'LOANS_DETAIL_PAID_INTEREST_COMMISSION',
+   DETAIL_PAID: 'LOANS_DETAIL_PAID',
+   DETAIL_RECEIVED_INVESTOR: 'LOANS_DETAIL_RECEIVED_INVESTOR',
+   DETAIL_COMMISSION_KEPT: 'LOANS_DETAIL_COMMISSION_KEPT',
+   DETAIL_COMMISSION_RECEIVED: 'LOANS_DETAIL_COMMISSION_RECEIVED',
    DETAIL_CURRENT: 'LOANS_DETAIL_CURRENT',
    BUTTON_PAY: 'LOANS_BUTTON_PAY',
    BUTTON_PAYMENTS: 'LOANS_BUTTON_PAYMENTS',
@@ -122,4 +144,42 @@ export const LOAN_STATUS_COLORS: Record<string, string> = {
    rejected: 'bg-red-500',
    finished: 'bg-slate-500',
    expired: 'bg-red-700',
+};
+
+/**
+ * Look of a payment card for every state: paid (green), expired (red), partial (blue),
+ * pending (gray) & paid to capital (orange)
+ */
+export const LOAN_PAYMENT_STYLES: Record<LoanPaymentState, { card: string; button: string }> = {
+   paid: {
+      card: 'border-green-500 text-green-600',
+      button: 'bg-green-500 hover:bg-green-600 focus:bg-green-600',
+   },
+   expired: { card: 'border-red-500 text-red-500', button: 'bg-red-500 hover:bg-red-600 focus:bg-red-600' },
+   partial: { card: 'border-second text-second', button: 'bg-second hover:bg-second-light focus:bg-second-light' },
+   pending: {
+      card: 'border-slate-300 text-slate-400',
+      button: 'bg-slate-300 hover:bg-slate-400 focus:bg-slate-400',
+   },
+   capital: { card: 'border-main text-main', button: 'bg-main hover:bg-orange-600 focus:bg-orange-600' },
+};
+
+// extra actions of a payment (they don't do anything yet): the payments that are paid in full only have settle & details
+export const LOAN_PAYMENT_ACTIONS: { id: string; icon: string; tooltip: string; paid: boolean }[] = [
+   { id: 'pay', icon: 'bx-dollar', tooltip: LOANS_I18N_KEYS.PAYMENT_PAY, paid: false },
+   { id: 'settle', icon: 'bx-checklist', tooltip: LOANS_I18N_KEYS.PAYMENT_SETTLE, paid: true },
+   { id: 'visit', icon: 'bx-home', tooltip: LOANS_I18N_KEYS.PAYMENT_VISIT, paid: false },
+   { id: 'details', icon: 'bx-queue', tooltip: LOANS_I18N_KEYS.PAYMENT_DETAILS, paid: true },
+];
+
+export const LOAN_DEPOSIT_TYPE_I18N_KEYS: Record<LoanDepositType, string> = {
+   regular: LOANS_I18N_KEYS.DEPOSIT_REGULAR,
+   late: LOANS_I18N_KEYS.DEPOSIT_LATE,
+   capital: LOANS_I18N_KEYS.DEPOSIT_CAPITAL,
+};
+
+export const LOAN_DEPOSIT_TYPE_COLORS: Record<LoanDepositType, string> = {
+   regular: 'bg-green-500',
+   late: 'bg-red-500',
+   capital: 'bg-main',
 };

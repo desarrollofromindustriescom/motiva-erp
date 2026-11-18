@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 
@@ -63,11 +62,6 @@ func updateSettings[T any](
 	list, err := update(payload)
 
 	if err != nil {
-		if errors.Is(err, repository.StgErrInvestorAboveGeneral) {
-			writeBadRequest(response, request, repository.StgI18nKeyInvestorAboveGeneral)
-			return
-		}
-
 		slog.Error("Error updating settings",
 			"event", event,
 			"error", err,

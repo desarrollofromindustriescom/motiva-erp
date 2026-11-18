@@ -156,18 +156,14 @@ func UpdateAgreements(ctx context.Context, payload *controller.AgreementsSetting
 }
 
 /**
- * Updates investor & general percentages of a loan type
- * (prefix: monthly_loan | weekly_loan), investor can't be
- * greater than the general percentage of the same period
+ * Updates investor & general percentages of a loan type (prefix: monthly_loan | weekly_loan).
+ * The general one is the interest of the loan; the investor one is the part of its share of
+ * every payment that the investor receives, so they aren't compared with each other.
  */
 func UpdateRates(ctx context.Context, prefix string, investor []float64, general []float64) ([]*controller.SettingPreview, error) {
 	items := make([]item, 0, len(investor)*2)
 
 	for i := range investor {
-		if investor[i] > general[i] {
-			return nil, repository.StgErrInvestorAboveGeneral
-		}
-
 		items = append(items,
 			item{fmt.Sprintf("%s_investor_%d", prefix, i+1), investor[i], repository.StgUnitPercentage},
 			item{fmt.Sprintf("%s_rate_%d", prefix, i+1), general[i], repository.StgUnitPercentage},

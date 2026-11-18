@@ -14,7 +14,6 @@
    "FIELD_MAX_LENGTH": "El campo debe tener máximo {{.Param}} caracteres",
    "FIELD_ONE_OF": "El valor no es válido",
    "FIELD_MONETARY": "El monto debe estar entre 0.1 y 100000 con máximo 2 decimales",
-   "SETTINGS_INVESTOR_ABOVE_GENERAL": "El porcentaje del inversor no puede ser mayor al porcentaje general",
    "CASH_BALANCE_INSUFFICIENT": "El monto a retirar no puede ser mayor al balance en caja",
    "CASH_BALANCE_LIMIT_EXCEEDED": "El depósito supera el límite permitido para el balance en caja",
    "FIELD_SECURE_PASSWORD": "La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales",
@@ -44,5 +43,9 @@
    "LOAN_AMOUNT_TOO_LARGE": "El monto del préstamo con su interés es demasiado grande",
    "LOAN_FUNDS_MISMATCH": "Los fondos elegidos deben sumar exactamente el monto del préstamo",
    "LOAN_FUNDS_INSUFFICIENT": "Alguno de los fondos elegidos ya no tiene saldo suficiente para este préstamo",
-   "LOAN_NOT_PENDING": "El préstamo no existe o ya no está pendiente"
+   "LOAN_NOT_PENDING": "El préstamo no existe o ya no está pendiente",
+   "LOAN_NOT_ACTIVE": "El préstamo no está activo",
+   "LOAN_PAYMENT_AMOUNT": "El monto del abono no es válido",
+   "LOAN_PAYMENT_NOT_NEXT": "Solo se puede abonar al próximo pago del préstamo",
+   "LOAN_PAYMENT_EXCEEDS": "El abono no puede ser mayor a la deuda del pago"
 }
