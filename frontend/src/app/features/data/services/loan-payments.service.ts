@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal, Signal, WritableSignal } from '@angular/core';
 import { HttpContext, httpResource, HttpResourceRef, HttpResourceRequest } from '@angular/common/http';
 import { EndpointData } from '../../../interfaces/api';
-import { LoanPayment } from '../../../interfaces/loan';
+import { LoanKind, LoanPayment } from '../../../interfaces/loan';
 import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
 import { loansRoute } from '../repository/loans.repository';
 import { environment } from '../../../../environments/environment.development';
@@ -19,6 +19,7 @@ export class LoanPaymentsService {
 
    private readonly $id: WritableSignal<string | null> = signal(null);
    private readonly $folio: WritableSignal<string> = signal('');
+   private readonly $kind: WritableSignal<LoanKind> = signal('loan');
    private readonly $version: WritableSignal<number> = signal(0);
 
    private readonly $payments: HttpResourceRef<LoanPayment[] | undefined> = httpResource<LoanPayment[]>(
@@ -39,6 +40,11 @@ export class LoanPaymentsService {
    );
 
    private readonly $loading: Signal<boolean> = computed(() => this.$payments.isLoading());
+
+   // whether the payments belong to a loan or to an agreement
+   public get kind(): LoanKind {
+      return this.$kind();
+   }
 
    // folio of the loan whose payments are shown (already compact)
    public get folio(): string {
@@ -72,8 +78,9 @@ export class LoanPaymentsService {
       if (this.$id() === id) this.reload();
    }
 
-   public open({ id, folio }: { id: string; folio: string }): void {
+   public open({ id, folio, kind = 'loan' }: { id: string; folio: string; kind?: LoanKind }): void {
       this.$folio.set(folio);
+      this.$kind.set(kind);
       // the payments of the previous loan aren't shown while the new ones load
       this.$id.set(null);
       this.$id.set(id);

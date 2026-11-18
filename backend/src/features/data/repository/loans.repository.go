@@ -246,16 +246,22 @@ const (
 	`
 )
 
-// Rows of the loans table. The state shown is derived: an active loan with a pending
-// payment already due is expired. The settlement date is the last expected payment.
-// The total is the amount with the interest applied once (same math as the creation).
-const lnFrom string = `--sql
-	FROM loans
-	INNER JOIN status ON loans.status_id = status.id
-	INNER JOIN users AS borrowers ON loans.request_user_id = borrowers.id
-	LEFT JOIN settings ON loans.rate_settings_id = settings.id
-	CROSS JOIN LATERAL (
+// Rows of the loans table: the loans & the agreements together, so the same filters & order apply to both. The state
+// shown is derived: an active loan or agreement with a payment already due & not paid in full is expired. The total is
+// the amount with the interest applied once (same math as the creation) for a loan & what its payments add up to for
+// an agreement. The settlement date is the last expected payment.
+const lnEntries string = `--sql
+	WITH entries AS (
 		SELECT
+			'loan'::text AS kind,
+			loans.id,
+			loans.folio,
+			loans.request_user_id AS user_id,
+			loans.request_date AS created,
+			loans.amount,
+			loans.type::text AS type,
+			loans.no_payments,
+			COALESCE(settings.value, 0) AS rate,
 			CASE
 				WHEN status.slug = 'active' AND EXISTS (
 					SELECT 1
@@ -267,32 +273,72 @@ const lnFrom string = `--sql
 				) THEN 'expired'
 				ELSE status.slug
 			END AS slug,
-			((loans.amount::bigint * (100000 + COALESCE(settings.value, 0)) + 50000) / 100000) AS total,
-			(SELECT MAX(payments.expected_payment_date) FROM payments WHERE payments.loan_id = loans.id) AS settlement
+			((loans.amount::bigint * (100000 + COALESCE(settings.value, 0)) + 50000) / 100000) AS total
+		FROM loans
+		INNER JOIN status ON loans.status_id = status.id
+		LEFT JOIN settings ON loans.rate_settings_id = settings.id
+
+		UNION ALL
+
+		SELECT
+			'agreement'::text,
+			agreements.id,
+			agreements.folio,
+			agreements.user_id,
+			agreements.created_at,
+			agreements.base_amount,
+			'weekly'::text,
+			agreements.weeks,
+			COALESCE(settings.value, 0),
+			CASE
+				WHEN status.slug = 'active' AND EXISTS (
+					SELECT 1
+					FROM payments
+					WHERE
+						payments.agreement_id = agreements.id AND
+						payments.expected_payment_date::date < CURRENT_DATE AND
+						COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
+				) THEN 'expired'
+				ELSE status.slug
+			END,
+			(SELECT COALESCE(SUM(payments.amount), 0) FROM payments WHERE payments.agreement_id = agreements.id)::bigint
+		FROM agreements
+		INNER JOIN status ON agreements.status_id = status.id
+		LEFT JOIN settings ON agreements.percentage_settings_id = settings.id
+	)
+`
+
+const lnFrom string = `--sql
+	FROM entries
+	INNER JOIN users AS borrowers ON entries.user_id = borrowers.id
+	CROSS JOIN LATERAL (
+		SELECT MAX(payments.expected_payment_date) AS settlement
+		FROM payments
+		WHERE COALESCE(payments.loan_id, payments.agreement_id) = entries.id
 	) AS derived
 	WHERE
 		(
 			$1 = '' OR
-			loans.folio ILIKE '%' || $1 || '%' OR
+			entries.folio ILIKE '%' || $1 || '%' OR
 			borrowers.fullname ILIKE '%' || $1 || '%' OR
 			borrowers.username ILIKE '%' || $1 || '%' OR
 			borrowers.curp ILIKE '%' || $1 || '%'
 		) AND
-		(cardinality($2::uuid[]) = 0 OR loans.request_user_id = ANY($2::uuid[])) AND
-		($3::date IS NULL OR loans.request_date >= $3::date) AND
-		($4::date IS NULL OR loans.request_date < $4::date + 1) AND
+		(cardinality($2::uuid[]) = 0 OR entries.user_id = ANY($2::uuid[])) AND
+		($3::date IS NULL OR entries.created >= $3::date) AND
+		($4::date IS NULL OR entries.created < $4::date + 1) AND
 		($5::date IS NULL OR derived.settlement >= $5::date) AND
 		($6::date IS NULL OR derived.settlement < $6::date + 1) AND
-		($7::numeric IS NULL OR COALESCE(settings.value, 0) >= $7::numeric * 1000) AND
-		($8::numeric IS NULL OR COALESCE(settings.value, 0) <= $8::numeric * 1000) AND
-		($9::int IS NULL OR loans.no_payments >= $9::int) AND
-		($10::int IS NULL OR loans.no_payments <= $10::int) AND
+		($7::numeric IS NULL OR entries.rate >= $7::numeric * 1000) AND
+		($8::numeric IS NULL OR entries.rate <= $8::numeric * 1000) AND
+		($9::int IS NULL OR entries.no_payments >= $9::int) AND
+		($10::int IS NULL OR entries.no_payments <= $10::int) AND
 		(
 			cardinality($11::int[]) = 0 OR
 			EXISTS (
 				SELECT 1 FROM payments
 				WHERE
-					payments.loan_id = loans.id AND
+					COALESCE(payments.loan_id, payments.agreement_id) = entries.id AND
 					EXTRACT(ISODOW FROM payments.expected_payment_date)::int = ANY($11::int[])
 			)
 		) AND
@@ -301,7 +347,7 @@ const lnFrom string = `--sql
 			EXISTS (
 				SELECT 1 FROM payments
 				WHERE
-					payments.loan_id = loans.id AND
+					COALESCE(payments.loan_id, payments.agreement_id) = entries.id AND
 					EXTRACT(DAY FROM payments.expected_payment_date)::int = ANY($12::int[])
 			)
 		) AND
@@ -310,7 +356,7 @@ const lnFrom string = `--sql
 			EXISTS (
 				SELECT 1 FROM payments
 				INNER JOIN payment_extras ON payment_extras.payment_id = payments.id
-				WHERE payments.loan_id = loans.id AND payment_extras.concept = 'visit'
+				WHERE COALESCE(payments.loan_id, payments.agreement_id) = entries.id AND payment_extras.concept = 'visit'
 			)
 		) AND
 		(
@@ -318,16 +364,16 @@ const lnFrom string = `--sql
 			EXISTS (
 				SELECT 1 FROM payments
 				INNER JOIN payment_extras ON payment_extras.payment_id = payments.id
-				WHERE payments.loan_id = loans.id AND payment_extras.concept = 'mora'
+				WHERE COALESCE(payments.loan_id, payments.agreement_id) = entries.id AND payment_extras.concept = 'mora'
 			)
 		) AND
-		($15 = '' OR loans.type::text = $15) AND
-		(cardinality($16::int[]) = 0 OR loans.no_payments = ANY($16::int[])) AND
-		(cardinality($17::text[]) = 0 OR derived.slug = ANY($17::text[])) AND
-		($18::numeric IS NULL OR loans.amount >= $18::numeric * 100) AND
-		($19::numeric IS NULL OR loans.amount <= $19::numeric * 100) AND
-		($20::numeric IS NULL OR derived.total >= $20::numeric * 100) AND
-		($21::numeric IS NULL OR derived.total <= $21::numeric * 100)
+		($15 = '' OR entries.type = $15) AND
+		(cardinality($16::int[]) = 0 OR entries.no_payments = ANY($16::int[])) AND
+		(cardinality($17::text[]) = 0 OR entries.slug = ANY($17::text[])) AND
+		($18::numeric IS NULL OR entries.amount >= $18::numeric * 100) AND
+		($19::numeric IS NULL OR entries.amount <= $19::numeric * 100) AND
+		($20::numeric IS NULL OR entries.total >= $20::numeric * 100) AND
+		($21::numeric IS NULL OR entries.total <= $21::numeric * 100)
 `
 
 const lnFromOne string = `--sql
@@ -356,26 +402,29 @@ const lnFromOne string = `--sql
 
 const (
 	LnQryCount string = `--sql
+		` + lnEntries + `
 		SELECT COUNT(*)` + lnFrom
 
 	LnQryGet string = `--sql
+		` + lnEntries + `
 		SELECT
-			loans.id,
-			loans.folio,
+			entries.id,
+			entries.folio,
 			borrowers.id,
 			borrowers.fullname,
-			derived.slug,
-			loans.type::text,
-			loans.amount,
-			derived.total,
-			COALESCE(settings.value, 0),
-			loans.no_payments,
-			loans.request_date` + lnFrom + `
+			entries.slug,
+			entries.type,
+			entries.amount,
+			entries.total,
+			entries.rate,
+			entries.no_payments,
+			entries.created,
+			entries.kind` + lnFrom + `
 		ORDER BY
-			CASE WHEN $22 = 'asc' THEN loans.folio END ASC,
-			CASE WHEN $22 = 'desc' THEN loans.folio END DESC,
-			loans.request_date DESC,
-			loans.id DESC
+			CASE WHEN $22 = 'asc' THEN entries.folio END ASC,
+			CASE WHEN $22 = 'desc' THEN entries.folio END DESC,
+			entries.created DESC,
+			entries.id DESC
 		LIMIT $23 OFFSET $24
 	`
 )
@@ -440,7 +489,7 @@ const (
 	`
 
 	LnQryPaymentOfLoan string = `--sql
-		SELECT 1 FROM payments WHERE id = $1 AND loan_id = $2
+		SELECT 1 FROM payments WHERE id = $1 AND COALESCE(loan_id, agreement_id) = $2
 	`
 	LnQryDepositsTotal string = `--sql
 		SELECT COUNT(*), COALESCE(SUM(amount), 0)::bigint
@@ -531,7 +580,7 @@ const (
 
 	// what a payment is made of: its original amount & its extras grouped by concept
 	LnQryBreakdownBase string = `--sql
-		SELECT original_amount FROM payments WHERE id = $1 AND loan_id = $2
+		SELECT original_amount FROM payments WHERE id = $1 AND COALESCE(loan_id, agreement_id) = $2
 	`
 	LnQryBreakdownExtras string = `--sql
 		SELECT
@@ -545,45 +594,77 @@ const (
 		GROUP BY concept
 	`
 
+	// a loan or an agreement of the borrower
 	LnQryOwnedBy string = `--sql
 		SELECT 1 FROM loans WHERE id = $1 AND request_user_id = $2
+		UNION ALL
+		SELECT 1 FROM agreements WHERE id = $1 AND user_id = $2
+		LIMIT 1
 	`
 
 	// payments that aren't paid in full of the active loans of a borrower, with what each one still owes
 	LnQryBorrowerActiveLoans string = `--sql
-		SELECT COUNT(*)
-		FROM loans
-		INNER JOIN status ON loans.status_id = status.id
-		WHERE
-			loans.request_user_id = $1 AND
-			status.slug = 'active'
+		WITH owners AS (
+			SELECT loans.id, loans.folio, loans.type::text AS type, loans.request_user_id AS user_id
+			FROM loans
+			INNER JOIN status ON loans.status_id = status.id
+			WHERE status.slug = 'active'
+
+			UNION ALL
+
+			SELECT agreements.id, agreements.folio, 'weekly'::text, agreements.user_id
+			FROM agreements
+			INNER JOIN status ON agreements.status_id = status.id
+			WHERE status.slug = 'active'
+		)
+		SELECT COUNT(*) FROM owners WHERE owners.user_id = $1
 	`
 	LnQryBorrowerDebts string = `--sql
+		WITH owners AS (
+			SELECT loans.id, loans.folio, loans.type::text AS type, loans.request_user_id AS user_id
+			FROM loans
+			INNER JOIN status ON loans.status_id = status.id
+			WHERE status.slug = 'active'
+
+			UNION ALL
+
+			SELECT agreements.id, agreements.folio, 'weekly'::text, agreements.user_id
+			FROM agreements
+			INNER JOIN status ON agreements.status_id = status.id
+			WHERE status.slug = 'active'
+		)
 		SELECT COUNT(*), COALESCE(SUM(owed.debt), 0)::bigint
 		FROM (
-			SELECT
-				payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) AS debt
+			SELECT payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) AS debt
 			FROM payments
-			INNER JOIN loans ON payments.loan_id = loans.id
-			INNER JOIN status ON loans.status_id = status.id
-			WHERE
-				loans.request_user_id = $1 AND
-				status.slug = 'active'
+			INNER JOIN owners ON COALESCE(payments.loan_id, payments.agreement_id) = owners.id
+			WHERE owners.user_id = $1
 		) AS owed
 		WHERE owed.debt > 0
 	`
 	// the first payment that isn't paid in full (what it still owes, its day & the type of its loan)
 	LnQryBorrowerNextPayment string = `--sql
+		WITH owners AS (
+			SELECT loans.id, loans.folio, loans.type::text AS type, loans.request_user_id AS user_id
+			FROM loans
+			INNER JOIN status ON loans.status_id = status.id
+			WHERE status.slug = 'active'
+
+			UNION ALL
+
+			SELECT agreements.id, agreements.folio, 'weekly'::text, agreements.user_id
+			FROM agreements
+			INNER JOIN status ON agreements.status_id = status.id
+			WHERE status.slug = 'active'
+		)
 		SELECT
 			payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0),
 			payments.expected_payment_date,
-			loans.type::text
+			owners.type
 		FROM payments
-		INNER JOIN loans ON payments.loan_id = loans.id
-		INNER JOIN status ON loans.status_id = status.id
+		INNER JOIN owners ON COALESCE(payments.loan_id, payments.agreement_id) = owners.id
 		WHERE
-			loans.request_user_id = $1 AND
-			status.slug = 'active' AND
+			owners.user_id = $1 AND
 			payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0)
 		ORDER BY payments.expected_payment_date ASC, payments.id ASC
 		LIMIT 1
@@ -592,10 +673,23 @@ const (
 	// Active loans with something to pay: its current payment (the first that isn't paid in full) with what
 	// it still owes & its day, what the whole loan owes, & the data of the borrower & its guarantee.
 	LnQryCalendar string = `--sql
+		WITH owners AS (
+			SELECT loans.id, loans.folio, loans.type::text AS type, loans.request_user_id AS user_id
+			FROM loans
+			INNER JOIN status ON loans.status_id = status.id
+			WHERE status.slug = 'active'
+
+			UNION ALL
+
+			SELECT agreements.id, agreements.folio, 'weekly'::text, agreements.user_id
+			FROM agreements
+			INNER JOIN status ON agreements.status_id = status.id
+			WHERE status.slug = 'active'
+		)
 		SELECT
-			loans.id,
-			loans.folio,
-			loans.type::text,
+			owners.id,
+			owners.folio,
+			owners.type,
 			borrowers.fullname,
 			borrowers.phone_number,
 			borrowers.guarantee_fullname,
@@ -604,16 +698,15 @@ const (
 			current.debt,
 			totals.debt,
 			current.expected_payment_date::date < CURRENT_DATE
-		FROM loans
-		INNER JOIN status ON loans.status_id = status.id
-		INNER JOIN users AS borrowers ON loans.request_user_id = borrowers.id
+		FROM owners
+		INNER JOIN users AS borrowers ON owners.user_id = borrowers.id
 		CROSS JOIN LATERAL (
 			SELECT
 				payments.expected_payment_date,
 				payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) AS debt
 			FROM payments
 			WHERE
-				payments.loan_id = loans.id AND
+				COALESCE(payments.loan_id, payments.agreement_id) = owners.id AND
 				payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0)
 			ORDER BY payments.expected_payment_date ASC, payments.id ASC
 			LIMIT 1
@@ -621,14 +714,17 @@ const (
 		CROSS JOIN LATERAL (
 			SELECT SUM(payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0))::bigint AS debt
 			FROM payments
-			WHERE payments.loan_id = loans.id
+			WHERE COALESCE(payments.loan_id, payments.agreement_id) = owners.id
 		) AS totals
-		WHERE status.slug = 'active'
-		ORDER BY borrowers.fullname ASC, loans.folio ASC
+		ORDER BY borrowers.fullname ASC, owners.folio ASC
 	`
 
+	// a loan or an agreement (their ids never repeat)
 	LnQryExists string = `--sql
 		SELECT 1 FROM loans WHERE id = $1
+		UNION ALL
+		SELECT 1 FROM agreements WHERE id = $1
+		LIMIT 1
 	`
 
 	// payments of a loan with what each one has got: the last payment date, whether part of it
@@ -637,6 +733,7 @@ const (
 		SELECT
 			payments.id,
 			payments.amount,
+			payments.original_amount,
 			payments.expected_payment_date,
 			COALESCE(SUM(payment_details.amount), 0)::bigint,
 			MAX(payment_details.payment_date),
@@ -644,7 +741,7 @@ const (
 			payments.expected_payment_date::date < CURRENT_DATE
 		FROM payments
 		LEFT JOIN payment_details ON payment_details.payment_id = payments.id
-		WHERE payments.loan_id = $1
+		WHERE COALESCE(payments.loan_id, payments.agreement_id) = $1
 		GROUP BY payments.id
 		ORDER BY payments.expected_payment_date ASC, payments.id ASC
 	`
@@ -675,7 +772,7 @@ const (
 			COUNT(*) FILTER (WHERE COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) >= payments.amount),
 			COALESCE(SUM((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id)), 0)::bigint
 		FROM payments
-		WHERE payments.loan_id = $1
+		WHERE COALESCE(payments.loan_id, payments.agreement_id) = $1
 	`
 
 	// the places that lent money to a loan: the general cash balance has no user
@@ -692,12 +789,23 @@ const (
 		ORDER BY cash_balances.user_id ASC NULLS FIRST, loan_details.id ASC
 	`
 
-	// every payment made to the payments of a loan, in the order they were made
+	// Every payment made to the payments of a loan, in the order they were made, with what its payment costs without
+	// extras & what had been paid to that payment before: the base part of a payment is paid first, the rest are extras
 	LnQryLoanDeposits string = `--sql
-		SELECT payment_details.amount
+		SELECT
+			payment_details.amount,
+			payments.original_amount,
+			COALESCE(
+				SUM(payment_details.amount) OVER (
+					PARTITION BY payment_details.payment_id
+					ORDER BY payment_details.payment_date ASC, payment_details.id ASC
+					ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+				),
+				0
+			)::bigint
 		FROM payment_details
 		INNER JOIN payments ON payment_details.payment_id = payments.id
-		WHERE payments.loan_id = $1
+		WHERE COALESCE(payments.loan_id, payments.agreement_id) = $1
 		ORDER BY payment_details.payment_date ASC, payment_details.id ASC
 	`
 
@@ -709,7 +817,7 @@ const (
 		FROM movements
 		INNER JOIN payments ON movements.origin_payment_id = payments.id
 		WHERE
-			payments.loan_id = $1 AND
+			COALESCE(payments.loan_id, payments.agreement_id) = $1 AND
 			movements.type = 'deposit'
 		GROUP BY movements.cash_balance_id
 	`
@@ -736,11 +844,12 @@ var (
 
 // state titles of the table
 var LnStatusTitles map[string]string = map[string]string{
-	"pending":  "Pendiente",
-	"active":   "Al corriente",
-	"rejected": "Rechazado",
-	"finished": "Terminado",
-	"expired":  "Expirado",
+	"pending":   "Pendiente",
+	"active":    "Al corriente",
+	"rejected":  "Rechazado",
+	"finished":  "Terminado",
+	"expired":   "Expirado",
+	"cancelled": "Cancelado",
 }
 
 var (

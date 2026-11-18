@@ -62,7 +62,14 @@ interface RowAction {
                   let-loan
                >
                   <tr>
-                     <td class="whitespace-nowrap max-sm:text-xs">{{ folio(loan) }}</td>
+                     <td class="whitespace-nowrap max-sm:text-xs">
+                        {{ folio(loan) }}
+                        @if (loan.kind === 'agreement') {
+                           <span class="bg-second ml-1 rounded px-1.5 py-0.5 text-[10px] text-white">{{
+                              I18N.AGREEMENT_BADGE | translate
+                           }}</span>
+                        }
+                     </td>
                      <td>{{ loan.borrower.fullname }}</td>
                      <td class="max-md:hidden">
                         <span

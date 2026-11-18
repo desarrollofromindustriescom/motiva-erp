@@ -138,6 +138,7 @@ export class SidebarService {
                      option('expired', LOANS_I18N_KEYS.STATUS_EXPIRED),
                      option('finished', LOANS_I18N_KEYS.STATUS_FINISHED),
                      option('rejected', LOANS_I18N_KEYS.STATUS_REJECTED),
+                     option('cancelled', LOANS_I18N_KEYS.STATUS_CANCELLED),
                   ],
                },
                { id: SIDEBAR_LOAN_FIELDS.AMOUNT, label: LOANS_I18N_KEYS.FILTER_AMOUNT, type: 'range', unit: 'money' },

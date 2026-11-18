@@ -50,5 +50,9 @@
    "LOAN_PAYMENT_EXCEEDS": "El abono no puede ser mayor a la deuda del pago",
    "LOAN_VISIT_NOT_CURRENT": "Solo se puede agregar una visita al pago actual del préstamo",
    "LOAN_EXTRA_SETTING": "No hay un valor configurado para este extra",
-   "LOAN_DEBT_EXCEEDS": "El abono no puede ser mayor a la deuda total del préstamo"
+   "LOAN_DEBT_EXCEEDS": "El abono no puede ser mayor a la deuda total del préstamo",
+   "AGREEMENT_LOANS_INVALID": "Los préstamos elegidos no existen, no son del prestatario o ya no tienen retraso",
+   "AGREEMENT_FUNDS_INSUFFICIENT": "La caja general no tiene saldo para restaurar a los inversores lo que prestaron en estos préstamos",
+   "AGREEMENT_RATE_NOT_FOUND": "No hay un porcentaje de convenios configurado",
+   "AGREEMENT_NO_VISITS": "Los convenios no tienen visitas"
 }

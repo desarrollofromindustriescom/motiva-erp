@@ -122,3 +122,69 @@ func TestCompactFolio(t *testing.T) {
 		}
 	}
 }
+
+// payment of 1200 with a visit of 100: the base amount is paid first, what is over it is the extra
+func TestBaseAndExtra(t *testing.T) {
+	cases := []struct {
+		name                     string
+		amount, original, before int64
+		base, extra              int64
+	}{
+		{"first payment, all base", 70_000, 120_000, 0, 70_000, 0},
+		{"second payment, completes the base & pays the extra", 60_000, 120_000, 70_000, 50_000, 10_000},
+		{"payment of everything at once", 130_000, 120_000, 0, 120_000, 10_000},
+		{"base already complete, all extra", 10_000, 120_000, 120_000, 0, 10_000},
+		{"more was paid before than the base", 5_000, 120_000, 125_000, 0, 5_000},
+		{"no extras", 120_000, 120_000, 0, 120_000, 0},
+	}
+
+	for _, item := range cases {
+		base, extra := baseAndExtra(item.amount, item.original, item.before)
+
+		if base != item.base || extra != item.extra {
+			t.Errorf("%s: got %d %d, want %d %d", item.name, base, extra, item.base, item.extra)
+		}
+
+		if base+extra != item.amount {
+			t.Errorf("%s: %d + %d doesn't add up to %d", item.name, base, extra, item.amount)
+		}
+	}
+}
+
+// debt of 10,000 in 40 weeks with 1.15%: 250 of the debt + 115 of interest in every payment
+func TestAgreementQuote(t *testing.T) {
+	payments, extra, total := agreementQuote(1_000_000, 40, 1_150)
+
+	if extra != 11_500 || len(payments) != 40 || total != 1_460_000 {
+		t.Fatalf("extra %d, payments %d, total %d", extra, len(payments), total)
+	}
+
+	var sum int64
+
+	for _, value := range payments {
+		if value != 36_500 {
+			t.Errorf("payment %d", value)
+		}
+
+		sum += value
+	}
+
+	if sum != total {
+		t.Errorf("payments add up to %d, total %d", sum, total)
+	}
+}
+
+func TestAgreementQuoteKeepsCents(t *testing.T) {
+	// a debt that doesn't divide between the weeks: the payments still add up to the total
+	payments, extra, total := agreementQuote(1_000_007, 25, 1_500)
+
+	var sum int64
+
+	for _, value := range payments {
+		sum += value
+	}
+
+	if sum != total || total != 1_000_007+25*extra {
+		t.Errorf("payments add up to %d, total %d (extra %d)", sum, total, extra)
+	}
+}

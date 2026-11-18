@@ -53,6 +53,8 @@ export const API_ROUTES: Record<
    CREATELOAN: '/loans',
    LISTLOANS: '/loans',
    LOANSEXCEL: '/loans/excel',
+   AGREEMENTLOANS: '/agreements/loans',
+   CREATEAGREEMENT: '/agreements',
    GETLOAN: '/loans/',
    UPDATELOAN: '/loans/',
    LOANPAYMENTS: '/loans/',

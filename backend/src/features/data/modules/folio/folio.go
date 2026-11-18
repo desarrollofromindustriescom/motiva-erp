@@ -79,3 +79,16 @@ func NextLoan(ctx context.Context, tx pgx.Tx) (string, error) {
 
 	return Format(repository.LnFolioPrefix, number)
 }
+
+/**
+ * Next incremental folio for agreements using a database sequence
+ */
+func NextAgreement(ctx context.Context, tx pgx.Tx) (string, error) {
+	var number int64
+
+	if err := tx.QueryRow(ctx, repository.AgQryNextFolio).Scan(&number); err != nil {
+		return "", err
+	}
+
+	return Format(repository.AgFolioPrefix, number)
+}

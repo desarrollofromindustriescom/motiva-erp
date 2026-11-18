@@ -671,6 +671,7 @@ func scanLoanRows(rows pgx.Rows) ([]*controller.LoanRowPreview, error) {
 			&rateValue,
 			&item.NoPayments,
 			&item.CreatedAt,
+			&item.Kind,
 		)
 
 		if err != nil {
@@ -785,30 +786,36 @@ func GetByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, 
 		Borrower: &controller.LoanBorrowerDetailPreview{},
 	}
 
-	err := pool.QueryRow(ctx, repository.LnQryGetByID, id).Scan(
-		&detail.ID,
-		&detail.Folio,
-		&detail.Status.Slug,
-		&detail.Type,
-		&amount,
-		&total,
-		&rateValue,
-		&detail.NoPayments,
-		&detail.RequestDate,
-		&detail.ResolutionDate,
-		&detail.Borrower.ID,
-		&detail.Borrower.Fullname,
-		&detail.Borrower.Username,
-		&detail.Borrower.PhoneNumber,
-		&detail.Borrower.CURP,
-		&detail.Borrower.Address,
-	)
+	scan := func(query string) error {
+		return pool.QueryRow(ctx, query, id).Scan(
+			&detail.ID,
+			&detail.Folio,
+			&detail.Status.Slug,
+			&detail.Type,
+			&amount,
+			&total,
+			&rateValue,
+			&detail.NoPayments,
+			&detail.RequestDate,
+			&detail.ResolutionDate,
+			&detail.Borrower.ID,
+			&detail.Borrower.Fullname,
+			&detail.Borrower.Username,
+			&detail.Borrower.PhoneNumber,
+			&detail.Borrower.CURP,
+			&detail.Borrower.Address,
+		)
+	}
+
+	detail.Kind = "loan"
+
+	err := scan(repository.LnQryGetByID)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return getAgreementByID(ctx, id)
+	}
 
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repository.LnErrNotFound
-		}
-
 		return nil, err
 	}
 
@@ -826,14 +833,73 @@ func GetByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, 
 		return nil, err
 	}
 
-	capital := proportion(paid, amount, total)
-	interest := paid - capital
+	// the capital & the interest of the loan are paid with the base part of the payments, what is over it are extras
+	bases, extras, err := loanAbonos(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var base int64
+
+	for _, part := range bases {
+		base += part
+	}
+
+	capital := proportion(base, amount, total)
+	interest := base - capital
 
 	detail.PaidCapital = float64(capital) / 100
 	detail.PaidInterest = float64(interest) / 100
+	detail.PaidExtras = float64(extras) / 100
 	detail.Current = float64(paid) / 100
 
-	return detail, loadLenders(ctx, detail, id, amount, rateValue)
+	detail.AgreementLoans = []*controller.AgreementLoanRefPreview{}
+
+	// a loan that was cancelled says which agreement it went to
+	var agreement controller.AgreementRefPreview
+
+	if err = pool.QueryRow(ctx, repository.AgQryOfLoan, id).Scan(&agreement.ID, &agreement.Folio); err == nil {
+		agreement.Folio = strings.TrimSpace(agreement.Folio)
+		detail.Agreement = &agreement
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	return detail, loadLenders(ctx, detail, id, amount, rateValue, bases, extras)
+}
+
+/**
+ * The base part of every payment made to the payments of a loan (in the order they were made) &
+ * what was paid over the base amount of the payments (their extras)
+ */
+func loanAbonos(ctx context.Context, id uuid.UUID) ([]int64, int64, error) {
+	rows, err := database.GetPool().Query(ctx, repository.LnQryLoanDeposits, id)
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	defer rows.Close()
+
+	var extras int64
+
+	bases := []int64{}
+
+	for rows.Next() {
+		var amount, original, before int64
+
+		if err = rows.Scan(&amount, &original, &before); err != nil {
+			return nil, 0, err
+		}
+
+		base, extra := baseAndExtra(amount, original, before)
+
+		bases = append(bases, base)
+		extras += extra
+	}
+
+	return bases, extras, rows.Err()
 }
 
 type lenderGroup struct {
@@ -847,7 +913,7 @@ type lenderGroup struct {
  * The share of each one is calculated like every payment was split (same rounding), what the
  * investors received is what really entered their balances & the rest of their shares is commission.
  */
-func loadLenders(ctx context.Context, detail *controller.LoanDetailPreview, id uuid.UUID, amount int64, rateValue int64) error {
+func loadLenders(ctx context.Context, detail *controller.LoanDetailPreview, id uuid.UUID, amount int64, rateValue int64, bases []int64, extras int64) error {
 	pool := database.GetPool()
 
 	rows, err := pool.Query(ctx, repository.LnQryLenders, id)
@@ -898,31 +964,11 @@ func loadLenders(ctx context.Context, detail *controller.LoanDetailPreview, id u
 		lents[i] = group.lent
 	}
 
-	payments, err := pool.Query(ctx, repository.LnQryLoanDeposits, id)
-
-	if err != nil {
-		return err
-	}
-
-	defer payments.Close()
-
-	for payments.Next() {
-		var value int64
-
-		if err = payments.Scan(&value); err != nil {
-			return err
-		}
-
+	for _, value := range bases {
 		for i, part := range distribute(value, lents) {
 			shares[i] += part
 		}
 	}
-
-	if err = payments.Err(); err != nil {
-		return err
-	}
-
-	payments.Close()
 
 	deposited := map[uuid.UUID]int64{}
 
@@ -982,14 +1028,15 @@ func loadLenders(ctx context.Context, detail *controller.LoanDetailPreview, id u
 		detail.Investors = append(detail.Investors, lender)
 	}
 
-	// the general cash balance shows up when it lent money or when it got commissions
-	if hasGeneral || commission > 0 {
+	// the general cash balance shows up when it lent money or when it got commissions or extras
+	if hasGeneral || commission > 0 || extras > 0 {
 		detail.General = &controller.LoanLenderPreview{
 			Lent:       float64(generalLent) / 100,
 			Debt:       float64((generalLent*(rateScale+rateValue)+rateScale/2)/rateScale) / 100,
 			Paid:       float64(generalPaid) / 100,
-			Received:   float64(generalPaid+commission) / 100,
+			Received:   float64(generalPaid+commission+extras) / 100,
 			Commission: float64(commission) / 100,
+			Extras:     float64(extras) / 100,
 		}
 	}
 
@@ -998,15 +1045,21 @@ func loadLenders(ctx context.Context, detail *controller.LoanDetailPreview, id u
 
 type paymentRow struct {
 	preview *controller.LoanPaymentPreview
-	// cents, what the payment costs & what has been paid to it
-	amount int64
-	paid   int64
+	// cents, what the payment costs (with its extras), what it costs without them & what has been paid to it
+	amount   int64
+	original int64
+	paid     int64
 	// its day has passed
 	overdue bool
 }
 
 type rowsQuerier interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+// what part of a payment made now to this payment is base & what part are extras
+func (row *paymentRow) split(cents int64) (int64, int64) {
+	return baseAndExtra(cents, row.original, row.paid)
 }
 
 func (row *paymentRow) debt() int64 {
@@ -1037,7 +1090,7 @@ func loadPayments(ctx context.Context, db rowsQuerier, id uuid.UUID) ([]*payment
 
 		row := &paymentRow{preview: &controller.LoanPaymentPreview{Number: len(payments) + 1}}
 
-		if err = rows.Scan(&row.preview.ID, &row.amount, &row.preview.ExpectedDate, &row.paid, &lastPaid, &hasCapital, &row.overdue); err != nil {
+		if err = rows.Scan(&row.preview.ID, &row.amount, &row.original, &row.preview.ExpectedDate, &row.paid, &lastPaid, &hasCapital, &row.overdue); err != nil {
 			return nil, err
 		}
 
@@ -1137,15 +1190,13 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 		return nil, err
 	}
 
-	var loanAmount, rateValue int64
+	owner, err := lockActive(ctx, tx, loanID)
 
-	if err = tx.QueryRow(ctx, repository.LnQryLockActive, loanID).Scan(new(uuid.UUID), &loanAmount, &rateValue); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repository.LnErrNotActive
-		}
-
+	if err != nil {
 		return nil, err
 	}
+
+	loanAmount, rateValue := owner.amount, owner.rate
 
 	// the debt of the payment includes the mora of the days that have passed
 	if err = accrueMora(ctx, tx, &loanID); err != nil {
@@ -1196,7 +1247,9 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 
 	total, _ := quote(loanAmount, rateValue, 1)
 
-	if err = depositPayment(ctx, tx, executor, loanID, paymentID, cents, loanAmount, total); err != nil {
+	base, extra := target.split(cents)
+
+	if err = depositOwner(ctx, tx, executor, owner, loanID, paymentID, base, extra, loanAmount, total); err != nil {
 		return nil, err
 	}
 
@@ -1207,7 +1260,7 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 
 		// it was the last payment that wasn't paid
 		if pending == 1 {
-			if _, err = tx.Exec(ctx, repository.LnQryFinish, loanID); err != nil {
+			if err = finishOwner(ctx, tx, owner, loanID); err != nil {
 				return nil, err
 			}
 		}
@@ -1221,11 +1274,12 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 }
 
 /**
- * Deposits the money of a payment in the balances of the places that lent the loan.
+ * Deposits the money of a payment in the balances of the places that lent the loan: the base part
+ * is divided between them (see splitPayment) & the extras go to the general cash balance.
  * The general cash balance is locked first & the investors after it, always in the same
  * order, like when the money of a loan is taken.
  */
-func depositPayment(ctx context.Context, tx pgx.Tx, executor *models.User, loanID uuid.UUID, paymentID uuid.UUID, cents int64, loanAmount int64, total int64) error {
+func depositPayment(ctx context.Context, tx pgx.Tx, executor *models.User, loanID uuid.UUID, paymentID uuid.UUID, base int64, extra int64, loanAmount int64, total int64) error {
 	rows, err := tx.Query(ctx, repository.LnQryLoanLenders, loanID)
 
 	if err != nil {
@@ -1251,7 +1305,12 @@ func depositPayment(ctx context.Context, tx pgx.Tx, executor *models.User, loanI
 		return err
 	}
 
-	result := splitPayment(cents, loanAmount, total, lenders)
+	// only the base amount is divided between the places that lent the money
+	result := paymentSplit{}
+
+	if base > 0 {
+		result = splitPayment(base, loanAmount, total, lenders)
+	}
 
 	var (
 		noOwner   *uuid.UUID
@@ -1280,7 +1339,7 @@ func depositPayment(ctx context.Context, tx pgx.Tx, executor *models.User, loanI
 	}
 
 	now := time.Now()
-	generalNext := int64(generalAt) + result.general + result.commission
+	generalNext := int64(generalAt) + result.general + result.commission + extra
 
 	if generalNext > int64(repository.CbMaxAmountCents) {
 		return repository.CbErrLimit
@@ -1294,6 +1353,13 @@ func depositPayment(ctx context.Context, tx pgx.Tx, executor *models.User, loanI
 
 	if result.commission > 0 {
 		if err = deposit(generalID, nil, result.commission); err != nil {
+			return err
+		}
+	}
+
+	// what is paid over the base amount (mora & visits) goes directly to the general cash balance
+	if extra > 0 {
+		if err = deposit(generalID, nil, extra); err != nil {
 			return err
 		}
 	}
@@ -1476,12 +1542,15 @@ func AddVisit(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID) ([]*co
 		return nil, err
 	}
 
-	if err = tx.QueryRow(ctx, repository.LnQryLockActive, loanID).Scan(new(uuid.UUID), new(int64), new(int64)); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repository.LnErrNotActive
-		}
+	owner, err := lockActive(ctx, tx, loanID)
 
+	if err != nil {
 		return nil, err
+	}
+
+	// the payments of an agreement only have what the agreement says, no extras
+	if owner.agreement {
+		return nil, repository.AgErrVisit
 	}
 
 	if err = accrueMora(ctx, tx, &loanID); err != nil {
@@ -1628,15 +1697,13 @@ func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amoun
 		return nil, err
 	}
 
-	var loanAmount, rateValue int64
+	owner, err := lockActive(ctx, tx, loanID)
 
-	if err = tx.QueryRow(ctx, repository.LnQryLockActive, loanID).Scan(new(uuid.UUID), &loanAmount, &rateValue); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repository.LnErrNotActive
-		}
-
+	if err != nil {
 		return nil, err
 	}
+
+	loanAmount, rateValue := owner.amount, owner.rate
 
 	if err = accrueMora(ctx, tx, &loanID); err != nil {
 		return nil, err
@@ -1681,7 +1748,9 @@ func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amoun
 			return nil, err
 		}
 
-		if err = depositPayment(ctx, tx, executor, loanID, target.preview.ID, item.amount, loanAmount, loanTotal); err != nil {
+		base, extra := target.split(item.amount)
+
+		if err = depositOwner(ctx, tx, executor, owner, loanID, target.preview.ID, base, extra, loanAmount, loanTotal); err != nil {
 			return nil, err
 		}
 
@@ -1696,7 +1765,7 @@ func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amoun
 
 	// nothing is owed anymore
 	if paidInFull == len(owed) {
-		if _, err = tx.Exec(ctx, repository.LnQryFinish, loanID); err != nil {
+		if err = finishOwner(ctx, tx, owner, loanID); err != nil {
 			return nil, err
 		}
 	}
@@ -1843,4 +1912,188 @@ func GetCalendar(ctx context.Context) ([]*controller.CalendarDayPreview, error) 
 	}
 
 	return days, rows.Err()
+}
+
+/**
+ * The loan or the agreement a payment belongs to, locked: their ids never repeat. For a loan it has
+ * what it lent & its rate (to divide the payments between its lenders), an agreement has neither.
+ */
+type activeOwner struct {
+	agreement bool
+	amount    int64
+	rate      int64
+}
+
+func lockActive(ctx context.Context, tx pgx.Tx, id uuid.UUID) (*activeOwner, error) {
+	owner := &activeOwner{}
+
+	err := tx.QueryRow(ctx, repository.LnQryLockActive, id).Scan(new(uuid.UUID), &owner.amount, &owner.rate)
+
+	if err == nil {
+		return owner, nil
+	}
+
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	if err = tx.QueryRow(ctx, repository.AgQryLockActive, id).Scan(new(uuid.UUID)); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.LnErrNotActive
+		}
+
+		return nil, err
+	}
+
+	owner.agreement = true
+
+	return owner, nil
+}
+
+/**
+ * Deposits the money of a payment: a loan divides it between its lenders & its extras go to the general
+ * cash balance, an agreement sends everything to the general cash balance
+ */
+func depositOwner(ctx context.Context, tx pgx.Tx, executor *models.User, owner *activeOwner, loanID uuid.UUID, paymentID uuid.UUID, base int64, extra int64, loanAmount int64, total int64) error {
+	if !owner.agreement {
+		return depositPayment(ctx, tx, executor, loanID, paymentID, base, extra, loanAmount, total)
+	}
+
+	var (
+		noOwner   *uuid.UUID
+		generalID uuid.UUID
+		generalAt int
+	)
+
+	if err := tx.QueryRow(ctx, repository.CbQryLockBalance, noOwner).Scan(&generalID, &generalAt); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return repository.CbErrNotFound
+		}
+
+		return err
+	}
+
+	amount := base + extra
+	next := int64(generalAt) + amount
+
+	if next > int64(repository.CbMaxAmountCents) {
+		return repository.CbErrLimit
+	}
+
+	number, err := folio.NextMovement(ctx, tx)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.Exec(ctx, repository.LnQryInsertDeposit, number, int(amount), generalID, nil, paymentID, executor.ID); err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, repository.CbQryUpdateBalance, int(next), time.Now(), generalID)
+
+	return err
+}
+
+// marks the loan or the agreement as finished
+func finishOwner(ctx context.Context, tx pgx.Tx, owner *activeOwner, id uuid.UUID) error {
+	query := repository.LnQryFinish
+
+	if owner.agreement {
+		query = repository.AgQryFinish
+	}
+
+	_, err := tx.Exec(ctx, query, id)
+
+	return err
+}
+
+/**
+ * Detail of an agreement, same shape as the one of a loan: its debt is what it was started with, its total
+ * what its payments add up to & what was paid is split into debt & interest in the same proportion as the
+ * total. It has no lenders (everything goes to the general cash balance) & lists the loans it was made of.
+ */
+func getAgreementByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, error) {
+	pool := database.GetPool()
+
+	var amount, total, rateValue int64
+
+	detail := &controller.LoanDetailPreview{
+		Kind:           "agreement",
+		Type:           repository.LnTypeWeekly,
+		Status:         &controller.LoanStatusPreview{},
+		Borrower:       &controller.LoanBorrowerDetailPreview{},
+		Investors:      []*controller.LoanLenderPreview{},
+		AgreementLoans: []*controller.AgreementLoanRefPreview{},
+	}
+
+	err := pool.QueryRow(ctx, repository.AgQryGetByID, id).Scan(
+		&detail.ID,
+		&detail.Folio,
+		&detail.Status.Slug,
+		&amount,
+		&total,
+		&rateValue,
+		&detail.NoPayments,
+		&detail.RequestDate,
+		&detail.Borrower.ID,
+		&detail.Borrower.Fullname,
+		&detail.Borrower.Username,
+		&detail.Borrower.PhoneNumber,
+		&detail.Borrower.CURP,
+		&detail.Borrower.Address,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.LnErrNotFound
+		}
+
+		return nil, err
+	}
+
+	// an agreement starts approved
+	detail.ResolutionDate = &detail.RequestDate
+	detail.Folio = strings.TrimSpace(detail.Folio)
+	detail.Status.Title = repository.LnStatusTitles[detail.Status.Slug]
+	detail.Borrower.CURP = trimmedPtr(detail.Borrower.CURP)
+	detail.Rate = float64(rateValue) / 1000
+	detail.Amount = float64(amount) / 100
+	detail.Total = float64(total) / 100
+
+	var paid int64
+
+	if err = pool.QueryRow(ctx, repository.LnQryPaid, id).Scan(&detail.FulfilledPayments, &paid); err != nil {
+		return nil, err
+	}
+
+	capital := proportion(paid, amount, total)
+
+	detail.PaidCapital = float64(capital) / 100
+	detail.PaidInterest = float64(paid-capital) / 100
+	detail.Current = float64(paid) / 100
+
+	rows, err := pool.Query(ctx, repository.AgQryLoansOf, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var debt int64
+
+		item := &controller.AgreementLoanRefPreview{}
+
+		if err = rows.Scan(&item.ID, &item.Folio, &debt); err != nil {
+			return nil, err
+		}
+
+		item.Folio = strings.TrimSpace(item.Folio)
+		item.Debt = float64(debt) / 100
+		detail.AgreementLoans = append(detail.AgreementLoans, item)
+	}
+
+	return detail, rows.Err()
 }

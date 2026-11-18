@@ -1,7 +1,7 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, Signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { LoanDetail, LoanLender } from '../../../../../../../interfaces/loan';
+import { AgreementLoanRef, LoanDetail, LoanLender } from '../../../../../../../interfaces/loan';
 import { LOANS_I18N_KEYS } from '../../../../../../data/repository/loans.repository';
 import { USERS_I18N_KEYS } from '../../../../../../data/repository/users.repository';
 import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
@@ -139,7 +139,11 @@ export class LoanDetailDialogComponent {
             amounts: false,
             rows: [
                { label: LOANS_I18N_KEYS.DETAIL_FOLIO, value: loan.folio },
-               { label: LOANS_I18N_KEYS.DETAIL_RATE, value: `${this.number.transform(loan.rate, '1.0-3')}%` },
+               {
+                  label:
+                     loan.kind === 'agreement' ? LOANS_I18N_KEYS.DETAIL_AGREEMENT_RATE : LOANS_I18N_KEYS.DETAIL_RATE,
+                  value: `${this.number.transform(loan.rate, '1.0-3')}%`,
+               },
                {
                   label: LOANS_I18N_KEYS.DETAIL_TYPE,
                   value:
@@ -147,6 +151,10 @@ export class LoanDetailDialogComponent {
                   translate: true,
                },
                { label: LOANS_I18N_KEYS.DETAIL_PAYMENTS, value: `${loan.no_payments}` },
+               // a cancelled loan says which agreement it went to
+               ...(loan.agreement
+                  ? [{ label: LOANS_I18N_KEYS.DETAIL_AGREEMENT, value: compactFolio(loan.agreement.folio) }]
+                  : []),
                { label: LOANS_I18N_KEYS.DETAIL_FULFILLED, value: `${loan.fulfilled_payments}` },
                { label: LOANS_I18N_KEYS.DETAIL_REQUESTED, value: this.date.transform(loan.request_date, 'dd.MM.yyyy') },
                {
@@ -159,10 +167,15 @@ export class LoanDetailDialogComponent {
             title: LOANS_I18N_KEYS.DETAIL_SECTION_TOTAL,
             amounts: true,
             rows: [
-               { label: LOANS_I18N_KEYS.DETAIL_LENT, value: this.money(loan.amount) },
+               {
+                  label:
+                     loan.kind === 'agreement' ? LOANS_I18N_KEYS.DETAIL_AGREEMENT_DEBT : LOANS_I18N_KEYS.DETAIL_LENT,
+                  value: this.money(loan.amount),
+               },
                { label: LOANS_I18N_KEYS.DETAIL_DEBT, value: this.money(loan.total) },
                { label: LOANS_I18N_KEYS.DETAIL_PAID_CAPITAL, value: this.money(loan.paid_capital) },
                { label: LOANS_I18N_KEYS.DETAIL_PAID_INTEREST, value: this.money(loan.paid_interest) },
+               ...this.extrasRow(loan.paid_extras),
                { label: LOANS_I18N_KEYS.DETAIL_CURRENT, value: this.money(loan.current) },
             ],
          },
@@ -178,6 +191,7 @@ export class LoanDetailDialogComponent {
                { label: LOANS_I18N_KEYS.DETAIL_DEBT, value: this.money(loan.general.debt) },
                { label: LOANS_I18N_KEYS.DETAIL_PAID, value: this.money(loan.general.paid) },
                { label: LOANS_I18N_KEYS.DETAIL_COMMISSION_RECEIVED, value: this.money(loan.general.commission) },
+               ...this.extrasRow(loan.general.extras),
                { label: LOANS_I18N_KEYS.DETAIL_CURRENT, value: this.money(loan.general.received) },
             ],
          });
@@ -196,6 +210,18 @@ export class LoanDetailDialogComponent {
                { label: LOANS_I18N_KEYS.DETAIL_RECEIVED_INVESTOR, value: this.money(investor.received) },
                { label: LOANS_I18N_KEYS.DETAIL_COMMISSION_KEPT, value: this.money(investor.commission) },
             ],
+         });
+      }
+
+      // the loans an agreement was made of (they were cancelled) with what each one owed
+      if (loan.agreement_loans.length > 0) {
+         sections.push({
+            title: LOANS_I18N_KEYS.DETAIL_SECTION_AGREEMENT_LOANS,
+            amounts: true,
+            rows: loan.agreement_loans.map((item: AgreementLoanRef) => ({
+               label: compactFolio(item.folio),
+               value: this.money(item.debt),
+            })),
          });
       }
 
@@ -253,13 +279,18 @@ export class LoanDetailDialogComponent {
 
       if (!loan) return;
 
-      this._payments.open({ id: loan.id, folio: compactFolio(loan.folio) });
+      this._payments.open({ id: loan.id, folio: compactFolio(loan.folio), kind: loan.kind });
       this._dialogs.newDialog({
          title: DIALOG_I18N_KEYS.LOAN_PAYMENTS_TITLE,
          titleParams: { folio: compactFolio(loan.folio) },
          component: LoanPaymentsDialogComponent,
          size: 'lg',
       });
+   }
+
+   // the extras (mora & visits) only show up when the payments have them
+   private extrasRow(extras: number): DetailRow[] {
+      return extras > 0 ? [{ label: LOANS_I18N_KEYS.DETAIL_EXTRAS, value: this.money(extras) }] : [];
    }
 
    private money(value: number): string {

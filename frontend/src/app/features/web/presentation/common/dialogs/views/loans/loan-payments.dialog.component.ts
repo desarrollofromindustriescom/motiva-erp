@@ -126,6 +126,9 @@ export class LoanPaymentsDialogComponent {
     */
    public enabled({ action, payment }: { action: { id: string }; payment: LoanPayment }): boolean {
       // paying & visiting are only possible on the current payment (the first that isn't paid in full)
+      // an agreement has no visits: its payments only have what the agreement says
+      if (action.id === 'visit' && this._payments.kind === 'agreement') return false;
+
       return !['pay', 'visit'].includes(action.id) || payment.is_next;
    }
 
@@ -159,7 +162,7 @@ export class LoanPaymentsDialogComponent {
       }
 
       if (action.id === 'visit') {
-         if (payment.is_next) this._visit.add({ loanId, paymentId: payment.id });
+         if (payment.is_next && this._payments.kind !== 'agreement') this._visit.add({ loanId, paymentId: payment.id });
 
          return;
       }

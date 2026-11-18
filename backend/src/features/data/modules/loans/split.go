@@ -168,3 +168,14 @@ func splitPayment(payment int64, amount int64, total int64, lenders []lender) pa
 
 	return result
 }
+
+/**
+ * What part of a payment made to a payment is its base amount & what part are extras (mora &
+ * visits). The base amount is paid first, so only what is left over once it is complete is an extra:
+ * `original` is what the payment costs without extras & `paidBefore` what had already been paid to it.
+ */
+func baseAndExtra(amount int64, original int64, paidBefore int64) (base int64, extra int64) {
+	base = min(amount, max(original-paidBefore, 0))
+
+	return base, amount - base
+}

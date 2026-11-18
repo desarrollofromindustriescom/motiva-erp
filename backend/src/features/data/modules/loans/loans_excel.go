@@ -18,11 +18,12 @@ var loansWidths = []float64{14, 32, 16, 16, 16, 12, 12}
 
 // colors of the state of a loan, like in the table
 var loanStatusColors = map[string]string{
-	"pending":  "F27732",
-	"active":   "22B14C",
-	"rejected": "E53935",
-	"finished": "64748B",
-	"expired":  "B91C1C",
+	"pending":   "F27732",
+	"active":    "22B14C",
+	"rejected":  "E53935",
+	"finished":  "64748B",
+	"expired":   "B91C1C",
+	"cancelled": "334155",
 }
 
 /**

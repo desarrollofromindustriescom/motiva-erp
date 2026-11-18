@@ -9,6 +9,7 @@ import { compactFolio } from '../../../../../../data/repository/cash-balance.rep
 import { SIDEBAR_OPTIONS, SIDEBAR_SECTIONS } from '../../../../../../data/repository/sidebar.repository';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
+import { AgreementCreationService } from '../../../../../../data/services/agreement-creation.service';
 import { LoansCalendarService } from '../../../../../../data/services/loans-calendar.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
 import { LoanDetailService } from '../../../../../../data/services/loan-detail.service';
@@ -19,6 +20,7 @@ import { SidebarService } from '../../../../../../data/services/sidebar.service'
 import { LoanPaymentsDialogComponent } from '../../../../common/dialogs/views/loans/loan-payments.dialog.component';
 import { LoanDetailDialogComponent } from '../../../../common/dialogs/views/loans/loan-detail.dialog.component';
 import { LoanPaymentPayDialogComponent } from '../../../../common/dialogs/views/loans/loan-payment-pay.dialog.component';
+import { AgreementCreateDialogComponent } from '../../../../common/dialogs/views/loans/agreement-create.dialog.component';
 import { LoansCalendarDialogComponent } from '../../../../common/dialogs/views/loans/loans-calendar.dialog.component';
 import { LoanCreateDialogComponent } from '../../../../common/dialogs/views/loans/loan-create.dialog.component';
 import { LoansTableComponent } from './components/loans-table.component';
@@ -44,6 +46,7 @@ export class LoansPageComponent {
    private readonly _detail: LoanDetailService = inject(LoanDetailService);
    private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
    private readonly _calendar: LoansCalendarService = inject(LoansCalendarService);
+   private readonly _agreement: AgreementCreationService = inject(AgreementCreationService);
    private readonly _pay: LoanPaymentPayService = inject(LoanPaymentPayService);
 
    constructor() {
@@ -74,9 +77,20 @@ export class LoansPageComponent {
    }
 
    /**
-    * The new loan, the calendar of payments & the Excel of the table have an action, the other buttons do nothing yet
+    * The new loan, the new agreement, the calendar of payments & the Excel of the table have an action
     */
    public handleAction({ option }: { option: string }): void {
+      if (option === SIDEBAR_OPTIONS.LOANS_NEW_AGREEMENT) {
+         this._agreement.start();
+         this._dialogs.newDialog({
+            title: DIALOG_I18N_KEYS.NEW_AGREEMENT_TITLE,
+            component: AgreementCreateDialogComponent,
+            size: 'lg',
+         });
+
+         return;
+      }
+
       if (option === SIDEBAR_OPTIONS.LOANS_EXCEL) {
          this._list.downloadExcel();
 
@@ -131,7 +145,7 @@ export class LoansPageComponent {
    }
 
    public handlePayments({ loan }: { loan: LoanRow }): void {
-      this._payments.open({ id: loan.id, folio: compactFolio(loan.folio) });
+      this._payments.open({ id: loan.id, folio: compactFolio(loan.folio), kind: loan.kind });
       this._dialogs.newDialog({
          title: DIALOG_I18N_KEYS.LOAN_PAYMENTS_TITLE,
          titleParams: { folio: compactFolio(loan.folio) },

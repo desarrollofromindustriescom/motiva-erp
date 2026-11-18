@@ -109,7 +109,7 @@ export class BorrowerDashboardComponent {
    }
 
    public handlePayments({ loan }: { loan: LoanRow }): void {
-      this._payments.open({ id: loan.id, folio: compactFolio(loan.folio) });
+      this._payments.open({ id: loan.id, folio: compactFolio(loan.folio), kind: loan.kind });
       this._dialogs.newDialog({
          title: DIALOG_I18N_KEYS.LOAN_PAYMENTS_TITLE,
          titleParams: { folio: compactFolio(loan.folio) },

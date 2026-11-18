@@ -104,7 +104,7 @@ type LoansFiltersPayload struct {
 	WithMora    bool     `json:"with_mora"`
 	Type        string   `json:"type" validate:"omitempty,oneof=weekly monthly"`
 	Payments    []int    `json:"payments" validate:"omitempty,max=13,dive,gte=1,lte=13"`
-	Statuses    []string `json:"statuses" validate:"omitempty,max=5,dive,oneof=pending active rejected finished expired"`
+	Statuses    []string `json:"statuses" validate:"omitempty,max=6,dive,oneof=pending active rejected finished expired cancelled"`
 	AmountMin   *float64 `json:"amount_min" validate:"omitempty,gte=0"`
 	AmountMax   *float64 `json:"amount_max" validate:"omitempty,gte=0"`
 	TotalMin    *float64 `json:"total_min" validate:"omitempty,gte=0"`
@@ -132,6 +132,8 @@ type LoanStatusPreview struct {
 }
 
 type LoanRowPreview struct {
+	// loan or agreement
+	Kind       string               `json:"kind"`
 	ID         uuid.UUID            `json:"id"`
 	Folio      string               `json:"folio"`
 	Borrower   *LoanBorrowerPreview `json:"borrower"`
@@ -168,6 +170,8 @@ type LoanLenderPreview struct {
 	Paid       float64 `json:"paid"`
 	Received   float64 `json:"received"`
 	Commission float64 `json:"commission"`
+	// only the general cash balance: what it got over the base amount of the payments (mora & visits)
+	Extras float64 `json:"extras"`
 }
 
 type LoanBorrowerDetailPreview struct {
@@ -179,25 +183,46 @@ type LoanBorrowerDetailPreview struct {
 	Address     *string   `json:"address"`
 }
 
+/**
+ * A loan that belongs to an agreement (it was cancelled when the agreement started) & what it owed
+ */
+type AgreementLoanRefPreview struct {
+	ID    uuid.UUID `json:"id"`
+	Folio string    `json:"folio"`
+	Debt  float64   `json:"debt"`
+}
+
+type AgreementRefPreview struct {
+	ID    uuid.UUID `json:"id"`
+	Folio string    `json:"folio"`
+}
+
 type LoanDetailPreview struct {
-	ID                uuid.UUID                  `json:"id"`
-	Folio             string                     `json:"folio"`
-	Status            *LoanStatusPreview         `json:"status"`
-	Rate              float64                    `json:"rate"`
-	Type              string                     `json:"type"`
-	NoPayments        int                        `json:"no_payments"`
-	FulfilledPayments int                        `json:"fulfilled_payments"`
-	RequestDate       time.Time                  `json:"request_date"`
-	ResolutionDate    *time.Time                 `json:"resolution_date"`
-	Amount            float64                    `json:"amount"`
-	Total             float64                    `json:"total"`
-	PaidCapital       float64                    `json:"paid_capital"`
-	PaidInterest      float64                    `json:"paid_interest"`
-	Current           float64                    `json:"current"`
-	Borrower          *LoanBorrowerDetailPreview `json:"borrower"`
+	// loan or agreement: an agreement has the loans it was made of & no lenders
+	Kind              string             `json:"kind"`
+	ID                uuid.UUID          `json:"id"`
+	Folio             string             `json:"folio"`
+	Status            *LoanStatusPreview `json:"status"`
+	Rate              float64            `json:"rate"`
+	Type              string             `json:"type"`
+	NoPayments        int                `json:"no_payments"`
+	FulfilledPayments int                `json:"fulfilled_payments"`
+	RequestDate       time.Time          `json:"request_date"`
+	ResolutionDate    *time.Time         `json:"resolution_date"`
+	Amount            float64            `json:"amount"`
+	Total             float64            `json:"total"`
+	PaidCapital       float64            `json:"paid_capital"`
+	PaidInterest      float64            `json:"paid_interest"`
+	// what was paid over the base amount of the payments (mora & visits)
+	PaidExtras float64                    `json:"paid_extras"`
+	Current    float64                    `json:"current"`
+	Borrower   *LoanBorrowerDetailPreview `json:"borrower"`
 	// the general cash balance when it lent money & every investor that did
 	General   *LoanLenderPreview   `json:"general"`
 	Investors []*LoanLenderPreview `json:"investors"`
+	// the loans of an agreement, & the agreement a cancelled loan went to
+	AgreementLoans []*AgreementLoanRefPreview `json:"agreement_loans"`
+	Agreement      *AgreementRefPreview       `json:"agreement"`
 }
 
 /**
@@ -330,4 +355,47 @@ type CalendarItemPreview struct {
 type CalendarDayPreview struct {
 	Weekday int                    `json:"weekday"`
 	Items   []*CalendarItemPreview `json:"items"`
+}
+
+/**
+ * Terms to see the loans of a borrower that can go to an agreement
+ */
+type AgreementLoansQueryPayload struct {
+	BorrowerID string `json:"borrower_id" validate:"required,uuid"`
+}
+
+/**
+ * New agreement: the loans that go into it (they are cancelled), & the weeks it lasts. Its debt is
+ * what those loans owe; the interest is the percentage of agreements of the settings.
+ */
+type NewAgreementPayload struct {
+	BorrowerID string   `json:"borrower_id" validate:"required,uuid"`
+	LoanIDs    []string `json:"loan_ids" validate:"required,min=1,max=50,dive,uuid"`
+	Weeks      int      `json:"weeks" validate:"required,gte=25,lte=100"`
+}
+
+type AgreementLoanPreview struct {
+	ID    uuid.UUID `json:"id"`
+	Folio string    `json:"folio"`
+	// weeks of delay of its oldest payment that isn't paid
+	WeeksLate int     `json:"weeks_late"`
+	Debt      float64 `json:"debt"`
+}
+
+/**
+ * The loans a borrower can take to an agreement & the percentage of the agreements
+ */
+type AgreementEligiblePreview struct {
+	Rate  float64                 `json:"rate"`
+	Loans []*AgreementLoanPreview `json:"loans"`
+}
+
+type AgreementPreview struct {
+	ID            uuid.UUID `json:"id"`
+	Folio         string    `json:"folio"`
+	Debt          float64   `json:"debt"`
+	Weeks         int       `json:"weeks"`
+	Rate          float64   `json:"rate"`
+	PaymentAmount float64   `json:"payment_amount"`
+	Total         float64   `json:"total"`
 }

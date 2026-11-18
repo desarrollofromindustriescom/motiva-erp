@@ -12,4 +12,5 @@ VALUES
    ('dab9d4a3-e641-443b-a6df-c0839ab190d9', 'unviewed', 'No vista'),
    ('f7aaffc4-22cc-406f-bb09-255b6f7ed067', 'viewed', 'Vista'),
    ('97469771-106a-4b3e-a2c6-ee0e0d8fa6d5', 'executed', 'Ejecutado'),
-   ('3c1f6b0e-8a52-4d7e-9b41-5e2d7a9c0f13', 'finished', 'Terminado') ON CONFLICT (slug) DO NOTHING;
+   ('3c1f6b0e-8a52-4d7e-9b41-5e2d7a9c0f13', 'finished', 'Terminado'),
+   ('b7d2e8a4-5c19-4f63-8a07-1e9d3c6f2b58', 'cancelled', 'Cancelado') ON CONFLICT (slug) DO NOTHING;

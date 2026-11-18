@@ -14,6 +14,8 @@ export type LoansRoutes =
    | 'myLoans'
    | 'loansCalendar'
    | 'loansCalendarExcel'
+   | 'agreementLoans'
+   | 'createAgreement'
    | 'payLoanPayment';
 
 export type LoanType = 'weekly' | 'monthly';
@@ -68,7 +70,11 @@ export type LoansOrder = 'asc' | 'desc' | '';
 // filters as the sidebar gives them: ranges & lists are texts separated by comma, ex: "10,20" or "1,3,5"
 export type LoansFilters = Record<string, string>;
 
+export type LoanKind = 'loan' | 'agreement';
+
 export interface LoanRow {
+   // a loan or an agreement: both are listed together
+   kind: LoanKind;
    id: string;
    folio: string;
    borrower: { id: string; fullname: string };
@@ -105,9 +111,21 @@ export interface LoanLender {
    paid: number;
    received: number;
    commission: number;
+   // only the general cash balance: what it got over the base amount of the payments (mora & visits)
+   extras: number;
+}
+
+/**
+ * A loan of an agreement (it was cancelled when the agreement started) with what it owed
+ */
+export interface AgreementLoanRef {
+   id: string;
+   folio: string;
+   debt: number;
 }
 
 export interface LoanDetail {
+   kind: LoanKind;
    id: string;
    folio: string;
    status: { slug: string; title: string };
@@ -121,6 +139,8 @@ export interface LoanDetail {
    total: number;
    paid_capital: number;
    paid_interest: number;
+   // what was paid over the base amount of the payments (mora & visits)
+   paid_extras: number;
    current: number;
    borrower: {
       id: string;
@@ -132,6 +152,9 @@ export interface LoanDetail {
    };
    general: LoanLender | null;
    investors: LoanLender[];
+   // the loans an agreement was made of & the agreement a cancelled loan went to
+   agreement_loans: AgreementLoanRef[];
+   agreement: { id: string; folio: string } | null;
 }
 
 export type LoanPaymentState = 'paid' | 'expired' | 'partial' | 'pending' | 'capital';
@@ -239,4 +262,31 @@ export interface CalendarItem {
 export interface CalendarDay {
    weekday: number;
    items: CalendarItem[];
+}
+
+/**
+ * A loan of a borrower that can go to an agreement: its weeks of delay & what it owes
+ */
+export interface AgreementLoan {
+   id: string;
+   folio: string;
+   weeks_late: number;
+   debt: number;
+}
+
+export interface AgreementEligible {
+   // percentage of the agreements, added to every payment
+   rate: number;
+   loans: AgreementLoan[];
+}
+
+export interface FieldsAgreement {
+   borrower_id: string;
+   weeks: number | null;
+}
+
+export interface AgreementQuote {
+   // what each payment costs: its part of the debt plus the interest
+   payment: number;
+   total: number;
 }

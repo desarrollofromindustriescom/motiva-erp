@@ -45,6 +45,14 @@ func writeLoanResult[T any](response http.ResponseWriter, request *http.Request,
 			writeBadRequest(response, request, repository.LnI18nKeyLoanExceeds)
 		case errors.Is(err, repository.LnErrPaymentExceeds):
 			writeBadRequest(response, request, repository.LnI18nKeyPaymentExceeds)
+		case errors.Is(err, repository.AgErrLoans):
+			writeBadRequest(response, request, repository.AgI18nKeyLoans)
+		case errors.Is(err, repository.AgErrFunds):
+			writeBadRequest(response, request, repository.AgI18nKeyFunds)
+		case errors.Is(err, repository.AgErrRate):
+			writeBadRequest(response, request, repository.AgI18nKeyRate)
+		case errors.Is(err, repository.AgErrVisit):
+			writeBadRequest(response, request, repository.AgI18nKeyVisit)
 		case errors.Is(err, repository.LnErrVisitNotCurrent):
 			writeBadRequest(response, request, repository.LnI18nKeyVisitNotCurrent)
 		case errors.Is(err, repository.LnErrExtraSetting):
@@ -384,4 +392,44 @@ func QueryLoansExcel(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Cache-Control", "private, no-store")
 	response.WriteHeader(http.StatusOK)
 	response.Write(file)
+}
+
+/**
+ * Loans of a borrower that can go to an agreement & the percentage of the agreements
+ */
+func QueryAgreementLoans(response http.ResponseWriter, request *http.Request) {
+	payload, ok := readPayload[controller.AgreementLoansQueryPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	borrowerID, err := uuid.Parse(payload.BorrowerID)
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	eligible, err := loans.GetAgreementLoans(request.Context(), borrowerID)
+
+	writeLoanResult(response, request, "handlers.QueryAgreementLoans.GetAgreementLoans", http.StatusOK, eligible, err)
+}
+
+/**
+ * Starts an agreement: its loans are cancelled & the investors get back what they lent
+ */
+func CreateAgreement(response http.ResponseWriter, request *http.Request) {
+	payload, ok := readPayload[controller.NewAgreementPayload](response, request)
+
+	if !ok {
+		return
+	}
+
+	ctx := request.Context()
+	currentSession := ctx.Value("session").(*models.Session)
+
+	agreement, err := loans.CreateAgreement(ctx, currentSession.User, payload)
+
+	writeLoanResult(response, request, "handlers.CreateAgreement.CreateAgreement", http.StatusCreated, agreement, err)
 }
