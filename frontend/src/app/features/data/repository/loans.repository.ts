@@ -1,4 +1,5 @@
 import { LoanDepositType, LoanPaymentState, LoanType } from '../../../interfaces/loan';
+import { UserProfile } from '../../../interfaces/user';
 
 // same limits the backend validates
 export const LOAN_MAX_PAYMENTS: Record<LoanType, number> = { monthly: 3, weekly: 13 };
@@ -8,11 +9,34 @@ export const LOAN_BORROWERS_PAGE_SIZE: number = 20;
 export const LOAN_BORROWERS_SEARCH_DELAY: number = 300;
 
 export const LOANS_PAGE_SIZE: number = 10;
+
+// a borrower only reads its own loans, from endpoints with the same shape as the ones of the loans module
+export const LOANS_BORROWER_ROUTE: string = '/borrower/loans/';
+
+/**
+ * Route of the loans of the module for the staff or the one of the borrower, so the same
+ * dialogs (detail, payments, abonos & breakdown) work for both of them
+ */
+export function loansRoute({ route, profile }: { route: string; profile: UserProfile | undefined }): string {
+   return profile === 'borrower' ? LOANS_BORROWER_ROUTE : route;
+}
 export const LOAN_DEPOSITS_PAGE_SIZE: number = 5;
 
 export const LOANS_I18N_KEYS = {
    MODULE_TITLE: 'LOANS_MODULE_TITLE',
    PAYMENT_EXPECTED: 'LOANS_PAYMENT_EXPECTED',
+   CALENDAR_HEAD_BORROWER: 'LOANS_CALENDAR_HEAD_BORROWER',
+   CALENDAR_HEAD_AMOUNT: 'LOANS_CALENDAR_HEAD_AMOUNT',
+   CALENDAR_HEAD_DEBT: 'LOANS_CALENDAR_HEAD_DEBT',
+   CALENDAR_HEAD_PAY_DAY: 'LOANS_CALENDAR_HEAD_PAY_DAY',
+   CALENDAR_HEAD_PHONE: 'LOANS_CALENDAR_HEAD_PHONE',
+   CALENDAR_HEAD_GUARANTOR: 'LOANS_CALENDAR_HEAD_GUARANTOR',
+   CALENDAR_HEAD_STATUS: 'LOANS_CALENDAR_HEAD_STATUS',
+   CALENDAR_MONTHLY_DAY: 'LOANS_CALENDAR_MONTHLY_DAY',
+   CALENDAR_CURRENT: 'LOANS_CALENDAR_CURRENT',
+   CALENDAR_OVERDUE: 'LOANS_CALENDAR_OVERDUE',
+   CALENDAR_EMPTY_DAY: 'LOANS_CALENDAR_EMPTY_DAY',
+   CALENDAR_EXCEL: 'LOANS_CALENDAR_EXCEL',
    BREAKDOWN_HEAD_CONCEPT: 'LOANS_BREAKDOWN_HEAD_CONCEPT',
    BREAKDOWN_HEAD_UNIT: 'LOANS_BREAKDOWN_HEAD_UNIT',
    BREAKDOWN_HEAD_QUANTITY: 'LOANS_BREAKDOWN_HEAD_QUANTITY',
@@ -191,3 +215,14 @@ export const LOAN_DEPOSIT_TYPE_COLORS: Record<LoanDepositType, string> = {
    late: 'bg-red-500',
    capital: 'bg-main',
 };
+
+// weekdays from Monday (1) to Sunday (7)
+export const LOAN_WEEKDAYS: string[] = [
+   LOANS_I18N_KEYS.DAY_MONDAY,
+   LOANS_I18N_KEYS.DAY_TUESDAY,
+   LOANS_I18N_KEYS.DAY_WEDNESDAY,
+   LOANS_I18N_KEYS.DAY_THURSDAY,
+   LOANS_I18N_KEYS.DAY_FRIDAY,
+   LOANS_I18N_KEYS.DAY_SATURDAY,
+   LOANS_I18N_KEYS.DAY_SUNDAY,
+];

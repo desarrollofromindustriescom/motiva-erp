@@ -9,6 +9,7 @@ import { compactFolio } from '../../../../../../data/repository/cash-balance.rep
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
+import { SessionService } from '../../../../../../data/services/session.service';
 import { LoanDetailService } from '../../../../../../data/services/loan-detail.service';
 import { LoanPaymentPayDialogComponent } from './loan-payment-pay.dialog.component';
 import { LoanPaymentsDialogComponent } from './loan-payments.dialog.component';
@@ -69,16 +70,21 @@ interface DetailSection {
                </section>
             }
 
-            <div class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
-               <button
-                  class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-white transition-all disabled:cursor-auto disabled:bg-slate-300"
-                  type="button"
-                  [disabled]="!$canPay()"
-                  (click)="handlePay()"
-               >
-                  <i class="bx bx-dollar text-xl"></i>
-                  {{ I18N.BUTTON_PAY | translate }}
-               </button>
+            <div
+               class="grid w-full grid-cols-1 gap-2"
+               [class.sm:grid-cols-2]="!$readOnly"
+            >
+               @if (!$readOnly) {
+                  <button
+                     class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-white transition-all disabled:cursor-auto disabled:bg-slate-300"
+                     type="button"
+                     [disabled]="!$canPay()"
+                     (click)="handlePay()"
+                  >
+                     <i class="bx bx-dollar text-xl"></i>
+                     {{ I18N.BUTTON_PAY | translate }}
+                  </button>
+               }
                <button
                   class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-white transition-all"
                   type="button"
@@ -103,6 +109,7 @@ export class LoanDetailDialogComponent {
    private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
    private readonly _pay: LoanPaymentPayService = inject(LoanPaymentPayService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
+   private readonly _session: SessionService = inject(SessionService);
 
    private readonly currency: CurrencyPipe = new CurrencyPipe('en-US');
    private readonly date: DatePipe = new DatePipe('en-US');
@@ -113,6 +120,9 @@ export class LoanDetailDialogComponent {
    public readonly skeletons: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
    public readonly $loan: Signal<LoanDetail | undefined> = computed(() => this._detail.detail);
+
+   // a borrower can only read its loans, it doesn't register payments
+   public readonly $readOnly: boolean = this._session.session?.profile === 'borrower';
 
    // only a loan that is being paid (on time or late) can receive payments
    public readonly $canPay: Signal<boolean> = computed(() =>

@@ -72,6 +72,7 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteUserCancellationReject), middleware.Authorize(handlers.RejectCancellation, usersProfiles...))
 
 	// Loans module: same profiles as users
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteLoansCalendar), middleware.Authorize(handlers.GetLoansCalendar, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoansFunds), middleware.Authorize(handlers.QueryLoanFunds, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteLoans), middleware.Authorize(handlers.QueryLoans, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoans), middleware.Authorize(handlers.CreateLoan, usersProfiles...))
@@ -84,6 +85,16 @@ func Router() *http.ServeMux {
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanPay), middleware.Authorize(handlers.PayLoan, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPut, repository.RouteLoan), middleware.Authorize(handlers.UpdateLoan, usersProfiles...))
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodPost, repository.RouteLoanApprove), middleware.Authorize(handlers.ApproveLoan, usersProfiles...))
+
+	// Panel of the borrower: only its own loans
+	borrower := repository.ProfileBorrower
+
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteMySummary), middleware.Authorize(handlers.GetMySummary, borrower))
+	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteMyLoans), middleware.Authorize(handlers.QueryMyLoans, borrower))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteMyLoan), middleware.Authorize(handlers.GetMyLoan, borrower))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteMyLoanPayments), middleware.Authorize(handlers.GetMyLoanPayments, borrower))
+	api.HandleFunc(fmt.Sprintf("%s %s", "QUERY", repository.RouteMyLoanDeposits), middleware.Authorize(handlers.QueryMyLoanPaymentDeposits, borrower))
+	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteMyLoanBreakdown), middleware.Authorize(handlers.GetMyLoanPaymentBreakdown, borrower))
 
 	// Panel of the investor: its own balance
 	api.HandleFunc(fmt.Sprintf("%s %s", http.MethodGet, repository.RouteInvestorBalance), middleware.Authorize(handlers.GetMyBalance, repository.ProfileInvestor))

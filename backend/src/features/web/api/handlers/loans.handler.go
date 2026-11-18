@@ -327,3 +327,12 @@ func PayLoan(response http.ResponseWriter, request *http.Request) {
 
 	writeLoanResult(response, request, "handlers.PayLoan.PayLoan", http.StatusCreated, &payments, err)
 }
+
+/**
+ * Calendar of payments: the active loans grouped by the weekday of their current payment
+ */
+func GetLoansCalendar(response http.ResponseWriter, request *http.Request) {
+	days, err := loans.GetCalendar(request.Context())
+
+	writeLoanResult(response, request, "handlers.GetLoansCalendar.GetCalendar", http.StatusOK, &days, err)
+}

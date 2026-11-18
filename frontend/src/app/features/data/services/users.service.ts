@@ -20,6 +20,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { DialogsService } from './dialogs.service';
 import { DIALOG_I18N_KEYS } from '../repository/dialog.repository';
+import { PATHS } from '../repository/navigation.repository';
 import { SessionService } from './session.service';
 
 @Injectable({ providedIn: 'root' })
@@ -210,9 +211,19 @@ export class UsersService {
       context.set(API_CONTEXT.IGNORE_SUCCESS, true);
       context.set(API_CONTEXT.IGNORE_ERROR, true);
 
-      this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_LOGOUT }).then(() => {
-         this._session.clear();
-         this._http.request(method, `${environment.apiUrl}${route}`, { context });
+      this._dialogs.confirmation({ message: DIALOG_I18N_KEYS.CONFIRM_LOGOUT }).then(async () => {
+         // the session is closed in the server while the token still exists
+         try {
+            await firstValueFrom(this._http.request(method, `${environment.apiUrl}${route}`, { context }));
+         } catch {
+            // the session is closed here anyway
+         }
+
+         await this._session.clear();
+
+         // The app starts again: the services keep the data & requests of the user that leaves (ex: the
+         // settings of an administrator), which would be made again with the token of the next user
+         window.location.assign(PATHS.ROOT);
       });
    }
 

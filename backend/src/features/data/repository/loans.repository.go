@@ -545,6 +545,88 @@ const (
 		GROUP BY concept
 	`
 
+	LnQryOwnedBy string = `--sql
+		SELECT 1 FROM loans WHERE id = $1 AND request_user_id = $2
+	`
+
+	// payments that aren't paid in full of the active loans of a borrower, with what each one still owes
+	LnQryBorrowerActiveLoans string = `--sql
+		SELECT COUNT(*)
+		FROM loans
+		INNER JOIN status ON loans.status_id = status.id
+		WHERE
+			loans.request_user_id = $1 AND
+			status.slug = 'active'
+	`
+	LnQryBorrowerDebts string = `--sql
+		SELECT COUNT(*), COALESCE(SUM(owed.debt), 0)::bigint
+		FROM (
+			SELECT
+				payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) AS debt
+			FROM payments
+			INNER JOIN loans ON payments.loan_id = loans.id
+			INNER JOIN status ON loans.status_id = status.id
+			WHERE
+				loans.request_user_id = $1 AND
+				status.slug = 'active'
+		) AS owed
+		WHERE owed.debt > 0
+	`
+	// the first payment that isn't paid in full (what it still owes, its day & the type of its loan)
+	LnQryBorrowerNextPayment string = `--sql
+		SELECT
+			payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0),
+			payments.expected_payment_date,
+			loans.type::text
+		FROM payments
+		INNER JOIN loans ON payments.loan_id = loans.id
+		INNER JOIN status ON loans.status_id = status.id
+		WHERE
+			loans.request_user_id = $1 AND
+			status.slug = 'active' AND
+			payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0)
+		ORDER BY payments.expected_payment_date ASC, payments.id ASC
+		LIMIT 1
+	`
+
+	// Active loans with something to pay: its current payment (the first that isn't paid in full) with what
+	// it still owes & its day, what the whole loan owes, & the data of the borrower & its guarantee.
+	LnQryCalendar string = `--sql
+		SELECT
+			loans.id,
+			loans.folio,
+			loans.type::text,
+			borrowers.fullname,
+			borrowers.phone_number,
+			borrowers.guarantee_fullname,
+			borrowers.guarantee_phone_number,
+			current.expected_payment_date,
+			current.debt,
+			totals.debt,
+			current.expected_payment_date::date < CURRENT_DATE
+		FROM loans
+		INNER JOIN status ON loans.status_id = status.id
+		INNER JOIN users AS borrowers ON loans.request_user_id = borrowers.id
+		CROSS JOIN LATERAL (
+			SELECT
+				payments.expected_payment_date,
+				payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) AS debt
+			FROM payments
+			WHERE
+				payments.loan_id = loans.id AND
+				payments.amount > COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0)
+			ORDER BY payments.expected_payment_date ASC, payments.id ASC
+			LIMIT 1
+		) AS current
+		CROSS JOIN LATERAL (
+			SELECT SUM(payments.amount - COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0))::bigint AS debt
+			FROM payments
+			WHERE payments.loan_id = loans.id
+		) AS totals
+		WHERE status.slug = 'active'
+		ORDER BY borrowers.fullname ASC, loans.folio ASC
+	`
+
 	LnQryExists string = `--sql
 		SELECT 1 FROM loans WHERE id = $1
 	`

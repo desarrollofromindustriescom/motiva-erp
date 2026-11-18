@@ -9,6 +9,9 @@ export type LoansRoutes =
    | 'loanDeposits'
    | 'loanBreakdown'
    | 'addLoanVisit'
+   | 'mySummary'
+   | 'myLoans'
+   | 'loansCalendar'
    | 'payLoanPayment';
 
 export type LoanType = 'weekly' | 'monthly';
@@ -187,4 +190,51 @@ export interface LoanBreakdown {
    mora: LoanExtra | null;
    visits: LoanExtra | null;
    total: number;
+}
+
+/**
+ * Next payment of the borrower: what it still owes & its day. The pay day is the weekday
+ * (1 Monday ... 7 Sunday) on weekly loans & the day of the month on monthly ones.
+ */
+export interface NextPayment {
+   amount: number;
+   expected_date: string;
+   pay_day_type: LoanType;
+   pay_day: number;
+}
+
+/**
+ * Panel of the borrower: what it owes, the payments it has left, its active loans & its next payment
+ */
+export interface BorrowerSummary {
+   active_loans: number;
+   total_debt: number;
+   remaining_payments: number;
+   next_payment: NextPayment | null;
+}
+
+/**
+ * A loan in the calendar of payments: what its current payment still owes, what the whole loan owes,
+ * its pay day (weekday on weekly loans, day of the month on monthly ones) & the borrower with its guarantee
+ */
+export interface CalendarItem {
+   loan_id: string;
+   folio: string;
+   borrower: string;
+   borrower_phone: string | null;
+   guarantor: string | null;
+   guarantor_phone: string | null;
+   amount: number;
+   total_debt: number;
+   pay_day_type: LoanType;
+   pay_day: number;
+   expected_date: string;
+   // the day of the current payment has passed
+   overdue: boolean;
+}
+
+// the loans that have their current payment on a weekday (1 Monday ... 7 Sunday)
+export interface CalendarDay {
+   weekday: number;
+   items: CalendarItem[];
 }

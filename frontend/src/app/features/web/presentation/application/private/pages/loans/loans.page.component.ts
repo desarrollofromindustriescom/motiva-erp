@@ -9,6 +9,7 @@ import { compactFolio } from '../../../../../../data/repository/cash-balance.rep
 import { SIDEBAR_OPTIONS, SIDEBAR_SECTIONS } from '../../../../../../data/repository/sidebar.repository';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
 import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
+import { LoansCalendarService } from '../../../../../../data/services/loans-calendar.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
 import { LoanDetailService } from '../../../../../../data/services/loan-detail.service';
 import { LoanBorrowersService } from '../../../../../../data/services/loan-borrowers.service';
@@ -18,6 +19,7 @@ import { SidebarService } from '../../../../../../data/services/sidebar.service'
 import { LoanPaymentsDialogComponent } from '../../../../common/dialogs/views/loans/loan-payments.dialog.component';
 import { LoanDetailDialogComponent } from '../../../../common/dialogs/views/loans/loan-detail.dialog.component';
 import { LoanPaymentPayDialogComponent } from '../../../../common/dialogs/views/loans/loan-payment-pay.dialog.component';
+import { LoansCalendarDialogComponent } from '../../../../common/dialogs/views/loans/loans-calendar.dialog.component';
 import { LoanCreateDialogComponent } from '../../../../common/dialogs/views/loans/loan-create.dialog.component';
 import { LoansTableComponent } from './components/loans-table.component';
 
@@ -41,6 +43,7 @@ export class LoansPageComponent {
    private readonly _borrowers: LoanBorrowersService = inject(LoanBorrowersService);
    private readonly _detail: LoanDetailService = inject(LoanDetailService);
    private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
+   private readonly _calendar: LoansCalendarService = inject(LoansCalendarService);
    private readonly _pay: LoanPaymentPayService = inject(LoanPaymentPayService);
 
    constructor() {
@@ -71,9 +74,20 @@ export class LoansPageComponent {
    }
 
    /**
-    * Only the new loan has an action for now, the other buttons do nothing yet
+    * The new loan & the calendar of payments have an action, the other buttons do nothing yet
     */
    public handleAction({ option }: { option: string }): void {
+      if (option === SIDEBAR_OPTIONS.LOANS_CALENDAR) {
+         this._calendar.open();
+         this._dialogs.newDialog({
+            title: DIALOG_I18N_KEYS.LOANS_CALENDAR_TITLE,
+            component: LoansCalendarDialogComponent,
+            size: 'lg',
+         });
+
+         return;
+      }
+
       if (option !== SIDEBAR_OPTIONS.LOANS_NEW_LOAN) return;
 
       this._creation.start();

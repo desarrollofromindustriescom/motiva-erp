@@ -17,13 +17,14 @@ import { LoanPaymentBreakdownService } from '../../../../../../data/services/loa
 import { LoanPaymentVisitService } from '../../../../../../data/services/loan-payment-visit.service';
 import { LoanPaymentDepositsService } from '../../../../../../data/services/loan-payment-deposits.service';
 import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
+import { SessionService } from '../../../../../../data/services/session.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
 
 /**
  * Payments of a loan as cards, the color of each one is its state: paid (green),
  * expired (red), partially paid (blue), pending (gray) & paid to capital (orange).
  * The expected date is always shown & the payment date only on the ones paid in full.
- * Every payment has actions, the ones paid in full only some of them. Pay, payments made, visit & breakdown are available.
+ * Every payment has actions, the ones paid in full only some of them. Pay, payments made, visit & breakdown are available (a borrower only has the payments made & the breakdown).
  */
 @Component({
    selector: 'fi-loan-payments-dialog-component',
@@ -97,10 +98,12 @@ export class LoanPaymentsDialogComponent {
    private readonly _breakdown: LoanPaymentBreakdownService = inject(LoanPaymentBreakdownService);
    private readonly _visit: LoanPaymentVisitService = inject(LoanPaymentVisitService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
+   private readonly _session: SessionService = inject(SessionService);
 
    public readonly I18N = LOANS_I18N_KEYS;
    public readonly STYLES = LOAN_PAYMENT_STYLES;
    public readonly ACTIONS = LOAN_PAYMENT_ACTIONS;
+   public readonly READ_ACTIONS = LOAN_PAYMENT_ACTIONS.filter((action) => ['settle', 'details'].includes(action.id));
    public readonly PAID_ACTIONS = LOAN_PAYMENT_ACTIONS.filter((action) => action.paid);
    public readonly skeletons: number[] = [1, 2, 3, 4, 5, 6];
 
@@ -110,6 +113,9 @@ export class LoanPaymentsDialogComponent {
     * Every payment has its actions, the ones paid in full only have some of them
     */
    public actions(payment: LoanPayment): typeof LOAN_PAYMENT_ACTIONS {
+      // a borrower can only read: the payments made to the payment & its breakdown
+      if (this._session.session?.profile === 'borrower') return this.READ_ACTIONS;
+
       const paid: boolean = payment.state === 'paid' || payment.state === 'capital';
 
       return paid ? this.PAID_ACTIONS : this.ACTIONS;

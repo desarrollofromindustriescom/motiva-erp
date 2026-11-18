@@ -52,14 +52,16 @@ export class SessionService {
    }
 
    /**
-    *
+    * Forgets the session & its token, resolves once the cookie of the token is deleted
     */
-   public clear(): void {
+   public clear(): Promise<void> {
       this.$loader.update((prev: Record<SessionLoader, boolean>) => ({ ...prev, logout: true }));
       this.$token.set('');
       this.$session.set(null);
-      cookieStore
+
+      return cookieStore
          .delete(environment.tokenKey)
+         .catch(() => undefined)
          .finally((): void =>
             this.$loader.update((prev: Record<SessionLoader, boolean>) => ({ ...prev, logout: false })),
          );

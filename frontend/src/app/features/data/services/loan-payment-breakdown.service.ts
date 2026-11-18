@@ -3,6 +3,7 @@ import { HttpContext, httpResource, HttpResourceRef, HttpResourceRequest } from 
 import { EndpointData } from '../../../interfaces/api';
 import { LoanBreakdown } from '../../../interfaces/loan';
 import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.repository';
+import { loansRoute } from '../repository/loans.repository';
 import { environment } from '../../../../environments/environment.development';
 import { SessionService } from './session.service';
 
@@ -30,7 +31,8 @@ export class LoanPaymentBreakdownService {
          // a new version means a new request even for the same payment
          this.$version();
 
-         const { route, method } = this.route;
+         const { method } = this.route;
+         const route: string = loansRoute({ route: this.route.route, profile: this._session.session?.profile });
          const context: HttpContext = new HttpContext().set(API_CONTEXT.IGNORE_SUCCESS, true);
 
          return { url: `${environment.apiUrl}${route}${loanId}/payments/${paymentId}/breakdown`, method, context };

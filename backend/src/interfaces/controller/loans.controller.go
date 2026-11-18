@@ -265,3 +265,62 @@ type LoanBreakdownPreview struct {
 	Visits *LoanExtraPreview `json:"visits"`
 	Total  float64           `json:"total"`
 }
+
+/**
+ * Page query of the loans of the borrower that is logged in
+ */
+type MyLoansQueryPayload struct {
+	Page  int    `json:"page" validate:"required,gte=1"`
+	Size  int    `json:"size" validate:"required,gte=1,lte=100"`
+	Order string `json:"order" validate:"omitempty,oneof=asc desc"`
+}
+
+/**
+ * The next payment of a borrower: what it still owes & its day. The pay day is the weekday
+ * (1 Monday ... 7 Sunday) on weekly loans & the day of the month on monthly ones.
+ */
+type NextPaymentPreview struct {
+	Amount       float64   `json:"amount"`
+	ExpectedDate time.Time `json:"expected_date"`
+	PayDayType   string    `json:"pay_day_type"`
+	PayDay       int       `json:"pay_day"`
+}
+
+/**
+ * Panel of the borrower: what it owes in total, the payments it has left, its active
+ * loans & its next payment (none when it doesn't owe anything)
+ */
+type BorrowerSummaryPreview struct {
+	ActiveLoans       int                 `json:"active_loans"`
+	TotalDebt         float64             `json:"total_debt"`
+	RemainingPayments int                 `json:"remaining_payments"`
+	NextPayment       *NextPaymentPreview `json:"next_payment"`
+}
+
+/**
+ * A loan in the calendar of payments: what its current payment still owes, what the whole loan
+ * owes, its pay day (the weekday on weekly loans, the day of the month on monthly ones) & the
+ * borrower with its guarantee. Overdue is true when the day of the current payment has passed.
+ */
+type CalendarItemPreview struct {
+	LoanID         uuid.UUID `json:"loan_id"`
+	Folio          string    `json:"folio"`
+	Borrower       string    `json:"borrower"`
+	BorrowerPhone  *string   `json:"borrower_phone"`
+	Guarantor      *string   `json:"guarantor"`
+	GuarantorPhone *string   `json:"guarantor_phone"`
+	Amount         float64   `json:"amount"`
+	TotalDebt      float64   `json:"total_debt"`
+	PayDayType     string    `json:"pay_day_type"`
+	PayDay         int       `json:"pay_day"`
+	ExpectedDate   time.Time `json:"expected_date"`
+	Overdue        bool      `json:"overdue"`
+}
+
+/**
+ * The loans that have their current payment on a weekday (1 Monday ... 7 Sunday)
+ */
+type CalendarDayPreview struct {
+	Weekday int                    `json:"weekday"`
+	Items   []*CalendarItemPreview `json:"items"`
+}

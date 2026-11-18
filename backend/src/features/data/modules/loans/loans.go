@@ -1682,3 +1682,140 @@ func PayLoan(ctx context.Context, executor *models.User, loanID uuid.UUID, amoun
 
 	return GetPayments(ctx, loanID)
 }
+
+/**
+ * Whether the loan belongs to the borrower (it is the user that requested it)
+ */
+func IsOwnedBy(ctx context.Context, loanID uuid.UUID, userID uuid.UUID) (bool, error) {
+	err := database.GetPool().QueryRow(ctx, repository.LnQryOwnedBy, loanID, userID).Scan(new(int))
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
+
+/**
+ * Panel of a borrower: debt, remaining payments, active loans & next payment. The mora of the
+ * payments that are late is generated first, so the debt is up to date.
+ */
+func GetBorrowerSummary(ctx context.Context, userID uuid.UUID) (*controller.BorrowerSummaryPreview, error) {
+	if err := RefreshMora(ctx, nil); err != nil {
+		return nil, err
+	}
+
+	pool := database.GetPool()
+	summary := &controller.BorrowerSummaryPreview{}
+
+	var debt int64
+
+	if err := pool.QueryRow(ctx, repository.LnQryBorrowerActiveLoans, userID).Scan(&summary.ActiveLoans); err != nil {
+		return nil, err
+	}
+
+	if err := pool.QueryRow(ctx, repository.LnQryBorrowerDebts, userID).Scan(&summary.RemainingPayments, &debt); err != nil {
+		return nil, err
+	}
+
+	summary.TotalDebt = float64(debt) / 100
+
+	var (
+		owed     int64
+		date     time.Time
+		loanType string
+	)
+
+	err := pool.QueryRow(ctx, repository.LnQryBorrowerNextPayment, userID).Scan(&owed, &date, &loanType)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return summary, nil
+		}
+
+		return nil, err
+	}
+
+	next := &controller.NextPaymentPreview{Amount: float64(owed) / 100, ExpectedDate: date, PayDayType: loanType}
+
+	if loanType == repository.LnTypeMonthly {
+		next.PayDay = date.Day()
+	} else {
+		// 1 Monday ... 7 Sunday
+		next.PayDay = int(date.Weekday()+6)%7 + 1
+	}
+
+	summary.NextPayment = next
+
+	return summary, nil
+}
+
+/**
+ * Calendar of payments: the active loans grouped by the weekday of their current payment
+ * (every day of the week is in the result, with its loans ordered by borrower). The mora of the
+ * payments that are late is generated first, so what they owe is up to date.
+ */
+func GetCalendar(ctx context.Context) ([]*controller.CalendarDayPreview, error) {
+	if err := RefreshMora(ctx, nil); err != nil {
+		return nil, err
+	}
+
+	rows, err := database.GetPool().Query(ctx, repository.LnQryCalendar)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	days := make([]*controller.CalendarDayPreview, 7)
+
+	for i := range days {
+		days[i] = &controller.CalendarDayPreview{Weekday: i + 1, Items: []*controller.CalendarItemPreview{}}
+	}
+
+	for rows.Next() {
+		var amount, total int64
+
+		item := &controller.CalendarItemPreview{}
+
+		err = rows.Scan(
+			&item.LoanID,
+			&item.Folio,
+			&item.PayDayType,
+			&item.Borrower,
+			&item.BorrowerPhone,
+			&item.Guarantor,
+			&item.GuarantorPhone,
+			&item.ExpectedDate,
+			&amount,
+			&total,
+			&item.Overdue,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		item.Folio = strings.TrimSpace(item.Folio)
+		item.Amount = float64(amount) / 100
+		item.TotalDebt = float64(total) / 100
+
+		// 1 Monday ... 7 Sunday
+		weekday := int(item.ExpectedDate.Weekday()+6)%7 + 1
+
+		if item.PayDayType == repository.LnTypeMonthly {
+			item.PayDay = item.ExpectedDate.Day()
+		} else {
+			item.PayDay = weekday
+		}
+
+		days[weekday-1].Items = append(days[weekday-1].Items, item)
+	}
+
+	return days, rows.Err()
+}
