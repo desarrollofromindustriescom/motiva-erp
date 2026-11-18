@@ -48,10 +48,11 @@ func TestSplitOnlyGeneral(t *testing.T) {
 }
 
 func TestSplitGeneralAndInvestor(t *testing.T) {
-	// half from the general: 600 stay, the investor gets 80% of its 600 & 120 are commission
+	// half from the general: 600 stay, the investor's 600 are 500 of capital (all of it) & 100 of gain
+	// (80% for the investor, 20 are commission)
 	result := splitPayment(payment, loanAmount, loanTotal, []lender{general(100_000), investment(100_000, 2)})
 
-	if result.general != 60_000 || result.commission != 12_000 || sumInvestments(result) != 48_000 {
+	if result.general != 60_000 || result.commission != 2_000 || sumInvestments(result) != 58_000 {
 		t.Errorf("got %+v", result)
 	}
 }
@@ -59,7 +60,8 @@ func TestSplitGeneralAndInvestor(t *testing.T) {
 func TestSplitOnlyInvestor(t *testing.T) {
 	result := splitPayment(payment, loanAmount, loanTotal, []lender{investment(200_000, 2)})
 
-	if result.general != 0 || result.commission != 24_000 || sumInvestments(result) != 96_000 {
+	// 1000 of capital & 200 of gain: the investor gets 160 of it
+	if result.general != 0 || result.commission != 4_000 || sumInvestments(result) != 116_000 {
 		t.Errorf("got %+v", result)
 	}
 }
@@ -68,19 +70,33 @@ func TestSplitInvestmentsWithDifferentTerms(t *testing.T) {
 	long, short := investment(50_000, 2), investment(50_000, 1)
 	result := splitPayment(payment, loanAmount, loanTotal, []lender{general(100_000), long, short})
 
-	if result.general != 60_000 || result.commission != 12_000 || sumInvestments(result) != 48_000 {
+	if result.general != 60_000 || result.commission != 2_000 || sumInvestments(result) != 58_000 {
 		t.Fatalf("got %+v", result)
 	}
 
-	// 480: 400 are capital (half & half) & 80 are gain (2 units for the long term, 1 for the short one)
+	// 580: 500 are capital (half & half) & 80 are gain (2 units for the long term, 1 for the short one)
 	first, second := result.investments[0], result.investments[1]
 
 	if first.reward != 5_333 || second.reward != 2_667 {
 		t.Errorf("rewards %d %d", first.reward, second.reward)
 	}
 
-	if first.amount != 20_000+5_333 || second.amount != 20_000+2_667 {
+	if first.amount != 25_000+5_333 || second.amount != 25_000+2_667 {
 		t.Errorf("amounts %d %d", first.amount, second.amount)
+	}
+}
+
+// loan of 1000 to 2 payments with 20% (1200): the payment of 600 is 300 for the general cash balance &
+// 300 for the investor, which are 250 of capital & 50 of gain: it gets 80% of the gain (40) & 10 are commission
+func TestSplitCapitalFirstThenGain(t *testing.T) {
+	result := splitPayment(60_000, 100_000, 120_000, []lender{general(50_000), investment(50_000, 1)})
+
+	if result.general != 30_000 || result.commission != 1_000 || len(result.investments) != 1 {
+		t.Fatalf("got %+v", result)
+	}
+
+	if item := result.investments[0]; item.amount != 29_000 || item.reward != 4_000 {
+		t.Errorf("investment %+v", item)
 	}
 }
 

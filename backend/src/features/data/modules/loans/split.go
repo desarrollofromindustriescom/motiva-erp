@@ -18,7 +18,7 @@ type lender struct {
 	investmentID *uuid.UUID
 	userID       *uuid.UUID
 	lent         int64
-	// part of its share of every payment the investor receives (stored x1000)
+	// part of the gain of its share of every payment the investor receives (stored x1000)
 	percentage int64
 	// weight of the term of the investment (longer terms weigh more)
 	weight int64
@@ -33,7 +33,7 @@ type investmentDeposit struct {
 }
 
 type paymentSplit struct {
-	// share of the general cash balance & what the investors don't receive of theirs
+	// share of the general cash balance & the part of the gain of the investors they don't receive
 	general     int64
 	commission  int64
 	investments []investmentDeposit
@@ -89,11 +89,14 @@ func distribute(total int64, weights []int64) []int64 {
  * Divides one payment (cents) of a loan between the places that lent the money:
  * - every place gets a share proportional to what it lent
  * - the share of the general cash balance stays there
- * - an investor receives its percentage of its share & the rest is commission for the general
- *   cash balance (the interest of the loan was already calculated when it was created)
- * - what the investor receives is divided between its investments: the part that matches the
- *   capital of the loan (amount / total) in proportion to what each investment lent, and the
- *   rest (the gain) in proportion to what it lent multiplied by the weight of its term
+ * - the share of an investor is made of capital & gain: the capital is the part that matches the
+ *   amount of the loan (amount / total) & the rest is the gain (the interest of the loan was
+ *   already calculated when it was created)
+ * - the investor always receives all of its capital, & its percentage of the gain: the rest of
+ *   the gain is commission for the general cash balance
+ * - what the investor receives is divided between its investments: the capital in proportion to
+ *   what each investment lent & the gain in proportion to what it lent multiplied by the weight
+ *   of its term
  */
 func splitPayment(payment int64, amount int64, total int64, lenders []lender) paymentSplit {
 	result := paymentSplit{}
@@ -139,11 +142,11 @@ func splitPayment(payment int64, amount int64, total int64, lenders []lender) pa
 		}
 
 		items := members[key(user)]
-		received := roundDiv(shares[i]*items[0].percentage, percentageScale)
-		capital := roundDiv(received*amount, total)
-		gain := received - capital
+		capital := roundDiv(shares[i]*amount, total)
+		earned := shares[i] - capital
+		gain := roundDiv(earned*items[0].percentage, percentageScale)
 
-		result.commission += shares[i] - received
+		result.commission += earned - gain
 
 		lents := make([]int64, len(items))
 		weighted := make([]int64, len(items))

@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS loans (
 CREATE TABLE IF NOT EXISTS loan_details (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
    amount INTEGER NOT NULL,
-   -- percentage the investor receives of its part of every payment, null when the money comes from the general cash
+   -- percentage of the gain of its part of every payment the investor receives (its capital is always returned in full), null when the money comes from the general cash
    percentage_settings_id UUID REFERENCES settings (id),
    cash_balance_detail_id UUID REFERENCES cash_balance_details (id),
    cash_balance_id UUID NOT NULL REFERENCES cash_balances (id),

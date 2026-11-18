@@ -818,8 +818,8 @@ func proportion(value int64, share int64, whole int64) int64 {
  * Everything of one loan for its detail dialog. What has been paid back is split like this:
  * - the payments pay the capital & the interest in the same proportion as the total to pay
  * - each place that lent money gets the part of both that matches what it lent
- * - the interest of an investor is divided between what the investor earns (its own
- *   percentage) & the commission (the rest of the loan percentage)
+ * - the investor gets back all of its capital & its own percentage of the interest, the
+ *   rest of the interest is commission for the general cash balance
  */
 func GetByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, error) {
 	pool := database.GetPool()
