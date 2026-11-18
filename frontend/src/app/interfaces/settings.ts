@@ -1,12 +1,13 @@
 import { SignalForm } from './alias';
 
-export type SettingsRoutes = 'settings' | 'updateExtras' | 'updateAgreements' | 'updateMonthly' | 'updateWeekly';
+export type SettingsRoutes =
+   'settings' | 'updateExtras' | 'updateAgreements' | 'updateMonthly' | 'updateBiweekly' | 'updateWeekly';
 
-export type SettingsGroup = 'extras' | 'agreements' | 'monthly' | 'weekly';
+export type SettingsGroup = 'extras' | 'agreements' | 'monthly' | 'biweekly' | 'weekly';
 
 export type SettingUnit = 'percentage' | 'monetary' | 'weeks';
 
-export type SettingRatePeriod = 'month' | 'week';
+export type SettingRatePeriod = 'month' | 'fortnight' | 'week';
 
 export interface Setting {
    slug: string;
@@ -30,6 +31,7 @@ export interface SettingsLoader {
    extras: boolean;
    agreements: boolean;
    monthly: boolean;
+   biweekly: boolean;
    weekly: boolean;
 }
 
@@ -53,5 +55,6 @@ export interface SettingsForms {
    extras: SignalForm<FieldsExtras>;
    agreements: SignalForm<FieldsAgreements>;
    monthly: SignalForm<FieldsRates>;
+   biweekly: SignalForm<FieldsRates>;
    weekly: SignalForm<FieldsRates>;
 }

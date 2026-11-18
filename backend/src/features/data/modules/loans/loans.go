@@ -51,11 +51,16 @@ func toCents(value float64) (int64, bool) {
 
 /**
  * Day (at 00:00) of the payment number `number` of a loan that starts on `from`: a week
- * after the previous one on weekly loans (same weekday) & a month after on monthly ones
+ * after the previous one on weekly loans (same weekday), two weeks after on biweekly ones (same
+ * weekday too) & a month after on monthly ones
  * (same day of the month, or the last day of a shorter month: Jan 31 -> Feb 28)
  */
 func paymentDate(from time.Time, loanType string, number int) time.Time {
 	year, month, day := from.Date()
+
+	if loanType == repository.LnTypeBiweekly {
+		return time.Date(year, month, day+14*number, 0, 0, 0, 0, from.Location())
+	}
 
 	if loanType != repository.LnTypeMonthly {
 		return time.Date(year, month, day+7*number, 0, 0, 0, 0, from.Location())
@@ -99,6 +104,8 @@ func validTerms(loanType string, noPayments int) bool {
 	switch loanType {
 	case repository.LnTypeMonthly:
 		return noPayments >= 1 && noPayments <= repository.LnMaxMonthlyPayments
+	case repository.LnTypeBiweekly:
+		return noPayments >= 1 && noPayments <= repository.LnMaxBiweeklyPayments
 	case repository.LnTypeWeekly:
 		return noPayments >= 1 && noPayments <= repository.LnMaxWeeklyPayments
 	}
@@ -1675,7 +1682,7 @@ func GetPaymentDeposits(ctx context.Context, loanID uuid.UUID, paymentID uuid.UU
 
 /**
  * Generates the mora that is missing in the payments that are late (see LnQryAccrueMora):
- * one for every week of delay over the original amount of the payment, which makes the
+ * one for every cycle of delay (a week, two on biweekly loans) over the original amount of the payment, which makes the
  * amount of the payment grow. Without the setting of the mora nothing is generated.
  */
 func accrueMora(ctx context.Context, tx pgx.Tx, loanID *uuid.UUID) error {
@@ -1696,7 +1703,7 @@ func accrueMora(ctx context.Context, tx pgx.Tx, loanID *uuid.UUID) error {
 
 /**
  * Same as accrueMora in its own transaction, for one loan or for all of them (nil). The
- * lock makes concurrent requests wait, so a week of mora is never generated twice.
+ * lock makes concurrent requests wait, so a cycle of mora is never generated twice.
  */
 func RefreshMora(ctx context.Context, loanID *uuid.UUID) error {
 	tx, err := database.GetPool().Begin(ctx)

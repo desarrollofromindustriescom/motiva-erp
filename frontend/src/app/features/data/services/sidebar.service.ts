@@ -120,6 +120,7 @@ export class SidebarService {
                   options: [
                      option('monthly', LOANS_I18N_KEYS.TYPE_MONTHLY),
                      option('weekly', LOANS_I18N_KEYS.TYPE_WEEKLY),
+                     option('biweekly', LOANS_I18N_KEYS.TYPE_BIWEEKLY),
                   ],
                },
                {

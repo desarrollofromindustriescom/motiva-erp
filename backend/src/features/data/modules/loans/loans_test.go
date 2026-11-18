@@ -39,6 +39,19 @@ func TestPaymentDateWeekly(t *testing.T) {
 	}
 }
 
+func TestPaymentDateBiweekly(t *testing.T) {
+	// 2026-11-18 is a Wednesday: every payment is a Wednesday, two weeks apart
+	from := time.Date(2026, time.November, 18, 9, 0, 0, 0, time.UTC)
+
+	for i := 1; i <= 6; i++ {
+		got := paymentDate(from, "biweekly", i)
+
+		if got.Weekday() != time.Wednesday || !got.Equal(day(2026, 11, 18+14*i)) {
+			t.Errorf("payment %d: got %v", i, got)
+		}
+	}
+}
+
 func TestEndDateIsAfterLastPaymentDay(t *testing.T) {
 	from := time.Date(2026, time.November, 17, 9, 0, 0, 0, time.UTC)
 

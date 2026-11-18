@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, signal, Signal, WritableSignal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { CalendarDay } from '../../../../../../../interfaces/loan';
@@ -14,7 +14,7 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
  */
 @Component({
    selector: 'fi-loans-calendar-dialog-component',
-   imports: [CurrencyPipe, TranslatePipe, LoaderComponent],
+   imports: [CurrencyPipe, DatePipe, TranslatePipe, LoaderComponent],
    template: `
       @let days = $days();
 
@@ -47,7 +47,7 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
                         @if (day.items.length === 0) {
                            <p class="py-3 text-sm text-slate-500">{{ I18N.CALENDAR_EMPTY_DAY | translate }}</p>
                         } @else {
-                           <table class="w-full min-w-208 text-sm">
+                           <table class="w-full min-w-240 text-sm">
                               <thead>
                                  <tr class="text-second border-b border-slate-300 text-left">
                                     <th class="px-1 py-2 font-medium">{{ I18N.CALENDAR_HEAD_BORROWER | translate }}</th>
@@ -58,6 +58,7 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
                                        {{ I18N.CALENDAR_HEAD_DEBT | translate }}
                                     </th>
                                     <th class="px-1 py-2 font-medium">{{ I18N.CALENDAR_HEAD_PAY_DAY | translate }}</th>
+                                    <th class="px-1 py-2 font-medium">{{ I18N.CALENDAR_HEAD_DATE | translate }}</th>
                                     <th class="px-1 py-2 font-medium">{{ I18N.CALENDAR_HEAD_PHONE | translate }}</th>
                                     <th class="px-1 py-2 font-medium">
                                        {{ I18N.CALENDAR_HEAD_GUARANTOR | translate }}
@@ -79,9 +80,17 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
                                        <td class="px-1 py-1.5 whitespace-nowrap">
                                           @if (item.pay_day_type === 'monthly') {
                                              {{ I18N.CALENDAR_MONTHLY_DAY | translate: { day: pad(item.pay_day) } }}
+                                          } @else if (item.pay_day_type === 'biweekly') {
+                                             {{
+                                                I18N.CALENDAR_BIWEEKLY_DAY
+                                                   | translate: { day: (WEEKDAYS[item.pay_day - 1] | translate) }
+                                             }}
                                           } @else {
                                              {{ WEEKDAYS[item.pay_day - 1] | translate }}
                                           }
+                                       </td>
+                                       <td class="px-1 py-1.5 whitespace-nowrap">
+                                          {{ item.expected_date | date: 'dd.MM.yyyy' }}
                                        </td>
                                        <td class="px-1 py-1.5 whitespace-nowrap">{{ phone(item.borrower_phone) }}</td>
                                        <td class="px-1 py-1.5">{{ item.guarantor || '-' }}</td>

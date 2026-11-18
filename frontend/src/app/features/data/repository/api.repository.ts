@@ -53,6 +53,7 @@ export const API_ROUTES: Record<
    UPDATEEXTRAS: '/settings/extras',
    UPDATEAGREEMENTS: '/settings/agreements',
    UPDATEMONTHLY: '/settings/monthly',
+   UPDATEBIWEEKLY: '/settings/biweekly',
    UPDATEWEEKLY: '/settings/weekly',
    CASHBALANCE: '/cash-balance',
    DEPOSIT: '/cash-balance/deposit',

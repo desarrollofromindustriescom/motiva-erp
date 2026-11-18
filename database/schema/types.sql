@@ -2,7 +2,7 @@ CREATE TYPE user_profile AS ENUM ('superadmin', 'administrator', 'manager', 'bor
 
 CREATE TYPE settings_unit AS ENUM ('percentage', 'monetary', 'weeks');
 
-CREATE TYPE loan_type AS ENUM ('weekly', 'monthly');
+CREATE TYPE loan_type AS ENUM ('weekly', 'biweekly', 'monthly');
 
 -- how the loan was handed to the borrower
 CREATE TYPE loan_payment_method AS ENUM ('cash', 'transfer');

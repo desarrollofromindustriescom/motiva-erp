@@ -61,5 +61,6 @@ const (
 	RouteSettingsExtras           string = "/api/settings/extras"
 	RouteSettingsAgreements       string = "/api/settings/agreements"
 	RouteSettingsMonthly          string = "/api/settings/monthly"
+	RouteSettingsBiweekly         string = "/api/settings/biweekly"
 	RouteSettingsWeekly           string = "/api/settings/weekly"
 )

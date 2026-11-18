@@ -33,6 +33,7 @@ const (
 		FROM unnest($1::text[], $2::integer[], $3::text[]) AS item(slug, value, unit)
 	`
 
-	StgPrefixMonthly string = "monthly_loan"
-	StgPrefixWeekly  string = "weekly_loan"
+	StgPrefixMonthly  string = "monthly_loan"
+	StgPrefixBiweekly string = "biweekly_loan"
+	StgPrefixWeekly   string = "weekly_loan"
 )

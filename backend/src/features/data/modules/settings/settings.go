@@ -156,7 +156,7 @@ func UpdateAgreements(ctx context.Context, payload *controller.AgreementsSetting
 }
 
 /**
- * Updates investor & general percentages of a loan type (prefix: monthly_loan | weekly_loan).
+ * Updates investor & general percentages of a loan type (prefix: monthly_loan | biweekly_loan | weekly_loan).
  * The general one is the interest of the loan; the investor one is the part of its share of
  * every payment that the investor receives, so they aren't compared with each other.
  */

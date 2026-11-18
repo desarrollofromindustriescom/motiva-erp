@@ -7,6 +7,7 @@ import { CashDepositDialogComponent } from '../../../../common/dialogs/views/cas
 import { CashWithdrawDialogComponent } from '../../../../common/dialogs/views/cash-balance/cash-withdraw.dialog.component';
 import { SettingsExtrasDialogComponent } from '../../../../common/dialogs/views/settings/settings-extras.dialog.component';
 import { SettingsAgreementsDialogComponent } from '../../../../common/dialogs/views/settings/settings-agreements.dialog.component';
+import { SettingsBiweeklyDialogComponent } from '../../../../common/dialogs/views/settings/settings-biweekly.dialog.component';
 import { SettingsMonthlyDialogComponent } from '../../../../common/dialogs/views/settings/settings-monthly.dialog.component';
 import { SettingsWeeklyDialogComponent } from '../../../../common/dialogs/views/settings/settings-weekly.dialog.component';
 import { CashBalanceService } from '../../../../../../data/services/cash-balance.service';
@@ -62,6 +63,12 @@ import { SettingsRatesComponent } from './components/settings-rates.component';
                [rows]="$monthly()"
             />
             <fi-settings-rates-component
+               [title]="I18N.SECTION_BIWEEKLY"
+               (edit)="handleEdit({ group: 'biweekly' })"
+               period="fortnight"
+               [rows]="$biweekly()"
+            />
+            <fi-settings-rates-component
                [title]="I18N.SECTION_WEEKLY"
                (edit)="handleEdit({ group: 'weekly' })"
                period="week"
@@ -86,6 +93,7 @@ export class SettingsPageComponent {
    public readonly $extras: Signal<SettingConceptRow[]> = computed(() => this._settings.extras);
    public readonly $agreements: Signal<SettingConceptRow[]> = computed(() => this._settings.agreements);
    public readonly $monthly: Signal<SettingRateRow[]> = computed(() => this._settings.monthly);
+   public readonly $biweekly: Signal<SettingRateRow[]> = computed(() => this._settings.biweekly);
    public readonly $weekly: Signal<SettingRateRow[]> = computed(() => this._settings.weekly);
 
    constructor() {
@@ -144,6 +152,13 @@ export class SettingsPageComponent {
             this._dialogs.newDialog({
                title: DIALOG_I18N_KEYS.EDIT_MONTHLY_TITLE,
                component: SettingsMonthlyDialogComponent,
+               size: 'lg',
+            });
+            break;
+         case 'biweekly':
+            this._dialogs.newDialog({
+               title: DIALOG_I18N_KEYS.EDIT_BIWEEKLY_TITLE,
+               component: SettingsBiweeklyDialogComponent,
                size: 'lg',
             });
             break;

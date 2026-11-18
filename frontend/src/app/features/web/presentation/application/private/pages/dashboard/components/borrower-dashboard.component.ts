@@ -51,7 +51,7 @@ import { BorrowerLoansTableComponent } from './borrower-loans-table.component';
                   <dt>{{ I18N.PAY_DAY | translate }}:</dt>
                   <dd class="font-bold">
                      @if (summary.next_payment; as next) {
-                        @if (next.pay_day_type === 'weekly') {
+                        @if (next.pay_day_type !== 'monthly') {
                            {{ WEEKDAYS[next.pay_day - 1] | translate }}
                         } @else {
                            {{ I18N.PAY_DAY_MONTHLY | translate: { day: next.pay_day } }}
@@ -93,7 +93,7 @@ export class BorrowerDashboardComponent {
    private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
 
    public readonly I18N = DASHBOARD_I18N_KEYS;
-   // the day of the next payment is the weekday of a weekly loan or the day of the month of a monthly one
+   // the day of the next payment is the weekday of a weekly or biweekly loan or the day of the month of a monthly one
    public readonly WEEKDAYS: string[] = LOAN_WEEKDAYS;
 
    public readonly $summary: Signal<BorrowerSummary | undefined> = computed(() => this._panel.summary);

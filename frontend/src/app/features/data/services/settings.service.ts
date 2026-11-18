@@ -20,6 +20,7 @@ import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.reposit
 import {
    SETTINGS_AGREEMENTS,
    SETTINGS_EXTRAS,
+   SETTINGS_BIWEEKLY_PERIODS,
    SETTINGS_MONTHLY_PERIODS,
    SETTINGS_WEEKLY_PERIODS,
 } from '../repository/settings.repository';
@@ -48,6 +49,7 @@ export class SettingsService {
       updateExtras: { route: API_ROUTES.UPDATEEXTRAS, method: HTTP_METHODS.PUT },
       updateAgreements: { route: API_ROUTES.UPDATEAGREEMENTS, method: HTTP_METHODS.PUT },
       updateMonthly: { route: API_ROUTES.UPDATEMONTHLY, method: HTTP_METHODS.PUT },
+      updateBiweekly: { route: API_ROUTES.UPDATEBIWEEKLY, method: HTTP_METHODS.PUT },
       updateWeekly: { route: API_ROUTES.UPDATEWEEKLY, method: HTTP_METHODS.PUT },
    };
 
@@ -55,6 +57,7 @@ export class SettingsService {
       extras: false,
       agreements: false,
       monthly: false,
+      biweekly: false,
       weekly: false,
    });
 
@@ -88,6 +91,9 @@ export class SettingsService {
    private readonly $monthly: Signal<SettingRateRow[]> = computed(() =>
       this.rates('monthly_loan', SETTINGS_MONTHLY_PERIODS),
    );
+   private readonly $biweekly: Signal<SettingRateRow[]> = computed(() =>
+      this.rates('biweekly_loan', SETTINGS_BIWEEKLY_PERIODS),
+   );
    private readonly $weekly: Signal<SettingRateRow[]> = computed(() =>
       this.rates('weekly_loan', SETTINGS_WEEKLY_PERIODS),
    );
@@ -99,6 +105,7 @@ export class SettingsService {
       weeks_after: null,
    });
    private readonly $modelMonthly: WritableSignal<FieldsRates> = signal(this.emptyRates(SETTINGS_MONTHLY_PERIODS));
+   private readonly $modelBiweekly: WritableSignal<FieldsRates> = signal(this.emptyRates(SETTINGS_BIWEEKLY_PERIODS));
    private readonly $modelWeekly: WritableSignal<FieldsRates> = signal(this.emptyRates(SETTINGS_WEEKLY_PERIODS));
 
    private readonly $formExtras: SettingsForms['extras'] = form(
@@ -130,6 +137,11 @@ export class SettingsService {
       (schema: FormSchema<FieldsRates>) => this.ratesSchema(schema, 'monthly'),
    );
 
+   private readonly $formBiweekly: SettingsForms['biweekly'] = form(
+      this.$modelBiweekly,
+      (schema: FormSchema<FieldsRates>) => this.ratesSchema(schema, 'biweekly'),
+   );
+
    private readonly $formWeekly: SettingsForms['weekly'] = form(this.$modelWeekly, (schema: FormSchema<FieldsRates>) =>
       this.ratesSchema(schema, 'weekly'),
    );
@@ -156,6 +168,10 @@ export class SettingsService {
       return this.$monthly();
    }
 
+   public get biweekly(): SettingRateRow[] {
+      return this.$biweekly();
+   }
+
    public get weekly(): SettingRateRow[] {
       return this.$weekly();
    }
@@ -165,6 +181,7 @@ export class SettingsService {
          extras: this.$formExtras,
          agreements: this.$formAgreements,
          monthly: this.$formMonthly,
+         biweekly: this.$formBiweekly,
          weekly: this.$formWeekly,
       };
    }
@@ -196,6 +213,9 @@ export class SettingsService {
             break;
          case 'monthly':
             this.$formMonthly().reset(this.ratesValues('monthly_loan', SETTINGS_MONTHLY_PERIODS));
+            break;
+         case 'biweekly':
+            this.$formBiweekly().reset(this.ratesValues('biweekly_loan', SETTINGS_BIWEEKLY_PERIODS));
             break;
          case 'weekly':
             this.$formWeekly().reset(this.ratesValues('weekly_loan', SETTINGS_WEEKLY_PERIODS));
@@ -236,6 +256,18 @@ export class SettingsService {
          route: 'updateMonthly',
          form: this.$formMonthly,
          body: () => ({ ...this.$formMonthly().value() }),
+      });
+   }
+
+   /**
+    *
+    */
+   public updateBiweekly(): void {
+      this.update({
+         group: 'biweekly',
+         route: 'updateBiweekly',
+         form: this.$formBiweekly,
+         body: () => ({ ...this.$formBiweekly().value() }),
       });
    }
 
@@ -369,7 +401,7 @@ export class SettingsService {
    /**
     * Rules for the lists of investor/general percentages
     */
-   private ratesSchema(schema: FormSchema<FieldsRates>, group: 'monthly' | 'weekly'): void {
+   private ratesSchema(schema: FormSchema<FieldsRates>, group: 'monthly' | 'biweekly' | 'weekly'): void {
       // the investor receives part of its share of every payment, so it can't be more than all of it
       applyEach(schema.investor, (item) => {
          investorPercentageRules(item);

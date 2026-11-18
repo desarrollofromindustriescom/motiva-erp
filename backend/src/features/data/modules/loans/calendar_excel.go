@@ -12,7 +12,7 @@ import (
 )
 
 // widths of the columns (characters), in the order of repository.LnCalendarHeaders
-var calendarWidths = []float64{30, 16, 16, 20, 16, 30, 16, 14}
+var calendarWidths = []float64{30, 16, 16, 28, 14, 16, 30, 16, 14}
 
 /**
  * Calendar of payments as an Excel file: one sheet for each weekday (Sunday only when a loan has its
@@ -128,8 +128,11 @@ func writeCalendarDay(file *excelize.File, sheet string, day *controller.Calenda
 
 		payDay := repository.LnWeekdayNames[(item.PayDay+6)%7]
 
-		if item.PayDayType == repository.LnTypeMonthly {
+		switch item.PayDayType {
+		case repository.LnTypeMonthly:
 			payDay = fmt.Sprintf("%02d de cada mes", item.PayDay)
+		case repository.LnTypeBiweekly:
+			payDay += " cada 2 semanas"
 		}
 
 		state := repository.LnCalendarCurrent
@@ -143,6 +146,7 @@ func writeCalendarDay(file *excelize.File, sheet string, day *controller.Calenda
 			item.Amount,
 			item.TotalDebt,
 			payDay,
+			item.ExpectedDate.Format("02.01.2006"),
 			phone(item.BorrowerPhone),
 			dash(item.Guarantor),
 			phone(item.GuarantorPhone),
@@ -161,7 +165,7 @@ func writeCalendarDay(file *excelize.File, sheet string, day *controller.Calenda
 			return err
 		}
 
-		if err := file.SetCellStyle(sheet, fmt.Sprintf("H%d", row), fmt.Sprintf("H%d", row), status[item.Overdue]); err != nil {
+		if err := file.SetCellStyle(sheet, fmt.Sprintf("I%d", row), fmt.Sprintf("I%d", row), status[item.Overdue]); err != nil {
 			return err
 		}
 	}

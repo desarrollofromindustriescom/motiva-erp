@@ -20,7 +20,7 @@ export type LoansRoutes =
    | 'createAgreement'
    | 'payLoanPayment';
 
-export type LoanType = 'weekly' | 'monthly';
+export type LoanType = 'weekly' | 'biweekly' | 'monthly';
 
 export interface FieldsLoan {
    borrower_id: string;
@@ -241,7 +241,7 @@ export interface LoanBreakdown {
 
 /**
  * Next payment of the borrower: what it still owes & its day. The pay day is the weekday
- * (1 Monday ... 7 Sunday) on weekly loans & the day of the month on monthly ones.
+ * (1 Monday ... 7 Sunday) on weekly & biweekly loans & the day of the month on monthly ones.
  */
 export interface NextPayment {
    amount: number;
@@ -262,7 +262,7 @@ export interface BorrowerSummary {
 
 /**
  * A loan in the calendar of payments: what its current payment still owes, what the whole loan owes,
- * its pay day (weekday on weekly loans, day of the month on monthly ones) & the borrower with its guarantee
+ * its pay day (weekday on weekly & biweekly loans, day of the month on monthly ones) & the borrower with its guarantee
  */
 export interface CalendarItem {
    loan_id: string;

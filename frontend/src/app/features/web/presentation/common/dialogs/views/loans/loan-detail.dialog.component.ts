@@ -3,7 +3,7 @@ import { Component, computed, DestroyRef, effect, inject, Signal } from '@angula
 import { SafeUrl } from '@angular/platform-browser';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AgreementLoanRef, LoanDetail, LoanLender } from '../../../../../../../interfaces/loan';
-import { LOANS_I18N_KEYS } from '../../../../../../data/repository/loans.repository';
+import { LOAN_DETAIL_TYPES, LOANS_I18N_KEYS } from '../../../../../../data/repository/loans.repository';
 import { USERS_I18N_KEYS } from '../../../../../../data/repository/users.repository';
 import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
 import { compactFolio } from '../../../../../../data/repository/cash-balance.repository';
@@ -180,8 +180,7 @@ export class LoanDetailDialogComponent {
                },
                {
                   label: LOANS_I18N_KEYS.DETAIL_TYPE,
-                  value:
-                     loan.type === 'weekly' ? LOANS_I18N_KEYS.DETAIL_TYPE_WEEKLY : LOANS_I18N_KEYS.DETAIL_TYPE_MONTHLY,
+                  value: LOAN_DETAIL_TYPES[loan.type],
                   translate: true,
                },
                { label: LOANS_I18N_KEYS.DETAIL_PAYMENTS, value: `${loan.no_payments}` },

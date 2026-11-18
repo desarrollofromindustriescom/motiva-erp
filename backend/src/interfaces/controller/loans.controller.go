@@ -32,7 +32,7 @@ type LoanFundsPayload struct {
 type NewLoanPayload struct {
 	BorrowerID string            `json:"borrower_id" validate:"required,uuid"`
 	Amount     float64           `json:"amount" validate:"required,monetary"`
-	Type       string            `json:"type" validate:"required,oneof=weekly monthly"`
+	Type       string            `json:"type" validate:"required,oneof=weekly biweekly monthly"`
 	NoPayments int               `json:"no_payments" validate:"required,gte=1,lte=13"`
 	Funds      *LoanFundsPayload `json:"funds" validate:"omitempty"`
 }
@@ -48,7 +48,7 @@ type ApproveLoanPayload struct {
  * Terms to know the interest & the funds available for a loan
  */
 type LoanFundsQueryPayload struct {
-	Type       string `json:"type" validate:"required,oneof=weekly monthly"`
+	Type       string `json:"type" validate:"required,oneof=weekly biweekly monthly"`
 	NoPayments int    `json:"no_payments" validate:"required,gte=1,lte=13"`
 }
 
@@ -102,7 +102,7 @@ type LoansFiltersPayload struct {
 	MonthlyDays []int    `json:"monthly_days" validate:"omitempty,max=31,dive,gte=1,lte=31"`
 	WithVisits  bool     `json:"with_visits"`
 	WithMora    bool     `json:"with_mora"`
-	Type        string   `json:"type" validate:"omitempty,oneof=weekly monthly"`
+	Type        string   `json:"type" validate:"omitempty,oneof=weekly biweekly monthly"`
 	Payments    []int    `json:"payments" validate:"omitempty,max=13,dive,gte=1,lte=13"`
 	Statuses    []string `json:"statuses" validate:"omitempty,max=6,dive,oneof=pending active rejected finished expired cancelled"`
 	AmountMin   *float64 `json:"amount_min" validate:"omitempty,gte=0"`
@@ -312,7 +312,7 @@ type MyLoansQueryPayload struct {
 
 /**
  * The next payment of a borrower: what it still owes & its day. The pay day is the weekday
- * (1 Monday ... 7 Sunday) on weekly loans & the day of the month on monthly ones.
+ * (1 Monday ... 7 Sunday) on weekly & biweekly loans & the day of the month on monthly ones.
  */
 type NextPaymentPreview struct {
 	Amount       float64   `json:"amount"`
@@ -334,7 +334,7 @@ type BorrowerSummaryPreview struct {
 
 /**
  * A loan in the calendar of payments: what its current payment still owes, what the whole loan
- * owes, its pay day (the weekday on weekly loans, the day of the month on monthly ones) & the
+ * owes, its pay day (the weekday on weekly & biweekly loans, the day of the month on monthly ones) & the
  * borrower with its guarantee. Overdue is true when the day of the current payment has passed.
  */
 type CalendarItemPreview struct {

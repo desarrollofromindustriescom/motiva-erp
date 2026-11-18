@@ -54,11 +54,13 @@ const (
 			loans.payment IS NOT NULL
 	`
 
-	LnTypeWeekly  string = "weekly"
-	LnTypeMonthly string = "monthly"
+	LnTypeWeekly   string = "weekly"
+	LnTypeBiweekly string = "biweekly"
+	LnTypeMonthly  string = "monthly"
 
-	LnMaxMonthlyPayments int = 3
-	LnMaxWeeklyPayments  int = 13
+	LnMaxBiweeklyPayments int = 6
+	LnMaxMonthlyPayments  int = 3
+	LnMaxWeeklyPayments   int = 13
 
 	// the most investors one loan can take money from
 	LnMaxInvestors int = 100
@@ -630,8 +632,8 @@ const (
 		SELECT pg_advisory_xact_lock(hashtext('loan_payment_extras'))
 	`
 
-	// Mora of the payments that are late: one for every week of delay (the first one on the first
-	// day) that doesn't have it yet. Each one is the percentage of mora over the ORIGINAL amount of
+	// Mora of the payments that are late: one for every cycle of delay (a week, two on biweekly loans; the first one on the
+	// first day) that doesn't have it yet. Each one is the percentage of mora over the ORIGINAL amount of
 	// the payment. Only the payments of active loans that aren't paid in full have it.
 	// $1: loan (null for all of them), $2: id of the mora setting, $3: its value (percentage x1000)
 	LnQryAccrueMora string = `--sql
@@ -639,7 +641,7 @@ const (
 			SELECT
 				payments.id,
 				payments.original_amount,
-				CEIL((CURRENT_DATE - payments.expected_payment_date::date) / 7.0)::int AS weeks,
+				CEIL((CURRENT_DATE - payments.expected_payment_date::date) / (CASE WHEN loans.type = 'biweekly' THEN 14.0 ELSE 7.0 END))::int AS weeks,
 				(
 					SELECT COUNT(*)
 					FROM payment_extras
@@ -948,7 +950,7 @@ var (
 	// weekdays from Monday to Sunday
 	LnWeekdayNames    = []string{"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"}
 	LnLoansHeaders    = []string{"Folio", "Prestatario", "Estado", "Préstamo", "Total a pagar", "Interés", "No. Pagos"}
-	LnCalendarHeaders = []string{"Prestatario", "Monto a pagar", "Deuda total", "Día de pago", "Teléfono", "Aval", "Teléfono del aval", "Estado"}
+	LnCalendarHeaders = []string{"Prestatario", "Monto a pagar", "Deuda total", "Día de pago", "Fecha de pago", "Teléfono", "Aval", "Teléfono del aval", "Estado"}
 )
 
 // state titles of the table

@@ -110,6 +110,17 @@ func UpdateMonthlySettings(response http.ResponseWriter, request *http.Request) 
 /**
  *
  */
+func UpdateBiweeklySettings(response http.ResponseWriter, request *http.Request) {
+	updateSettings(response, request, "handlers.UpdateBiweeklySettings.UpdateRates",
+		func(payload *controller.BiweeklySettingsPayload) ([]*controller.SettingPreview, error) {
+			return settings.UpdateRates(request.Context(), repository.StgPrefixBiweekly, payload.Investor, payload.General)
+		},
+	)
+}
+
+/**
+ *
+ */
 func UpdateWeeklySettings(response http.ResponseWriter, request *http.Request) {
 	updateSettings(response, request, "handlers.UpdateWeeklySettings.UpdateRates",
 		func(payload *controller.WeeklySettingsPayload) ([]*controller.SettingPreview, error) {
