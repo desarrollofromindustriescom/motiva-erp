@@ -56,6 +56,8 @@ export const API_ROUTES: Record<
    UPDATELOAN: '/loans/',
    LOANPAYMENTS: '/loans/',
    LOANDEPOSITS: '/loans/',
+   LOANBREAKDOWN: '/loans/',
+   ADDLOANVISIT: '/loans/',
    PAYLOANPAYMENT: '/loans/',
    APPROVELOAN: '/loans/',
 };

@@ -142,7 +142,9 @@ CREATE TABLE IF NOT EXISTS agreement_details (
 
 CREATE TABLE IF NOT EXISTS payments (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+   -- what the payment costs now (the original amount plus its extras) & what it cost when it was created
    amount INTEGER NOT NULL,
+   original_amount INTEGER NOT NULL,
    expected_payment_date TIMESTAMP NOT NULL,
    loan_id UUID REFERENCES loans (id),
    agreement_id UUID REFERENCES agreements (id),
@@ -161,7 +163,6 @@ CREATE TABLE IF NOT EXISTS payment_extras (
    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
    extra_amount INTEGER NOT NULL,
    concept payment_extra_concept NOT NULL,
-   payment_date TIMESTAMP,
    settings_id UUID NOT NULL REFERENCES settings (id),
    payment_id UUID NOT NULL REFERENCES payments (id)
 );
@@ -182,7 +183,6 @@ CREATE TABLE IF NOT EXISTS movements (
    cash_balance_detail_id UUID REFERENCES cash_balance_details (id),
    recipient_loan_id UUID REFERENCES loans (id),
    origin_payment_id UUID REFERENCES payments (id),
-   origin_payment_extra_id UUID REFERENCES payment_extras (id),
    user_id UUID NOT NULL REFERENCES users (id),
    status_id UUID NOT NULL REFERENCES status (id) DEFAULT '97469771-106a-4b3e-a2c6-ee0e0d8fa6d5',
    UNIQUE (folio, cash_balance_id)

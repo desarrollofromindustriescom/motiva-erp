@@ -7,6 +7,8 @@ export type LoansRoutes =
    | 'updateLoan'
    | 'loanPayments'
    | 'loanDeposits'
+   | 'loanBreakdown'
+   | 'addLoanVisit'
    | 'payLoanPayment';
 
 export type LoanType = 'weekly' | 'monthly';
@@ -165,4 +167,24 @@ export interface LoanDepositsPage {
    sum: number;
    page: number;
    size: number;
+}
+
+/**
+ * One kind of extra of a payment: how many there are, what each one costs (null when they
+ * don't cost the same) & what they add up to
+ */
+export interface LoanExtra {
+   quantity: number;
+   unit: number | null;
+   total: number;
+}
+
+/**
+ * What a payment is made of: its original amount plus its extras (mora & visits)
+ */
+export interface LoanBreakdown {
+   base: number;
+   mora: LoanExtra | null;
+   visits: LoanExtra | null;
+   total: number;
 }

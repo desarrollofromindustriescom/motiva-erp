@@ -29,6 +29,8 @@ const (
 	LnI18nKeyPaymentAmount    models.I18nKey = "LOAN_PAYMENT_AMOUNT"
 	LnI18nKeyPaymentNotNext   models.I18nKey = "LOAN_PAYMENT_NOT_NEXT"
 	LnI18nKeyPaymentExceeds   models.I18nKey = "LOAN_PAYMENT_EXCEEDS"
+	LnI18nKeyVisitNotCurrent  models.I18nKey = "LOAN_VISIT_NOT_CURRENT"
+	LnI18nKeyExtraSetting     models.I18nKey = "LOAN_EXTRA_SETTING"
 
 	LnQryNextFolio string = `--sql
 		SELECT nextval('loans_folio_seq')
@@ -120,8 +122,8 @@ const (
 
 	// the payments of a loan, pending by default
 	LnQryInsertPayments string = `--sql
-		INSERT INTO payments (amount, expected_payment_date, loan_id)
-		SELECT item.amount, item.expected, $3
+		INSERT INTO payments (amount, original_amount, expected_payment_date, loan_id)
+		SELECT item.amount, item.amount, item.expected, $3
 		FROM unnest($1::integer[], $2::timestamp[]) AS item(amount, expected)
 	`
 
@@ -466,6 +468,82 @@ const (
 		WHERE id = $1
 	`
 
+	// serializes the accrual of mora & the changes of the payments that depend on it
+	LnQryLockExtras string = `--sql
+		SELECT pg_advisory_xact_lock(hashtext('loan_payment_extras'))
+	`
+
+	// Mora of the payments that are late: one for every week of delay (the first one on the first
+	// day) that doesn't have it yet. Each one is the percentage of mora over the ORIGINAL amount of
+	// the payment. Only the payments of active loans that aren't paid in full have it.
+	// $1: loan (null for all of them), $2: id of the mora setting, $3: its value (percentage x1000)
+	LnQryAccrueMora string = `--sql
+		WITH late AS (
+			SELECT
+				payments.id,
+				payments.original_amount,
+				CEIL((CURRENT_DATE - payments.expected_payment_date::date) / 7.0)::int AS weeks,
+				(
+					SELECT COUNT(*)
+					FROM payment_extras
+					WHERE payment_extras.payment_id = payments.id AND payment_extras.concept = 'mora'
+				)::int AS moras
+			FROM payments
+			INNER JOIN loans ON payments.loan_id = loans.id
+			INNER JOIN status ON loans.status_id = status.id
+			WHERE
+				status.slug = 'active' AND
+				($1::uuid IS NULL OR loans.id = $1::uuid) AND
+				payments.expected_payment_date::date < CURRENT_DATE AND
+				COALESCE((SELECT SUM(payment_details.amount) FROM payment_details WHERE payment_details.payment_id = payments.id), 0) < payments.amount
+		), added AS (
+			INSERT INTO payment_extras (extra_amount, concept, settings_id, payment_id)
+			SELECT
+				((late.original_amount::bigint * $3::bigint + 50000) / 100000)::int,
+				'mora'::payment_extra_concept,
+				$2::uuid,
+				late.id
+			FROM late
+			CROSS JOIN LATERAL generate_series(late.moras + 1, late.weeks)
+			WHERE late.weeks > late.moras
+			RETURNING payment_id, extra_amount
+		)
+		UPDATE payments
+		SET amount = payments.amount + totals.total
+		FROM (
+			SELECT payment_id, SUM(extra_amount)::int AS total
+			FROM added
+			GROUP BY payment_id
+		) AS totals
+		WHERE payments.id = totals.payment_id
+	`
+
+	LnQryInsertExtra string = `--sql
+		INSERT INTO payment_extras (extra_amount, concept, settings_id, payment_id)
+		VALUES ($1, $2::payment_extra_concept, $3, $4)
+	`
+	LnQryAddToPayment string = `--sql
+		UPDATE payments
+		SET amount = amount + $1
+		WHERE id = $2
+	`
+
+	// what a payment is made of: its original amount & its extras grouped by concept
+	LnQryBreakdownBase string = `--sql
+		SELECT original_amount FROM payments WHERE id = $1 AND loan_id = $2
+	`
+	LnQryBreakdownExtras string = `--sql
+		SELECT
+			concept::text,
+			COUNT(*),
+			SUM(extra_amount)::bigint,
+			MIN(extra_amount),
+			MAX(extra_amount)
+		FROM payment_extras
+		WHERE payment_id = $1
+		GROUP BY concept
+	`
+
 	LnQryExists string = `--sql
 		SELECT 1 FROM loans WHERE id = $1
 	`
@@ -569,6 +647,8 @@ var (
 	LnErrPaymentAmount    error = errors.New("Payment amount not valid")
 	LnErrPaymentNotNext   error = errors.New("Only the next payment can be paid")
 	LnErrPaymentExceeds   error = errors.New("Payment amount greater than the debt of the payment")
+	LnErrVisitNotCurrent  error = errors.New("Only the current payment can have a visit")
+	LnErrExtraSetting     error = errors.New("Extra setting not found")
 	LnErrBorrowerInvalid  error = errors.New("Borrower doesn't exist or isn't active")
 	LnErrPaymentsInvalid  error = errors.New("Number of payments not allowed for the loan type")
 	LnErrRateNotFound     error = errors.New("Interest rate of the loan not found")

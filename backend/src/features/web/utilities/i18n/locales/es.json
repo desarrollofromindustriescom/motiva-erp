@@ -47,5 +47,7 @@
    "LOAN_NOT_ACTIVE": "El préstamo no está activo",
    "LOAN_PAYMENT_AMOUNT": "El monto del abono no es válido",
    "LOAN_PAYMENT_NOT_NEXT": "Solo se puede abonar al próximo pago del préstamo",
-   "LOAN_PAYMENT_EXCEEDS": "El abono no puede ser mayor a la deuda del pago"
+   "LOAN_PAYMENT_EXCEEDS": "El abono no puede ser mayor a la deuda del pago",
+   "LOAN_VISIT_NOT_CURRENT": "Solo se puede agregar una visita al pago actual del préstamo",
+   "LOAN_EXTRA_SETTING": "No hay un valor configurado para este extra"
 }

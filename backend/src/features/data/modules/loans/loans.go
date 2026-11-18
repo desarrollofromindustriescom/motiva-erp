@@ -617,6 +617,11 @@ func settingByID(ctx context.Context, db querier, id uuid.UUID) (*rate, error) {
  */
 func GetPage(ctx context.Context, payload *controller.LoansQueryPayload) (*controller.LoansPagePreview, error) {
 	pool := database.GetPool()
+
+	// the loans that are late have their mora before they are listed
+	if err := RefreshMora(ctx, nil); err != nil {
+		return nil, err
+	}
 	borrowers := make([]uuid.UUID, 0, len(payload.Borrowers))
 
 	for _, value := range payload.Borrowers {
@@ -743,6 +748,10 @@ func proportion(value int64, share int64, whole int64) int64 {
  */
 func GetByID(ctx context.Context, id uuid.UUID) (*controller.LoanDetailPreview, error) {
 	pool := database.GetPool()
+
+	if err := RefreshMora(ctx, &id); err != nil {
+		return nil, err
+	}
 
 	var amount, total, rateValue int64
 
@@ -1058,6 +1067,10 @@ func GetPayments(ctx context.Context, id uuid.UUID) ([]*controller.LoanPaymentPr
 		return nil, err
 	}
 
+	if err := RefreshMora(ctx, &id); err != nil {
+		return nil, err
+	}
+
 	rows, err := loadPayments(ctx, pool, id)
 
 	if err != nil {
@@ -1094,6 +1107,11 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 
 	defer tx.Rollback(ctx)
 
+	// always in this order: the extras first & the loan after it
+	if _, err = tx.Exec(ctx, repository.LnQryLockExtras); err != nil {
+		return nil, err
+	}
+
 	var loanAmount, rateValue int64
 
 	if err = tx.QueryRow(ctx, repository.LnQryLockActive, loanID).Scan(new(uuid.UUID), &loanAmount, &rateValue); err != nil {
@@ -1101,6 +1119,11 @@ func PayPayment(ctx context.Context, executor *models.User, loanID uuid.UUID, pa
 			return nil, repository.LnErrNotActive
 		}
 
+		return nil, err
+	}
+
+	// the debt of the payment includes the mora of the days that have passed
+	if err = accrueMora(ctx, tx, &loanID); err != nil {
 		return nil, err
 	}
 
@@ -1361,6 +1384,195 @@ func GetPaymentDeposits(ctx context.Context, loanID uuid.UUID, paymentID uuid.UU
 		item.Amount = float64(amount) / 100
 		result.Items = append(result.Items, item)
 	}
+
+	return result, rows.Err()
+}
+
+/**
+ * Generates the mora that is missing in the payments that are late (see LnQryAccrueMora):
+ * one for every week of delay over the original amount of the payment, which makes the
+ * amount of the payment grow. Without the setting of the mora nothing is generated.
+ */
+func accrueMora(ctx context.Context, tx pgx.Tx, loanID *uuid.UUID) error {
+	mora, err := activeSetting(ctx, tx, "mora")
+
+	if err != nil {
+		if errors.Is(err, repository.LnErrRateNotFound) {
+			return nil
+		}
+
+		return err
+	}
+
+	_, err = tx.Exec(ctx, repository.LnQryAccrueMora, loanID, mora.id, mora.value)
+
+	return err
+}
+
+/**
+ * Same as accrueMora in its own transaction, for one loan or for all of them (nil). The
+ * lock makes concurrent requests wait, so a week of mora is never generated twice.
+ */
+func RefreshMora(ctx context.Context, loanID *uuid.UUID) error {
+	tx, err := database.GetPool().Begin(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback(ctx)
+
+	if _, err = tx.Exec(ctx, repository.LnQryLockExtras); err != nil {
+		return err
+	}
+
+	if err = accrueMora(ctx, tx, loanID); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+/**
+ * Registers a visit to a payment as an extra (its price is fixed in the settings), which
+ * adds it to what the payment costs. Only the current payment can have one: the first that
+ * isn't paid in full (the next one when the current was already paid). Returns the payments updated.
+ */
+func AddVisit(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID) ([]*controller.LoanPaymentPreview, error) {
+	tx, err := database.GetPool().Begin(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback(ctx)
+
+	if _, err = tx.Exec(ctx, repository.LnQryLockExtras); err != nil {
+		return nil, err
+	}
+
+	if err = tx.QueryRow(ctx, repository.LnQryLockActive, loanID).Scan(new(uuid.UUID), new(int64), new(int64)); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.LnErrNotActive
+		}
+
+		return nil, err
+	}
+
+	if err = accrueMora(ctx, tx, &loanID); err != nil {
+		return nil, err
+	}
+
+	rows, err := loadPayments(ctx, tx, loanID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var target *paymentRow
+
+	for _, row := range rows {
+		if row.preview.ID == paymentID {
+			target = row
+		}
+	}
+
+	if target == nil {
+		return nil, repository.LnErrNotFound
+	}
+
+	if !target.preview.IsNext {
+		return nil, repository.LnErrVisitNotCurrent
+	}
+
+	visit, err := activeSetting(ctx, tx, "visit")
+
+	if err != nil {
+		if errors.Is(err, repository.LnErrRateNotFound) {
+			return nil, repository.LnErrExtraSetting
+		}
+
+		return nil, err
+	}
+
+	// the price of a visit is stored in cents
+	if _, err = tx.Exec(ctx, repository.LnQryInsertExtra, int(visit.value), "visit", visit.id, paymentID); err != nil {
+		return nil, err
+	}
+
+	if _, err = tx.Exec(ctx, repository.LnQryAddToPayment, int(visit.value), paymentID); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return GetPayments(ctx, loanID)
+}
+
+/**
+ * What a payment is made of: its original amount plus the extras (mora & visits) with how
+ * many there are & what each one costs
+ */
+func GetBreakdown(ctx context.Context, loanID uuid.UUID, paymentID uuid.UUID) (*controller.LoanBreakdownPreview, error) {
+	pool := database.GetPool()
+
+	if err := RefreshMora(ctx, &loanID); err != nil {
+		return nil, err
+	}
+
+	var base int64
+
+	if err := pool.QueryRow(ctx, repository.LnQryBreakdownBase, paymentID, loanID).Scan(&base); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repository.LnErrNotFound
+		}
+
+		return nil, err
+	}
+
+	result := &controller.LoanBreakdownPreview{Base: float64(base) / 100}
+	total := base
+
+	rows, err := pool.Query(ctx, repository.LnQryBreakdownExtras, paymentID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			concept  string
+			quantity int
+			sum      int64
+			lowest   int64
+			highest  int64
+		)
+
+		if err = rows.Scan(&concept, &quantity, &sum, &lowest, &highest); err != nil {
+			return nil, err
+		}
+
+		extra := &controller.LoanExtraPreview{Quantity: quantity, Total: float64(sum) / 100}
+
+		if lowest == highest {
+			unit := float64(lowest) / 100
+			extra.Unit = &unit
+		}
+
+		if concept == "mora" {
+			result.Mora = extra
+		} else {
+			result.Visits = extra
+		}
+
+		total += sum
+	}
+
+	result.Total = float64(total) / 100
 
 	return result, rows.Err()
 }

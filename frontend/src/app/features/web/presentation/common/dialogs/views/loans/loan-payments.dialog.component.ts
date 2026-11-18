@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, Signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { TooltipModule } from 'primeng/tooltip';
+import { LoanPaymentBreakdownDialogComponent } from './loan-payment-breakdown.dialog.component';
 import { LoanPaymentDepositsDialogComponent } from './loan-payment-deposits.dialog.component';
 import { LoanPaymentPayDialogComponent } from './loan-payment-pay.dialog.component';
 import { LoanPayment } from '../../../../../../../interfaces/loan';
@@ -12,6 +13,8 @@ import {
 } from '../../../../../../data/repository/loans.repository';
 import { DIALOG_I18N_KEYS } from '../../../../../../data/repository/dialog.repository';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
+import { LoanPaymentBreakdownService } from '../../../../../../data/services/loan-payment-breakdown.service';
+import { LoanPaymentVisitService } from '../../../../../../data/services/loan-payment-visit.service';
 import { LoanPaymentDepositsService } from '../../../../../../data/services/loan-payment-deposits.service';
 import { LoanPaymentPayService } from '../../../../../../data/services/loan-payment-pay.service';
 import { LoanPaymentsService } from '../../../../../../data/services/loan-payments.service';
@@ -20,7 +23,7 @@ import { LoanPaymentsService } from '../../../../../../data/services/loan-paymen
  * Payments of a loan as cards, the color of each one is its state: paid (green),
  * expired (red), partially paid (blue), pending (gray) & paid to capital (orange).
  * The expected date is always shown & the payment date only on the ones paid in full.
- * Every payment has actions, the ones paid in full only some of them. Paying the next payment & seeing the payments made to a payment are available for now.
+ * Every payment has actions, the ones paid in full only some of them. Pay, payments made, visit & breakdown are available.
  */
 @Component({
    selector: 'fi-loan-payments-dialog-component',
@@ -91,6 +94,8 @@ export class LoanPaymentsDialogComponent {
    private readonly _payments: LoanPaymentsService = inject(LoanPaymentsService);
    private readonly _pay: LoanPaymentPayService = inject(LoanPaymentPayService);
    private readonly _deposits: LoanPaymentDepositsService = inject(LoanPaymentDepositsService);
+   private readonly _breakdown: LoanPaymentBreakdownService = inject(LoanPaymentBreakdownService);
+   private readonly _visit: LoanPaymentVisitService = inject(LoanPaymentVisitService);
    private readonly _dialogs: DialogsService = inject(DialogsService);
 
    public readonly I18N = LOANS_I18N_KEYS;
@@ -114,7 +119,8 @@ export class LoanPaymentsDialogComponent {
     * Paying is only possible on the next payment, the ones after it have to wait
     */
    public enabled({ action, payment }: { action: { id: string }; payment: LoanPayment }): boolean {
-      return action.id !== 'pay' || payment.is_next;
+      // paying & visiting are only possible on the current payment (the first that isn't paid in full)
+      return !['pay', 'visit'].includes(action.id) || payment.is_next;
    }
 
    public handleAction({ action, payment }: { action: { id: string }; payment: LoanPayment }): void {
@@ -130,6 +136,24 @@ export class LoanPaymentsDialogComponent {
             component: LoanPaymentDepositsDialogComponent,
             size: 'sm',
          });
+
+         return;
+      }
+
+      if (action.id === 'details') {
+         this._breakdown.open({ loanId, paymentId: payment.id });
+         this._dialogs.newDialog({
+            title: DIALOG_I18N_KEYS.LOAN_BREAKDOWN_TITLE,
+            titleParams: { number: `${payment.number}`, folio: this._payments.folio },
+            component: LoanPaymentBreakdownDialogComponent,
+            size: 'sm',
+         });
+
+         return;
+      }
+
+      if (action.id === 'visit') {
+         if (payment.is_next) this._visit.add({ loanId, paymentId: payment.id });
 
          return;
       }

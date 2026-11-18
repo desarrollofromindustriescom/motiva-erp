@@ -42,6 +42,10 @@ func writeLoanResult[T any](response http.ResponseWriter, request *http.Request,
 			writeBadRequest(response, request, repository.LnI18nKeyPaymentNotNext)
 		case errors.Is(err, repository.LnErrPaymentExceeds):
 			writeBadRequest(response, request, repository.LnI18nKeyPaymentExceeds)
+		case errors.Is(err, repository.LnErrVisitNotCurrent):
+			writeBadRequest(response, request, repository.LnI18nKeyVisitNotCurrent)
+		case errors.Is(err, repository.LnErrExtraSetting):
+			writeBadRequest(response, request, repository.LnI18nKeyExtraSetting)
 		case errors.Is(err, repository.LnErrNotPending):
 			writeBadRequest(response, request, repository.LnI18nKeyNotPending)
 		default:
@@ -249,4 +253,50 @@ func QueryLoanPaymentDeposits(response http.ResponseWriter, request *http.Reques
 	deposits, err := loans.GetPaymentDeposits(request.Context(), loanID, paymentID, payload.Page, payload.Size)
 
 	writeLoanResult(response, request, "handlers.QueryLoanPaymentDeposits.GetPaymentDeposits", http.StatusOK, deposits, err)
+}
+
+/**
+ * Registers a visit to a payment of a loan
+ */
+func AddLoanPaymentVisit(response http.ResponseWriter, request *http.Request) {
+	loanID, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	paymentID, err := uuid.Parse(request.PathValue("paymentId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	payments, err := loans.AddVisit(request.Context(), loanID, paymentID)
+
+	writeLoanResult(response, request, "handlers.AddLoanPaymentVisit.AddVisit", http.StatusCreated, &payments, err)
+}
+
+/**
+ * Original amount, mora & visits of one payment of a loan
+ */
+func GetLoanPaymentBreakdown(response http.ResponseWriter, request *http.Request) {
+	loanID, err := uuid.Parse(request.PathValue("id"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	paymentID, err := uuid.Parse(request.PathValue("paymentId"))
+
+	if err != nil {
+		http.Error(response, repository.HttpBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	breakdown, err := loans.GetBreakdown(request.Context(), loanID, paymentID)
+
+	writeLoanResult(response, request, "handlers.GetLoanPaymentBreakdown.GetBreakdown", http.StatusOK, breakdown, err)
 }

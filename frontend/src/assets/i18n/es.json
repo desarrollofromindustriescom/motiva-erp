@@ -395,8 +395,8 @@
    "LOANS_PAYMENT_EMPTY": "Este préstamo todavía no tiene pagos",
    "LOANS_PAYMENT_PAY": "Abonar",
    "LOANS_PAYMENT_SETTLE": "Abonos a pago",
-   "LOANS_PAYMENT_VISIT": "Visita",
-   "LOANS_PAYMENT_DETAILS": "Detalles del pago",
+   "LOANS_PAYMENT_VISIT": "Agregar visita",
+   "LOANS_PAYMENT_DETAILS": "Desglose de pago",
    "DIALOG_LOAN_PAYMENT_PAY_TITLE": "Abonar al pago {{number}}",
    "DIALOG_CONFIRM_PAY_LOAN_PAYMENT": "Se registrará el abono al pago del préstamo",
    "FORM_VAL_EXCEEDS_DEBT": "El monto no puede ser mayor a la deuda del pago",
@@ -416,5 +416,15 @@
    "LOANS_DETAIL_PAID": "Monto abonado",
    "LOANS_DETAIL_RECEIVED_INVESTOR": "Monto abonado al inversor",
    "LOANS_DETAIL_COMMISSION_KEPT": "Monto abonado a comisión",
-   "LOANS_DETAIL_COMMISSION_RECEIVED": "Comisión recibida de inversores"
+   "LOANS_DETAIL_COMMISSION_RECEIVED": "Comisión recibida de inversores",
+   "DIALOG_LOAN_BREAKDOWN_TITLE": "Desglose del pago #{{number}} del préstamo {{folio}}",
+   "DIALOG_CONFIRM_ADD_VISIT": "Se registrará una visita a este pago con el costo configurado, y se sumará a lo que debe pagar",
+   "LOANS_BREAKDOWN_HEAD_CONCEPT": "Concepto",
+   "LOANS_BREAKDOWN_HEAD_UNIT": "Unitario",
+   "LOANS_BREAKDOWN_HEAD_QUANTITY": "Cantidad",
+   "LOANS_BREAKDOWN_HEAD_TOTAL": "Total",
+   "LOANS_BREAKDOWN_BASE": "Pago base",
+   "LOANS_BREAKDOWN_MORA": "Mora (semanas de retraso)",
+   "LOANS_BREAKDOWN_VISITS": "Visitas",
+   "LOANS_BREAKDOWN_TOTAL": "Total"
 }

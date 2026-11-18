@@ -244,3 +244,24 @@ type LoanDepositsQueryPayload struct {
 	Page int `json:"page" validate:"required,gte=1"`
 	Size int `json:"size" validate:"required,gte=1,lte=100"`
 }
+
+/**
+ * One kind of extra of a payment: how many there are, what each one costs (null when they
+ * don't cost the same, ex: the percentage changed) & what they add up to
+ */
+type LoanExtraPreview struct {
+	Quantity int      `json:"quantity"`
+	Unit     *float64 `json:"unit"`
+	Total    float64  `json:"total"`
+}
+
+/**
+ * What a payment is made of: its original amount plus its extras (one mora for every
+ * week of delay & the visits that were made)
+ */
+type LoanBreakdownPreview struct {
+	Base   float64           `json:"base"`
+	Mora   *LoanExtraPreview `json:"mora"`
+	Visits *LoanExtraPreview `json:"visits"`
+	Total  float64           `json:"total"`
+}

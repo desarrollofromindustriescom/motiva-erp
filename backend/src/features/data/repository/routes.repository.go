@@ -27,6 +27,8 @@ const (
 	RouteLoan                     string = "/api/loans/{id}"
 	RouteLoanPaymentPay           string = "/api/loans/{id}/payments/{paymentId}/pay"
 	RouteLoanPaymentDeposits      string = "/api/loans/{id}/payments/{paymentId}/deposits"
+	RouteLoanPaymentVisits        string = "/api/loans/{id}/payments/{paymentId}/visits"
+	RouteLoanPaymentBreakdown     string = "/api/loans/{id}/payments/{paymentId}/breakdown"
 	RouteLoanPayments             string = "/api/loans/{id}/payments"
 	RouteLoansFunds               string = "/api/loans/funds"
 	RouteLoanApprove              string = "/api/loans/{id}/approve"
