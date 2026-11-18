@@ -12,7 +12,7 @@ type CashBalancePreview struct {
 }
 
 type CashBalanceMovementPayload struct {
-	Amount float64 `json:"amount" validate:"required,monetary"`
+	Amount float64 `json:"amount" validate:"required,cashmonetary"`
 }
 
 type MovementsQueryPayload struct {

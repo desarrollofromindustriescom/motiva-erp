@@ -12,6 +12,7 @@ interface NumericContext {
 
 export const PERCENTAGE_RANGE = { min: 0.1, max: 1000, decimals: 3 };
 export const MONETARY_RANGE = { min: 0.1, max: 100000, decimals: 2 };
+export const CASH_MONETARY_RANGE = { min: 0.1, max: 10000000, decimals: 2 };
 export const WEEKS_RANGE = { min: 1, max: 100000 };
 
 const touched = ({ state }: NumericContext): boolean => state.touched();
@@ -55,6 +56,13 @@ export function investorPercentageRules(path: NumberPath): void {
 
 export function monetaryRules(path: NumberPath): void {
    numericRules(path, MONETARY_RANGE);
+}
+
+/**
+ * Deposits & withdrawals of the cash balance (higher limit than regular amounts)
+ */
+export function cashMonetaryRules(path: NumberPath): void {
+   numericRules(path, CASH_MONETARY_RANGE);
 }
 
 /**

@@ -8,6 +8,8 @@ const (
 	KpPendingAmount string = "pending_amount"
 	KpInvestors     string = "investors"
 	KpBorrowers     string = "borrowers"
+	// basis points (percentage x100) of the interest collected over the capital lent
+	KpCapitalYield string = "capital_yield"
 
 	// weeks the chart of the loans shows (the current one is the last)
 	KpWeeks int = 12
@@ -67,6 +69,28 @@ const (
 				INNER JOIN status ON users.status_id = status.id
 				WHERE users.profile = 'borrower' AND status.slug = 'active'
 			)::bigint
+	`
+
+	// Yield of the capital in basis points: the interest already collected over the capital of the loans that are
+	// active or finished. What a loan collected is split between capital & interest in the proportion of its
+	// total (what its payments cost without extras), so the interest is collected * (total - amount) / total.
+	KpQryCapitalYield string = `--sql
+		SELECT COALESCE(
+			ROUND(SUM(paid.collected * (totals.total - loans.amount)::numeric / totals.total) * 10000 / NULLIF(SUM(loans.amount), 0)),
+			0
+		)::bigint
+		FROM loans
+		INNER JOIN status ON loans.status_id = status.id
+		CROSS JOIN LATERAL (
+			SELECT SUM(payments.original_amount) AS total FROM payments WHERE payments.loan_id = loans.id
+		) AS totals
+		CROSS JOIN LATERAL (
+			SELECT COALESCE(SUM(payment_details.amount), 0) AS collected
+			FROM payment_details
+			INNER JOIN payments ON payment_details.payment_id = payments.id
+			WHERE payments.loan_id = loans.id AND payment_details.status_id = '052c0113-4293-4619-880a-f158aecdd476'
+		) AS paid
+		WHERE status.slug IN ('active', 'finished') AND totals.total > 0
 	`
 
 	// loans approved on every week (they start on Monday) with what they lent

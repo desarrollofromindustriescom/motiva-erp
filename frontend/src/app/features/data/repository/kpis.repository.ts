@@ -7,6 +7,7 @@ export const KPIS_I18N_KEYS = {
    AWAITING_PAYMENT: 'KPIS_AWAITING_PAYMENT',
    INVESTORS: 'KPIS_INVESTORS',
    BORROWERS: 'KPIS_BORROWERS',
+   CAPITAL_YIELD: 'KPIS_CAPITAL_YIELD',
    CHART_TITLE: 'KPIS_CHART_TITLE',
    CHART_SUBTITLE: 'KPIS_CHART_SUBTITLE',
    CHART_LOANS: 'KPIS_CHART_LOANS',
@@ -18,13 +19,13 @@ export const KPIS_I18N_KEYS = {
    RETRY: 'KPIS_RETRY',
 };
 
-export type KpiCardValue = 'money' | 'count';
+export type KpiCardValue = 'money' | 'count' | 'percentage';
 
 /**
  * The cards of the panel: the value they show, its icon & the color of the icon
  */
 export const KPIS_CARDS: {
-   id: 'amount_lent' | 'awaiting_payment' | 'investors' | 'borrowers';
+   id: 'amount_lent' | 'awaiting_payment' | 'capital_yield' | 'investors' | 'borrowers';
    label: string;
    icon: string;
    type: KpiCardValue;
@@ -43,6 +44,13 @@ export const KPIS_CARDS: {
       icon: 'bx-hourglass',
       type: 'money',
       accent: 'bg-main/10 text-main',
+   },
+   {
+      id: 'capital_yield',
+      label: KPIS_I18N_KEYS.CAPITAL_YIELD,
+      icon: 'bx-chart-line',
+      type: 'percentage',
+      accent: 'bg-second/10 text-second',
    },
    {
       id: 'investors',

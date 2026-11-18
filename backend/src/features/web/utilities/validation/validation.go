@@ -16,6 +16,7 @@ var (
 		repository.ValKeySecurePassword: securePasswordValidation,
 		repository.ValKeyPercentage:     percentageValidation,
 		repository.ValKeyMonetary:       monetaryValidation,
+		repository.ValKeyCashMonetary:   cashMonetaryValidation,
 		repository.ValKeyPhone:          phoneValidation,
 		repository.ValKeyCURP:           curpValidation,
 		repository.ValKeyClabe:          clabeValidation,

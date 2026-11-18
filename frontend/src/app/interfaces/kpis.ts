@@ -18,6 +18,8 @@ export interface Kpis {
    awaiting_payment: number;
    investors: number;
    borrowers: number;
+   // interest collected over the capital lent, in percentage
+   capital_yield: number;
    // the last weeks, the current one last
    weeks: KpiWeek[];
    updated_at: string;

@@ -16,7 +16,7 @@ import { API_CONTEXT, API_ROUTES, HTTP_METHODS } from '../repository/api.reposit
 import { FORMS_CUSTOM_VALIDATIONS, FORMS_I18N_KEYS } from '../repository/forms.repository';
 import { DIALOG_I18N_KEYS } from '../repository/dialog.repository';
 import { environment } from '../../../../environments/environment.development';
-import { monetaryRules } from '../../web/utilities/validators/numeric.validators';
+import { cashMonetaryRules } from '../../web/utilities/validators/numeric.validators';
 import { SessionService } from './session.service';
 import { DialogsService } from './dialogs.service';
 
@@ -59,7 +59,7 @@ export class CashBalanceService {
    private readonly $formDeposit: CashBalanceForms['deposit'] = form(
       this.$modelDeposit,
       (schema: FormSchema<FieldsCashMovement>) => {
-         monetaryRules(schema.amount);
+         cashMonetaryRules(schema.amount);
 
          disabled(schema.amount, { when: () => this.$updating().deposit });
       },
@@ -68,7 +68,7 @@ export class CashBalanceService {
    private readonly $formWithdraw: CashBalanceForms['withdraw'] = form(
       this.$modelWithdraw,
       (schema: FormSchema<FieldsCashMovement>) => {
-         monetaryRules(schema.amount);
+         cashMonetaryRules(schema.amount);
 
          validate(schema.amount, ({ value }) => {
             const amount: number | null = value();

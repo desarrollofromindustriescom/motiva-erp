@@ -13,6 +13,7 @@
    "FIELD_CLABE": "La CLABE debe tener 18 dígitos",
    "FIELD_MAX_LENGTH": "El campo debe tener máximo {{.Param}} caracteres",
    "FIELD_ONE_OF": "El valor no es válido",
+   "FIELD_CASH_MONETARY": "El monto debe estar entre 0.1 y 10000000 con máximo 2 decimales",
    "FIELD_MONETARY": "El monto debe estar entre 0.1 y 100000 con máximo 2 decimales",
    "CASH_BALANCE_INSUFFICIENT": "El monto a retirar no puede ser mayor al balance en caja",
    "CASH_BALANCE_LIMIT_EXCEEDED": "El depósito supera el límite permitido para el balance en caja",

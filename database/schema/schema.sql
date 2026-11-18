@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS movements (
 -- minutes & after the events that change them) and stored here, so reading them never has to add up everything
 CREATE TABLE IF NOT EXISTS kpi_metrics (
    slug VARCHAR(64) PRIMARY KEY,
-   -- cents on money (loans_amount, pending_amount), a count on the others
+   -- cents on money (loans_amount, pending_amount), basis points on capital_yield, a count on the others
    VALUE BIGINT NOT NULL,
    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

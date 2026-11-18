@@ -1,4 +1,3 @@
 export const CONTACT = {
-   EMAIL: 'example@gmail.com',
-   PHONE_NUMBER: '772 000 9090',
+   PHONE_NUMBER: '7717002230',
 };

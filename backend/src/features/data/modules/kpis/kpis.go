@@ -107,7 +107,14 @@ func Refresh(ctx context.Context) error {
 		return err
 	}
 
+	var capitalYield int64
+
+	if err = tx.QueryRow(ctx, repository.KpQryCapitalYield).Scan(&capitalYield); err != nil {
+		return err
+	}
+
 	values := map[string]int64{
+		repository.KpCapitalYield:  capitalYield,
 		repository.KpLoansAmount:   lent,
 		repository.KpPendingAmount: pending,
 		repository.KpInvestors:     investors,
@@ -286,6 +293,7 @@ func Get(ctx context.Context) (*controller.KpisPreview, error) {
 		AwaitingPayment: float64(values[repository.KpPendingAmount]) / 100,
 		Investors:       int(values[repository.KpInvestors]),
 		Borrowers:       int(values[repository.KpBorrowers]),
+		CapitalYield:    float64(values[repository.KpCapitalYield]) / 100,
 		Weeks:           fillWeeks(stored, currentWeek, repository.KpWeeks),
 		UpdatedAt:       updatedAt,
 	}, nil

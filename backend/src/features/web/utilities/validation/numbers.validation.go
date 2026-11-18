@@ -26,6 +26,15 @@ func percentageValidation(level validator.FieldLevel) bool {
 }
 
 /**
+ * Cash balance movement between 0.1 & 10000000 with at most 2 decimals
+ */
+func cashMonetaryValidation(level validator.FieldLevel) bool {
+	value := level.Field().Float()
+
+	return value >= 0.1 && value <= 10000000 && hasMaxDecimals(value, 2)
+}
+
+/**
  * Monetary amount between 0.1 & 100000 with at most 2 decimals
  */
 func monetaryValidation(level validator.FieldLevel) bool {

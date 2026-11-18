@@ -10,13 +10,13 @@ import { LOGIN_I18N_KEYS } from '../../../../../../../data/repository/login.repo
    providers: [PhoneFormatPipe],
    template: `
       <div
-         class="border border-black/30 rounded-xl py-4 sm:py-8 md:py-12 px-6 sm:px-12 md:px-24 flex flex-col items-start justify-between size-full transition-all"
+         class="flex size-full flex-col items-start justify-between rounded-xl border border-black/30 px-6 py-4 transition-all sm:px-12 sm:py-8 md:px-24 md:py-12"
       >
          <div class="flex flex-col">
-            <h1 class="text-xl sm:text-2xl md:text-4xl text-second font-bold transition-all">
+            <h1 class="text-second text-xl font-bold transition-all sm:text-2xl md:text-4xl">
                {{ I18N.TITLE | translate }}
             </h1>
-            <span class="text-xs sm:text-sm text-main transition-all">{{ I18N.SUBTITLE | translate }}</span>
+            <span class="text-main text-xs transition-all sm:text-sm">{{ I18N.SUBTITLE | translate }}</span>
          </div>
 
          <ng-content />
@@ -24,10 +24,10 @@ import { LOGIN_I18N_KEYS } from '../../../../../../../data/repository/login.repo
          <ul class="flex flex-col gap-1">
             @for (contact of contactMedia; track $index) {
                <li class="flex items-center justify-start gap-2">
-                  <i [class]="'text-main text-xl bx ' + contact.icon"></i>
+                  <i [class]="'text-main bx text-xl ' + contact.icon"></i>
                   <a
                      [href]="contact.link"
-                     class="text-sm sm:text-base text-main transition-all"
+                     class="text-main text-sm transition-all sm:text-base"
                      >{{ contact.text }}</a
                   >
                </li>
@@ -46,11 +46,6 @@ export class LoginWelcomeComponent {
       link: string;
       text: string;
    }[] = [
-      {
-         icon: 'bx-envelope-alt',
-         link: `mailto:${CONTACT.EMAIL}`,
-         text: CONTACT.EMAIL,
-      },
       {
          icon: 'bx-phone',
          link: `tel:${CONTACT.PHONE_NUMBER}`,

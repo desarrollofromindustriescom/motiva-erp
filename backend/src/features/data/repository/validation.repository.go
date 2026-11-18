@@ -21,6 +21,7 @@ const (
 	ValKeySecurePassword string = "securepassword"
 	ValKeyPercentage     string = "percentage"
 	ValKeyMonetary       string = "monetary"
+	ValKeyCashMonetary   string = "cashmonetary"
 	ValKeyPhone          string = "phone"
 	ValKeyCURP           string = "curp"
 	ValKeyClabe          string = "clabe"
@@ -37,6 +38,7 @@ const (
 	ValI18nKeyFieldLength          models.I18nKey = "FIELD_LENGTH"
 	ValI18nKeyFieldPercentage      models.I18nKey = "FIELD_PERCENTAGE"
 	ValI18nKeyFieldMonetary        models.I18nKey = "FIELD_MONETARY"
+	ValI18nKeyFieldCashMonetary    models.I18nKey = "FIELD_CASH_MONETARY"
 )
 
 var (

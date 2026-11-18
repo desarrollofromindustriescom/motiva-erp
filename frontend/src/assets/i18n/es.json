@@ -506,6 +506,7 @@
    "LOANS_STATUS_CANCELLED": "Cancelado",
    "KPIS_AMOUNT_LENT": "Monto prestado",
    "KPIS_AWAITING_PAYMENT": "En espera de pago",
+   "KPIS_CAPITAL_YIELD": "Rendimiento del capital",
    "KPIS_INVESTORS": "Inversores",
    "KPIS_BORROWERS": "Prestatarios",
    "KPIS_CHART_TITLE": "Préstamos realizados por semana",
