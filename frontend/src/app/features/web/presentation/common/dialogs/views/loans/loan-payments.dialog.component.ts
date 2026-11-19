@@ -1,7 +1,6 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, Signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { TooltipModule } from 'primeng/tooltip';
 import { LoanPaymentBreakdownDialogComponent } from './loan-payment-breakdown.dialog.component';
 import { LoanPaymentDepositsDialogComponent } from './loan-payment-deposits.dialog.component';
 import { LoanPaymentPayDialogComponent } from './loan-payment-pay.dialog.component';
@@ -28,7 +27,7 @@ import { LoanPaymentsService } from '../../../../../../data/services/loan-paymen
  */
 @Component({
    selector: 'fi-loan-payments-dialog-component',
-   imports: [CurrencyPipe, DatePipe, TranslatePipe, TooltipModule],
+   imports: [CurrencyPipe, DatePipe, TranslatePipe],
    template: `
       @let payments = $payments();
 
@@ -56,19 +55,16 @@ import { LoanPaymentsService } from '../../../../../../data/services/loan-paymen
                      </div>
 
                      <div class="flex items-end justify-between gap-2">
-                        <div class="flex gap-1">
+                        <div class="flex flex-wrap gap-1">
                            @for (action of actions(payment); track action.id) {
                               <button
-                                 class="flex cursor-pointer items-center justify-center rounded-md p-1 text-white transition-all disabled:cursor-auto disabled:opacity-40"
+                                 class="flex cursor-pointer items-center justify-center rounded-md px-2.5 py-1 text-sm whitespace-nowrap text-white transition-all disabled:cursor-auto disabled:opacity-40"
                                  type="button"
-                                 tooltipPosition="top"
                                  [class]="STYLES[payment.state].button"
-                                 [pTooltip]="action.tooltip | translate"
-                                 [showDelay]="1500"
                                  [disabled]="!enabled({ action, payment })"
                                  (click)="handleAction({ action, payment })"
                               >
-                                 <i [class]="'bx text-base ' + action.icon"></i>
+                                 {{ action.tooltip | translate }}
                               </button>
                            }
                         </div>

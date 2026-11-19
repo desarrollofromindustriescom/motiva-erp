@@ -284,11 +284,11 @@ export const LOAN_PAYMENT_STYLES: Record<LoanPaymentState, { card: string; butto
 };
 
 // extra actions of a payment (they don't do anything yet): the payments that are paid in full only have settle & details
-export const LOAN_PAYMENT_ACTIONS: { id: string; icon: string; tooltip: string; paid: boolean }[] = [
-   { id: 'pay', icon: 'bx-dollar', tooltip: LOANS_I18N_KEYS.PAYMENT_PAY, paid: false },
-   { id: 'settle', icon: 'bx-checklist', tooltip: LOANS_I18N_KEYS.PAYMENT_SETTLE, paid: true },
-   { id: 'visit', icon: 'bx-home', tooltip: LOANS_I18N_KEYS.PAYMENT_VISIT, paid: false },
-   { id: 'details', icon: 'bx-queue', tooltip: LOANS_I18N_KEYS.PAYMENT_DETAILS, paid: true },
+export const LOAN_PAYMENT_ACTIONS: { id: string; tooltip: string; paid: boolean }[] = [
+   { id: 'pay', tooltip: LOANS_I18N_KEYS.PAYMENT_PAY, paid: false },
+   { id: 'settle', tooltip: LOANS_I18N_KEYS.PAYMENT_SETTLE, paid: true },
+   { id: 'visit', tooltip: LOANS_I18N_KEYS.PAYMENT_VISIT, paid: false },
+   { id: 'details', tooltip: LOANS_I18N_KEYS.PAYMENT_DETAILS, paid: true },
 ];
 
 export const LOAN_DEPOSIT_TYPE_I18N_KEYS: Record<LoanDepositType, string> = {

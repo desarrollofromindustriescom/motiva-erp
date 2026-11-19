@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal, Signal, WritableSignal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { CalendarDay } from '../../../../../../../interfaces/loan';
@@ -14,8 +14,21 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
  */
 @Component({
    selector: 'fi-loans-calendar-dialog-component',
-   imports: [CurrencyPipe, DatePipe, TranslatePipe, LoaderComponent],
+   imports: [NgTemplateOutlet, CurrencyPipe, DatePipe, TranslatePipe, LoaderComponent],
    template: `
+      <ng-template
+         #payDay
+         let-item
+      >
+         @if (item.pay_day_type === 'monthly') {
+            {{ I18N.CALENDAR_MONTHLY_DAY | translate: { day: pad(item.pay_day) } }}
+         } @else if (item.pay_day_type === 'biweekly') {
+            {{ I18N.CALENDAR_BIWEEKLY_DAY | translate: { day: (WEEKDAYS[item.pay_day - 1] | translate) } }}
+         } @else {
+            {{ WEEKDAYS[item.pay_day - 1] | translate }}
+         }
+      </ng-template>
+
       @let days = $days();
 
       @if (days) {
@@ -47,7 +60,7 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
                         @if (day.items.length === 0) {
                            <p class="py-3 text-sm text-slate-500">{{ I18N.CALENDAR_EMPTY_DAY | translate }}</p>
                         } @else {
-                           <table class="w-full min-w-240 text-sm">
+                           <table class="w-full text-sm max-xl:hidden">
                               <thead>
                                  <tr class="text-second border-b border-slate-300 text-left">
                                     <th class="px-1 py-2 font-medium">{{ I18N.CALENDAR_HEAD_BORROWER | translate }}</th>
@@ -78,16 +91,7 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
                                           {{ item.total_debt | currency }}
                                        </td>
                                        <td class="px-1 py-1.5 whitespace-nowrap">
-                                          @if (item.pay_day_type === 'monthly') {
-                                             {{ I18N.CALENDAR_MONTHLY_DAY | translate: { day: pad(item.pay_day) } }}
-                                          } @else if (item.pay_day_type === 'biweekly') {
-                                             {{
-                                                I18N.CALENDAR_BIWEEKLY_DAY
-                                                   | translate: { day: (WEEKDAYS[item.pay_day - 1] | translate) }
-                                             }}
-                                          } @else {
-                                             {{ WEEKDAYS[item.pay_day - 1] | translate }}
-                                          }
+                                          <ng-container *ngTemplateOutlet="payDay; context: { $implicit: item }" />
                                        </td>
                                        <td class="px-1 py-1.5 whitespace-nowrap">
                                           {{ item.expected_date | date: 'dd.MM.yyyy' }}
@@ -109,6 +113,75 @@ import { PhoneFormatPipe } from '../../../../../utilities/pipes/phone-format.pip
                                  }
                               </tbody>
                            </table>
+
+                           <ul class="flex w-full flex-col gap-2 pt-1 xl:hidden">
+                              @for (item of day.items; track item.loan_id) {
+                                 <li class="border-second/30 flex flex-col gap-2 rounded-lg border p-3 text-sm">
+                                    <div class="flex items-start justify-between gap-2">
+                                       <span class="text-second font-medium">{{ item.borrower }}</span>
+                                       <span
+                                          class="rounded px-2 py-0.5 text-xs whitespace-nowrap text-white"
+                                          [class]="item.overdue ? 'bg-red-500' : 'bg-green-500'"
+                                          >{{
+                                             (item.overdue ? I18N.CALENDAR_OVERDUE : I18N.CALENDAR_CURRENT) | translate
+                                          }}</span
+                                       >
+                                    </div>
+                                    <dl class="text-second/80 grid grid-cols-2 gap-x-3 gap-y-1.5">
+                                       <div class="flex flex-col">
+                                          <dt class="text-xs text-slate-500">
+                                             {{ I18N.CALENDAR_HEAD_AMOUNT | translate }}
+                                          </dt>
+                                          <dd class="font-medium whitespace-nowrap text-green-600">
+                                             {{ item.amount | currency }}
+                                          </dd>
+                                       </div>
+                                       <div class="flex flex-col">
+                                          <dt class="text-xs text-slate-500">
+                                             {{ I18N.CALENDAR_HEAD_DEBT | translate }}
+                                          </dt>
+                                          <dd class="font-medium whitespace-nowrap text-green-600">
+                                             {{ item.total_debt | currency }}
+                                          </dd>
+                                       </div>
+                                       <div class="flex flex-col">
+                                          <dt class="text-xs text-slate-500">
+                                             {{ I18N.CALENDAR_HEAD_PAY_DAY | translate }}
+                                          </dt>
+                                          <dd class="whitespace-nowrap">
+                                             <ng-container *ngTemplateOutlet="payDay; context: { $implicit: item }" />
+                                          </dd>
+                                       </div>
+                                       <div class="flex flex-col">
+                                          <dt class="text-xs text-slate-500">
+                                             {{ I18N.CALENDAR_HEAD_DATE | translate }}
+                                          </dt>
+                                          <dd class="whitespace-nowrap">
+                                             {{ item.expected_date | date: 'dd.MM.yyyy' }}
+                                          </dd>
+                                       </div>
+                                       <div class="flex flex-col">
+                                          <dt class="text-xs text-slate-500">
+                                             {{ I18N.CALENDAR_HEAD_PHONE | translate }}
+                                          </dt>
+                                          <dd class="whitespace-nowrap">{{ phone(item.borrower_phone) }}</dd>
+                                       </div>
+                                       <div class="flex flex-col">
+                                          <dt class="text-xs text-slate-500">
+                                             {{ I18N.CALENDAR_HEAD_GUARANTOR | translate }}
+                                          </dt>
+                                          <dd>{{ item.guarantor || '-' }}</dd>
+                                       </div>
+                                       <div class="flex flex-col">
+                                          <dt class="text-xs text-slate-500">
+                                             {{ I18N.CALENDAR_HEAD_PHONE | translate }}
+                                          </dt>
+                                          <dd class="whitespace-nowrap">{{ phone(item.guarantor_phone) }}</dd>
+                                       </div>
+                                    </dl>
+                                 </li>
+                              }
+                           </ul>
                         }
                      </div>
                   }

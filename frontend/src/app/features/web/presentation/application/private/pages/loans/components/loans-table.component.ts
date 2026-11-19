@@ -1,9 +1,8 @@
-import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, output, OutputEmitterRef, Signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
-import { TooltipModule } from 'primeng/tooltip';
 import { LoanActionId, LoanRow, LoansOrder } from '../../../../../../../../interfaces/loan';
 import { compactFolio } from '../../../../../../../data/repository/cash-balance.repository';
 import { LOAN_STATUS_COLORS, LOANS_I18N_KEYS } from '../../../../../../../data/repository/loans.repository';
@@ -11,17 +10,36 @@ import { LoansListService } from '../../../../../../../data/services/loans-list.
 
 interface RowAction {
    id: LoanActionId;
-   icon: string;
    tooltip: string;
 }
 
 @Component({
    selector: 'fi-loans-table-component',
-   imports: [CurrencyPipe, DecimalPipe, TranslatePipe, TableModule, PaginatorModule, TooltipModule],
+   imports: [NgTemplateOutlet, CurrencyPipe, DecimalPipe, TranslatePipe, TableModule, PaginatorModule],
    template: `
       @let loans = $loans();
       @let loading = $loading();
       @let order = $order();
+
+      <ng-template
+         #rowActions
+         let-loan
+      >
+         <div
+            class="flex flex-wrap items-center gap-1 max-2xl:w-0 max-2xl:min-w-full 2xl:ml-auto 2xl:max-w-md 2xl:justify-end"
+         >
+            @for (action of actions; track action.id) {
+               <button
+                  class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md px-2.5 py-1 text-sm text-white transition-all disabled:cursor-auto disabled:bg-slate-300 2xl:whitespace-nowrap"
+                  type="button"
+                  [disabled]="!enabled({ action, loan })"
+                  (click)="handleAction({ action, loan })"
+               >
+                  {{ action.tooltip | translate }}
+               </button>
+            }
+         </div>
+      </ng-template>
 
       <section class="flex w-full flex-auto flex-col gap-2 rounded-2xl border border-slate-500 p-3 sm:p-4">
          <div class="w-full flex-auto overflow-x-auto">
@@ -54,15 +72,15 @@ interface RowAction {
                      <th class="text-right! max-lg:hidden">{{ I18N.HEAD_TOTAL | translate }}</th>
                      <th class="text-right! max-xl:hidden">{{ I18N.HEAD_RATE | translate }}</th>
                      <th class="text-right! max-xl:hidden">{{ I18N.HEAD_PAYMENTS | translate }}</th>
-                     <th></th>
+                     <th class="max-2xl:hidden"></th>
                   </tr>
                </ng-template>
                <ng-template
                   #body
                   let-loan
                >
-                  <tr>
-                     <td class="whitespace-nowrap max-sm:text-xs">
+                  <tr class="max-2xl:[&>td]:border-b-0!">
+                     <td class="whitespace-nowrap max-sm:text-xs max-sm:whitespace-normal">
                         {{ folio(loan) }}
                         @if (loan.kind === 'agreement') {
                            <span class="bg-second ml-1 rounded px-1.5 py-0.5 text-[10px] text-white">{{
@@ -84,24 +102,16 @@ interface RowAction {
                      </td>
                      <td class="text-right! whitespace-nowrap max-xl:hidden">{{ loan.rate | number: '1.0-2' }}%</td>
                      <td class="text-right! max-xl:hidden">{{ loan.no_payments }}</td>
-                     <td>
-                        <div
-                           class="ml-auto grid w-fit grid-cols-2 gap-1 sm:flex sm:w-full sm:items-center sm:justify-end"
-                        >
-                           @for (action of actions; track action.id) {
-                              <button
-                                 class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all disabled:cursor-auto disabled:bg-slate-300"
-                                 type="button"
-                                 tooltipPosition="top"
-                                 [pTooltip]="action.tooltip | translate"
-                                 [showDelay]="1500"
-                                 [disabled]="!enabled({ action, loan })"
-                                 (click)="handleAction({ action, loan })"
-                              >
-                                 <i [class]="'bx text-lg text-white ' + action.icon"></i>
-                              </button>
-                           }
-                        </div>
+                     <td class="max-2xl:hidden">
+                        <ng-container *ngTemplateOutlet="rowActions; context: { $implicit: loan }" />
+                     </td>
+                  </tr>
+                  <tr class="2xl:hidden">
+                     <td
+                        colspan="8"
+                        class="pt-0!"
+                     >
+                        <ng-container *ngTemplateOutlet="rowActions; context: { $implicit: loan }" />
                      </td>
                   </tr>
                </ng-template>
@@ -141,11 +151,11 @@ export class LoansTableComponent {
 
    // the details & the payments are always available, the payment is registered once, continuing a loan only while it is pending & paying it while it is active
    public readonly actions: RowAction[] = [
-      { id: 'details', icon: 'bx-file-detail', tooltip: LOANS_I18N_KEYS.TOOLTIP_DETAILS },
-      { id: 'ticket', icon: 'bx-receipt', tooltip: LOANS_I18N_KEYS.TOOLTIP_TICKET },
-      { id: 'payments', icon: 'bx-currency-notes', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAYMENTS },
-      { id: 'edit', icon: 'bx-pen', tooltip: LOANS_I18N_KEYS.TOOLTIP_EDIT },
-      { id: 'pay', icon: 'bx-dollar-circle', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAY },
+      { id: 'details', tooltip: LOANS_I18N_KEYS.TOOLTIP_DETAILS },
+      { id: 'ticket', tooltip: LOANS_I18N_KEYS.TOOLTIP_TICKET },
+      { id: 'payments', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAYMENTS },
+      { id: 'edit', tooltip: LOANS_I18N_KEYS.TOOLTIP_EDIT },
+      { id: 'pay', tooltip: LOANS_I18N_KEYS.TOOLTIP_PAY },
    ];
 
    public $details: OutputEmitterRef<LoanRow> = output({ alias: 'details' });

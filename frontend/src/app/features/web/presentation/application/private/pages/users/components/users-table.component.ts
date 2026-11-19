@@ -1,7 +1,7 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, output, OutputEmitterRef, Signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
-import { TooltipModule } from 'primeng/tooltip';
 import { TableModule } from 'primeng/table';
 import { UserActionId, UserRow, UsersOrder } from '../../../../../../../../interfaces/user';
 import { UserPasswordService } from '../../../../../../../data/services/user-password.service';
@@ -18,17 +18,41 @@ import {
 
 interface RowAction {
    id: UserActionId;
-   icon: string;
    danger?: boolean;
 }
 
 @Component({
    selector: 'fi-users-table-component',
-   imports: [TranslatePipe, TableModule, PaginatorModule, TooltipModule],
+   imports: [NgTemplateOutlet, TranslatePipe, TableModule, PaginatorModule],
    template: `
       @let users = $users();
       @let loading = $loading();
       @let order = $order();
+
+      <ng-template
+         #rowActions
+         let-user
+      >
+         <div
+            class="flex flex-wrap items-center gap-1 max-2xl:w-0 max-2xl:min-w-full 2xl:ml-auto 2xl:max-w-md 2xl:justify-end"
+         >
+            @for (action of actions; track action.id) {
+               <button
+                  class="flex cursor-pointer items-center justify-center rounded-md px-2.5 py-1 text-sm text-white transition-all disabled:cursor-auto disabled:bg-slate-300 2xl:whitespace-nowrap"
+                  type="button"
+                  [class]="
+                     action.danger
+                        ? 'bg-red-500 hover:bg-red-600 focus:bg-red-600'
+                        : 'bg-second hover:bg-second-light focus:bg-second-light'
+                  "
+                  [disabled]="!enabled({ action, user })"
+                  (click)="handleAction({ action, user })"
+               >
+                  {{ TOOLTIPS[action.id] | translate }}
+               </button>
+            }
+         </div>
+      </ng-template>
 
       <section class="flex w-full flex-auto flex-col gap-2 rounded-2xl border border-slate-500 p-3 sm:p-4">
          <div class="w-full flex-auto overflow-x-auto">
@@ -59,15 +83,15 @@ interface RowAction {
                      <th>{{ I18N.HEAD_FULLNAME | translate }}</th>
                      <th class="max-lg:hidden">{{ I18N.HEAD_STATUS | translate }}</th>
                      <th class="max-sm:hidden">{{ I18N.HEAD_PROFILE | translate }}</th>
-                     <th></th>
+                     <th class="max-2xl:hidden"></th>
                   </tr>
                </ng-template>
                <ng-template
                   #body
                   let-user
                >
-                  <tr>
-                     <td class="max-sm:text-xs max-sm:break-all sm:whitespace-nowrap">{{ user.curp || '-' }}</td>
+                  <tr class="max-2xl:[&>td]:border-b-0!">
+                     <td class="max-sm:text-xs max-sm:break-all 2xl:whitespace-nowrap">{{ user.curp || '-' }}</td>
                      <td class="max-lg:hidden">{{ user.username }}</td>
                      <td>{{ user.fullname }}</td>
                      <td class="max-lg:hidden">
@@ -84,29 +108,16 @@ interface RowAction {
                            >{{ ROLE_I18N[user.profile] | translate }}</span
                         >
                      </td>
-                     <td>
-                        <div
-                           class="ml-auto grid w-fit grid-cols-3 gap-1 sm:flex sm:w-full sm:items-center sm:justify-end"
-                        >
-                           @for (action of actions; track action.icon) {
-                              <button
-                                 class="flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all disabled:cursor-auto disabled:bg-slate-300"
-                                 type="button"
-                                 [class]="
-                                    action.danger
-                                       ? 'bg-red-500 hover:bg-red-600 focus:bg-red-600'
-                                       : 'bg-second hover:bg-second-light focus:bg-second-light'
-                                 "
-                                 tooltipPosition="top"
-                                 [pTooltip]="TOOLTIPS[action.id] | translate"
-                                 [showDelay]="1500"
-                                 [disabled]="!enabled({ action, user })"
-                                 (click)="handleAction({ action, user })"
-                              >
-                                 <i [class]="'bx text-lg text-white ' + action.icon"></i>
-                              </button>
-                           }
-                        </div>
+                     <td class="max-2xl:hidden">
+                        <ng-container *ngTemplateOutlet="rowActions; context: { $implicit: user }" />
+                     </td>
+                  </tr>
+                  <tr class="2xl:hidden">
+                     <td
+                        colspan="6"
+                        class="pt-0!"
+                     >
+                        <ng-container *ngTemplateOutlet="rowActions; context: { $implicit: user }" />
                      </td>
                   </tr>
                </ng-template>
@@ -151,12 +162,12 @@ export class UsersTableComponent {
 
    // availability follows the profile & status of every row (USERS_ACTION_RULES)
    public readonly actions: RowAction[] = [
-      { id: 'details', icon: 'bx-file-detail' },
-      { id: 'documents', icon: 'bx-file-zip' },
-      { id: 'wallet', icon: 'bx-wallet' },
-      { id: 'password', icon: 'bx-lock-open' },
-      { id: 'edit', icon: 'bx-pencil' },
-      { id: 'delete', icon: 'bx-trash', danger: true },
+      { id: 'details' },
+      { id: 'documents' },
+      { id: 'wallet' },
+      { id: 'password' },
+      { id: 'edit' },
+      { id: 'delete', danger: true },
    ];
 
    public $details: OutputEmitterRef<UserRow> = output({ alias: 'details' });

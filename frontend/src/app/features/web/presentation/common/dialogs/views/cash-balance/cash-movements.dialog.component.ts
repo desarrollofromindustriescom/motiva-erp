@@ -4,7 +4,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
 import { Movement } from '../../../../../../../interfaces/cash-balance';
 import { CashMovementsService } from '../../../../../../data/services/cash-movements.service';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
@@ -21,7 +20,7 @@ import { CashMovementDetailDialogComponent } from './cash-movement-detail.dialog
 
 @Component({
    selector: 'fi-cash-movements-dialog-component',
-   imports: [CurrencyPipe, DatePipe, TranslatePipe, TableModule, TagModule, TooltipModule, PaginatorModule],
+   imports: [CurrencyPipe, DatePipe, TranslatePipe, TableModule, TagModule, PaginatorModule],
    template: `
       @let movements = $movements();
       @let loading = $loading();
@@ -38,14 +37,14 @@ import { CashMovementDetailDialogComponent } from './cash-movement-detail.dialog
                   <th class="max-sm:hidden">{{ I18N.HEAD_DATE | translate }}</th>
                   <th class="max-sm:hidden">{{ I18N.HEAD_TYPE | translate }}</th>
                   <th class="max-md:hidden">{{ I18N.HEAD_STATUS | translate }}</th>
-                  <th></th>
+                  <th class="max-sm:hidden"></th>
                </tr>
             </ng-template>
             <ng-template
                #body
                let-movement
             >
-               <tr>
+               <tr class="max-sm:[&>td]:border-b-0!">
                   <td class="whitespace-nowrap">{{ folio(movement) }}</td>
                   <td
                      class="text-right! whitespace-nowrap"
@@ -67,19 +66,30 @@ import { CashMovementDetailDialogComponent } from './cash-movement-detail.dialog
                         [severity]="statusSeverity(movement)"
                      />
                   </td>
-                  <td>
+                  <td class="max-sm:hidden">
                      <div class="flex w-full justify-end">
                         <button
-                           class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all"
+                           class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md px-2.5 py-1 text-sm whitespace-nowrap text-white transition-all"
                            type="button"
-                           tooltipPosition="top"
-                           [pTooltip]="I18N.BUTTON_DETAILS | translate"
-                           [showDelay]="1500"
                            (click)="handleDetails({ movement })"
                         >
-                           <i class="bx bx-file text-xl text-white"></i>
+                           {{ I18N.BUTTON_DETAILS | translate }}
                         </button>
                      </div>
+                  </td>
+               </tr>
+               <tr class="sm:hidden">
+                  <td
+                     colspan="6"
+                     class="pt-0!"
+                  >
+                     <button
+                        class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md px-2.5 py-1 text-sm whitespace-nowrap text-white transition-all"
+                        type="button"
+                        (click)="handleDetails({ movement })"
+                     >
+                        {{ I18N.BUTTON_DETAILS | translate }}
+                     </button>
                   </td>
                </tr>
             </ng-template>

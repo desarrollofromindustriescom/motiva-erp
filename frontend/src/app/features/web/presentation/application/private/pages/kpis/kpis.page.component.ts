@@ -19,7 +19,7 @@ import { KpiLoansChartComponent } from './components/kpi-loans-chart.component';
 
       @if (kpis) {
          <section
-            class="grid w-full grid-cols-1 gap-2 min-[560px]:grid-cols-2 xl:grid-cols-5"
+            class="grid w-full grid-cols-1 gap-2 min-[560px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
             aria-label="KPIs"
          >
             @for (card of CARDS; track card.id) {
@@ -33,7 +33,7 @@ import { KpiLoansChartComponent } from './components/kpi-loans-chart.component';
 
                   <div class="flex min-w-0 flex-col">
                      <span class="text-sm text-slate-600">{{ card.label | translate }}</span>
-                     <span class="text-second text-2xl leading-tight font-bold wrap-anywhere sm:text-3xl">
+                     <span class="text-second text-2xl leading-tight font-bold whitespace-nowrap">
                         @if (card.type === 'money') {
                            {{ kpis[card.id] | currency }}
                         } @else if (card.type === 'percentage') {
@@ -73,7 +73,9 @@ import { KpiLoansChartComponent } from './components/kpi-loans-chart.component';
             </button>
          </section>
       } @else {
-         <section class="grid w-full animate-pulse grid-cols-1 gap-2 min-[560px]:grid-cols-2 xl:grid-cols-5">
+         <section
+            class="grid w-full animate-pulse grid-cols-1 gap-2 min-[560px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
+         >
             @for (card of CARDS; track card.id) {
                <div class="h-20 w-full rounded-2xl bg-slate-300 sm:h-24"></div>
             }

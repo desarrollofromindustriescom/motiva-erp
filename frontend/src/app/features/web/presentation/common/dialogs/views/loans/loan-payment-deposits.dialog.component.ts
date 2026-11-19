@@ -1,9 +1,8 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, Signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
-import { TooltipModule } from 'primeng/tooltip';
 import { LoanDeposit } from '../../../../../../../interfaces/loan';
 import {
    LOAN_DEPOSIT_TYPE_COLORS,
@@ -28,8 +27,39 @@ import { LoanPaymentDepositsService } from '../../../../../../data/services/loan
  */
 @Component({
    selector: 'fi-loan-payment-deposits-dialog-component',
-   imports: [CurrencyPipe, DatePipe, TranslatePipe, TableModule, PaginatorModule, TooltipModule],
+   imports: [NgTemplateOutlet, CurrencyPipe, DatePipe, TranslatePipe, TableModule, PaginatorModule],
    template: `
+      <ng-template
+         #rowActions
+         let-deposit
+      >
+         @if (deposit.status === 'pending' && !$borrower) {
+            <button
+               class="mr-1 inline-flex cursor-pointer items-center justify-center rounded-md bg-green-600 px-2.5 py-1 text-sm text-white transition-all hover:bg-green-700"
+               type="button"
+               (click)="handleAnswer({ deposit, accept: true })"
+            >
+               {{ I18N.DEPOSIT_ACCEPT | translate }}
+            </button>
+            <button
+               class="mr-1 inline-flex cursor-pointer items-center justify-center rounded-md bg-red-500 px-2.5 py-1 text-sm text-white transition-all hover:bg-red-600"
+               type="button"
+               (click)="handleAnswer({ deposit, accept: false })"
+            >
+               {{ I18N.DEPOSIT_REJECT | translate }}
+            </button>
+         }
+         @if (deposit.has_ticket) {
+            <button
+               class="bg-second hover:bg-second-light focus:bg-second-light inline-flex cursor-pointer items-center justify-center rounded-md px-2.5 py-1 text-sm text-white transition-all"
+               type="button"
+               (click)="handleReceipt({ deposit })"
+            >
+               {{ I18N.DEPOSITS_VIEW_RECEIPT | translate }}
+            </button>
+         }
+      </ng-template>
+
       @if ($ready()) {
          <div class="flex w-full flex-col gap-2">
             <p-table
@@ -40,27 +70,27 @@ import { LoanPaymentDepositsService } from '../../../../../../data/services/loan
                <ng-template #header>
                   <tr>
                      <th>{{ I18N.DEPOSITS_HEAD_DATE | translate }}</th>
-                     <th>{{ I18N.DEPOSITS_HEAD_TYPE | translate }}</th>
-                     <th>{{ I18N.DEPOSITS_HEAD_PAYMENT | translate }}</th>
+                     <th class="max-sm:hidden">{{ I18N.DEPOSITS_HEAD_TYPE | translate }}</th>
+                     <th class="max-sm:hidden">{{ I18N.DEPOSITS_HEAD_PAYMENT | translate }}</th>
                      <th>{{ I18N.DEPOSITS_HEAD_STATUS | translate }}</th>
                      <th class="text-right!">{{ I18N.DEPOSITS_HEAD_AMOUNT | translate }}</th>
-                     <th></th>
+                     <th class="max-sm:hidden"></th>
                   </tr>
                </ng-template>
                <ng-template
                   #body
                   let-deposit
                >
-                  <tr>
+                  <tr class="max-sm:[&>td]:border-b-0!">
                      <td class="whitespace-nowrap">{{ deposit.date | date: 'dd.MM.yyyy' }}</td>
-                     <td>
+                     <td class="max-sm:hidden">
                         <span
                            class="rounded px-3 py-0.5 text-xs whitespace-nowrap text-white"
                            [class]="COLORS[deposit.type]"
                            >{{ TYPES[deposit.type] | translate }}</span
                         >
                      </td>
-                     <td>
+                     <td class="max-sm:hidden">
                         @if (deposit.payment) {
                            <span
                               class="rounded px-3 py-0.5 text-xs whitespace-nowrap text-white"
@@ -85,44 +115,30 @@ import { LoanPaymentDepositsService } from '../../../../../../data/services/loan
                      >
                         {{ deposit.amount | currency }}
                      </td>
-                     <td class="text-right! whitespace-nowrap">
-                        @if (deposit.status === 'pending' && !$borrower) {
-                           <button
-                              class="mr-1 inline-flex cursor-pointer items-center justify-center rounded-md bg-green-600 p-1.5 transition-all hover:bg-green-700"
-                              type="button"
-                              tooltipPosition="top"
-                              [pTooltip]="I18N.DEPOSIT_ACCEPT | translate"
-                              [showDelay]="1000"
-                              [attr.aria-label]="I18N.DEPOSIT_ACCEPT | translate"
-                              (click)="handleAnswer({ deposit, accept: true })"
+                     <td class="text-right! whitespace-nowrap max-sm:hidden">
+                        <ng-container *ngTemplateOutlet="rowActions; context: { $implicit: deposit }" />
+                     </td>
+                  </tr>
+                  <tr class="sm:hidden">
+                     <td
+                        colspan="6"
+                        class="pt-0!"
+                     >
+                        <div class="flex flex-wrap items-center gap-1">
+                           <span
+                              class="rounded px-3 py-0.5 text-xs whitespace-nowrap text-white"
+                              [class]="COLORS[deposit.type]"
+                              >{{ TYPES[deposit.type] | translate }}</span
                            >
-                              <i class="bx bx-check text-lg text-white"></i>
-                           </button>
-                           <button
-                              class="mr-1 inline-flex cursor-pointer items-center justify-center rounded-md bg-red-500 p-1.5 transition-all hover:bg-red-600"
-                              type="button"
-                              tooltipPosition="top"
-                              [pTooltip]="I18N.DEPOSIT_REJECT | translate"
-                              [showDelay]="1000"
-                              [attr.aria-label]="I18N.DEPOSIT_REJECT | translate"
-                              (click)="handleAnswer({ deposit, accept: false })"
-                           >
-                              <i class="bx bx-x text-lg text-white"></i>
-                           </button>
-                        }
-                        @if (deposit.has_ticket) {
-                           <button
-                              class="bg-second hover:bg-second-light focus:bg-second-light inline-flex cursor-pointer items-center justify-center rounded-md p-1.5 transition-all"
-                              type="button"
-                              tooltipPosition="top"
-                              [pTooltip]="I18N.DEPOSITS_VIEW_RECEIPT | translate"
-                              [showDelay]="1000"
-                              [attr.aria-label]="I18N.DEPOSITS_VIEW_RECEIPT | translate"
-                              (click)="handleReceipt({ deposit })"
-                           >
-                              <i class="bx bx-receipt text-lg text-white"></i>
-                           </button>
-                        }
+                           @if (deposit.payment) {
+                              <span
+                                 class="rounded px-3 py-0.5 text-xs whitespace-nowrap text-white"
+                                 [class]="METHOD_COLORS[deposit.payment]"
+                                 >{{ METHODS[deposit.payment] | translate }}</span
+                              >
+                           }
+                           <ng-container *ngTemplateOutlet="rowActions; context: { $implicit: deposit }" />
+                        </div>
                      </td>
                   </tr>
                </ng-template>
@@ -140,13 +156,13 @@ import { LoanPaymentDepositsService } from '../../../../../../data/services/loan
                   @if ($total() > 0) {
                      <tr>
                         <td class="font-bold">{{ I18N.DEPOSITS_TOTAL | translate }}</td>
-                        <td></td>
-                        <td></td>
+                        <td class="max-sm:hidden"></td>
+                        <td class="max-sm:hidden"></td>
                         <td></td>
                         <td class="text-right! font-bold whitespace-nowrap text-green-600">
                            {{ $sum() | currency }}
                         </td>
-                        <td></td>
+                        <td class="max-sm:hidden"></td>
                      </tr>
                   }
                </ng-template>

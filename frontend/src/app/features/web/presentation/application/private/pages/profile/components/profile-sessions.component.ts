@@ -6,12 +6,11 @@ import { ActiveSession } from '../../../../../../../../interfaces/user';
 import { PROFILE_I18N_KEYS } from '../../../../../../../data/repository/profile.repository';
 import { FORMS_I18N_KEYS } from '../../../../../../../data/repository/forms.repository';
 import { TABLE_I18N_KEYS } from '../../../../../../../data/repository/table.repository';
-import { TooltipModule } from 'primeng/tooltip';
 import { LoaderComponent } from '../../../../../common/forms/loader/loader.component';
 
 @Component({
    selector: 'fi-profile-sessions-component',
-   imports: [DatePipe, TableModule, TranslatePipe, NgClass, TooltipModule, LoaderComponent],
+   imports: [DatePipe, TableModule, TranslatePipe, NgClass, LoaderComponent],
    template: `
       @let loading = $loading();
       @let closingAll = $closingAll();
@@ -30,7 +29,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
 
          @if (!loading || sessions.length) {
             <p-table
-               class="block w-full max-sm:[&_td]:px-1.5! max-sm:[&_th]:px-1.5!"
+               class="block w-full max-sm:[&_td]:px-1.5! max-sm:[&_th]:px-1.5! max-sm:[&_th]:text-xs!"
                [value]="sessions"
             >
                <ng-template #header>
@@ -75,19 +74,16 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                            @if (!session.current) {
                               <div class="flex w-full justify-end">
                                  <button
-                                    class="flex cursor-pointer items-center justify-center-safe rounded-md bg-red-500 p-1.5 transition-all hover:bg-red-600 focus:bg-red-600 disabled:cursor-auto disabled:opacity-60 disabled:hover:bg-red-500 disabled:focus:bg-red-500"
-                                    tooltipPosition="top"
+                                    class="flex cursor-pointer items-center justify-center-safe rounded-md bg-red-500 px-2.5 py-1 text-sm whitespace-nowrap text-white transition-all hover:bg-red-600 focus:bg-red-600 disabled:cursor-auto disabled:opacity-60 disabled:hover:bg-red-500 disabled:focus:bg-red-500"
                                     [disabled]="busy || closing[session.id]"
-                                    [pTooltip]="I18N.BUTTON_CLOSE | translate"
-                                    [showDelay]="1500"
                                     (click)="$close.emit({ sessionID: session.id })"
                                  >
                                     @if (closing[session.id]) {
-                                       <span class="flex size-5 items-center justify-center">
+                                       <span class="flex size-4 items-center justify-center">
                                           <fi-loader-component tone="white" />
                                        </span>
                                     } @else {
-                                       <i class="bx bx-x text-xl text-white"></i>
+                                       {{ I18N.BUTTON_CLOSE | translate }}
                                     }
                                  </button>
                               </div>

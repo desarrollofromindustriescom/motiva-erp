@@ -1,9 +1,8 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, Signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
-import { TooltipModule } from 'primeng/tooltip';
 import { Investment } from '../../../../../../../interfaces/investment';
 import { CashMovementsService } from '../../../../../../data/services/cash-movements.service';
 import { DialogsService } from '../../../../../../data/services/dialogs.service';
@@ -25,16 +24,32 @@ import { InvestmentDetailDialogComponent } from './investment-detail.dialog.comp
  */
 interface InvestmentAction {
    id: 'details' | 'movements';
-   icon: string;
    tooltip: string;
 }
 
 @Component({
    selector: 'fi-investments-table-component',
-   imports: [CurrencyPipe, DatePipe, TranslatePipe, TableModule, PaginatorModule, TooltipModule],
+   imports: [NgTemplateOutlet, CurrencyPipe, DatePipe, TranslatePipe, TableModule, PaginatorModule],
    template: `
       @let investments = $investments();
       @let loading = $loading();
+
+      <ng-template
+         #rowActions
+         let-investment
+      >
+         <div class="flex w-full flex-wrap items-center justify-end gap-1 max-sm:justify-start">
+            @for (action of actions; track action.id) {
+               <button
+                  class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md px-2.5 py-1 text-sm whitespace-nowrap text-white transition-all"
+                  type="button"
+                  (click)="handleAction({ action, investment })"
+               >
+                  {{ action.tooltip | translate }}
+               </button>
+            }
+         </div>
+      </ng-template>
 
       <section class="flex w-full flex-col gap-2">
          <h2 class="text-second text-xl font-medium sm:text-2xl">{{ I18N.TITLE | translate }}</h2>
@@ -52,14 +67,14 @@ interface InvestmentAction {
                   <th class="max-md:hidden">{{ I18N.HEAD_OPENED | translate }}</th>
                   <th class="max-sm:hidden">{{ I18N.HEAD_TERM | translate }}</th>
                   <th>{{ I18N.HEAD_STATUS | translate }}</th>
-                  <th></th>
+                  <th class="max-sm:hidden"></th>
                </tr>
             </ng-template>
             <ng-template
                #body
                let-investment
             >
-               <tr>
+               <tr class="max-sm:[&>td]:border-b-0!">
                   <td class="whitespace-nowrap">{{ folio(investment) }}</td>
                   <td class="text-right! whitespace-nowrap text-green-600">
                      {{ investment.initial_amount | currency }}
@@ -78,21 +93,16 @@ interface InvestmentAction {
                         >{{ investment.status.title }}</span
                      >
                   </td>
-                  <td>
-                     <div class="flex w-full items-center justify-end gap-1 max-sm:flex-col max-sm:items-end">
-                        @for (action of actions; track action.id) {
-                           <button
-                              class="bg-second hover:bg-second-light focus:bg-second-light flex cursor-pointer items-center justify-center rounded-md p-1 transition-all"
-                              type="button"
-                              tooltipPosition="top"
-                              [pTooltip]="action.tooltip | translate"
-                              [showDelay]="1500"
-                              (click)="handleAction({ action, investment })"
-                           >
-                              <i [class]="'bx text-lg text-white ' + action.icon"></i>
-                           </button>
-                        }
-                     </div>
+                  <td class="max-sm:hidden">
+                     <ng-container *ngTemplateOutlet="rowActions; context: { $implicit: investment }" />
+                  </td>
+               </tr>
+               <tr class="sm:hidden">
+                  <td
+                     colspan="7"
+                     class="pt-0!"
+                  >
+                     <ng-container *ngTemplateOutlet="rowActions; context: { $implicit: investment }" />
                   </td>
                </tr>
             </ng-template>
@@ -131,8 +141,8 @@ export class InvestmentsTableComponent {
    public readonly I18N = INVESTMENTS_I18N_KEYS;
    public readonly STATUS_COLORS: Record<string, string> = INVESTMENT_STATUS_COLORS;
    public readonly actions: InvestmentAction[] = [
-      { id: 'details', icon: 'bx-file-detail', tooltip: INVESTMENTS_I18N_KEYS.TOOLTIP_DETAILS },
-      { id: 'movements', icon: 'bx-menu-left', tooltip: INVESTMENTS_I18N_KEYS.TOOLTIP_MOVEMENTS },
+      { id: 'details', tooltip: INVESTMENTS_I18N_KEYS.TOOLTIP_DETAILS },
+      { id: 'movements', tooltip: INVESTMENTS_I18N_KEYS.TOOLTIP_MOVEMENTS },
    ];
    public readonly $size: number = this._investments.size;
 
