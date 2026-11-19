@@ -104,7 +104,7 @@ import { LoanReceiptFieldsComponent } from './loan-receipt-fields.component';
             </button>
             <button
                class="bg-contrast flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
-               type="button"
+               type="submit"
                [disabled]="saving"
                (click)="handlePay()"
             >

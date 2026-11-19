@@ -47,6 +47,11 @@ export class LoginWelcomeComponent {
       text: string;
    }[] = [
       {
+         icon: 'bx-envelope-alt',
+         link: `mailto:${CONTACT.EMAIL}`,
+         text: CONTACT.EMAIL,
+      },
+      {
          icon: 'bx-phone',
          link: `tel:${CONTACT.PHONE_NUMBER}`,
          text: this.pPhoneFormat.transform(CONTACT.PHONE_NUMBER),

@@ -54,7 +54,7 @@ import { PasswordFieldsComponent } from '../../../../common/forms/password-field
                <button
                   class="bg-contrast w-full cursor-pointer rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60"
                   id="change"
-                  type="button"
+                  type="submit"
                   [disabled]="loading"
                   (click)="handleChange()"
                >

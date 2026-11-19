@@ -1,4 +1,4 @@
-import { NgClass } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
    Component,
    computed,
@@ -41,6 +41,7 @@ const MENU_GAP = 8;
    selector: 'fi-private-sections-component',
    imports: [
       NgClass,
+      NgTemplateOutlet,
       FormsModule,
       TranslatePipe,
       CheckboxModule,
@@ -55,294 +56,365 @@ const MENU_GAP = 8;
       @let openId = $openId();
       @let position = $position();
 
+      <ng-template
+         #sectionHeader
+         let-section
+         let-icon="icon"
+      >
+         <button
+            class="flex w-full cursor-pointer items-center justify-between gap-2 text-left xl:hidden"
+            type="button"
+            [attr.aria-expanded]="isExpanded({ id: section.id })"
+            (click)="handleCollapse({ id: section.id })"
+         >
+            <span class="text-base font-medium">{{ section.title | translate }}</span>
+            <span class="flex items-center gap-2">
+               @if (icon) {
+                  <i [class]="'bx text-second text-xl ' + icon"></i>
+               }
+               <i
+                  class="bx text-second text-xl"
+                  [class.bx-chevron-up]="isExpanded({ id: section.id })"
+                  [class.bx-chevron-down]="!isExpanded({ id: section.id })"
+               ></i>
+            </span>
+         </button>
+         <div class="hidden w-full items-center justify-between xl:flex">
+            <span class="text-lg font-medium">{{ section.title | translate }}</span>
+            @if (icon) {
+               <i [class]="'bx text-second text-2xl ' + icon"></i>
+            }
+         </div>
+      </ng-template>
+
       @for (section of $sections(); track section.id) {
          @if (section.type === 'dropdown') {
-            <section class="flex w-full flex-col gap-2 rounded-2xl border border-slate-500 p-4">
-               <span class="text-lg font-medium">{{ section.title | translate }}</span>
+            <section class="flex w-full flex-col rounded-2xl border border-slate-500 p-4 max-xl:p-3">
+               <ng-container *ngTemplateOutlet="sectionHeader; context: { $implicit: section, icon: null }" />
 
-               <button
-                  class="group border-contrast text-contrast hover:bg-contrast focus:bg-contrast flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 transition-all hover:text-white focus:text-white"
-                  type="button"
-                  (click)="handleToggle({ id: section.id, event: $event })"
+               <div
+                  class="grid transition-[grid-template-rows] duration-300 ease-in-out max-xl:grid-rows-[0fr] xl:grid-rows-[1fr]"
+                  [class.max-xl:grid-rows-[1fr]]="isExpanded({ id: section.id })"
                >
-                  <span class="flex items-center gap-3">
-                     <i [class]="'bx text-xl ' + section.button.icon"></i>
-                     <span class="text-base">{{ section.button.label | translate }}</span>
-                  </span>
-                  <i
-                     class="bx bx-chevron-right hidden! text-xl transition-transform xl:block!"
-                     [ngClass]="{ 'rotate-180': openId === section.id }"
-                  ></i>
-                  <i
-                     class="bx bx-chevron-down text-xl transition-transform xl:hidden!"
-                     [ngClass]="{ 'rotate-180': openId === section.id }"
-                  ></i>
-               </button>
-
-               @if (openId === section.id && position) {
-                  <button
-                     class="fixed inset-0 z-40 cursor-default"
-                     type="button"
-                     tabindex="-1"
-                     (click)="$openId.set(null)"
-                  ></button>
-
-                  <ul
-                     class="fixed z-50 flex flex-col gap-1 rounded-xl border border-slate-300 bg-white p-2 shadow-lg"
-                     [style.top.px]="position.top"
-                     [style.left.px]="position.left"
-                     [style.min-width.px]="position.width"
+                  <div
+                     class="-mx-1 min-h-0 overflow-hidden px-1 transition-[visibility] duration-300"
+                     [class.max-xl:invisible]="!isExpanded({ id: section.id })"
                   >
-                     @for (option of section.options; track option.id) {
-                        <li *fiAuthorized="option.allowed">
+                     <div class="flex w-full flex-col gap-2 pt-2">
+                        <button
+                           class="group border-contrast text-contrast hover:bg-contrast focus:bg-contrast flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 transition-all hover:text-white focus:text-white max-xl:px-3 max-xl:py-2"
+                           type="button"
+                           (click)="handleToggle({ id: section.id, event: $event })"
+                        >
+                           <span class="flex items-center gap-3">
+                              <i [class]="'bx text-xl max-xl:text-lg ' + section.button.icon"></i>
+                              <span class="text-base max-xl:text-sm">{{ section.button.label | translate }}</span>
+                           </span>
+                           <i
+                              class="bx bx-chevron-right hidden! text-xl transition-transform xl:block!"
+                              [ngClass]="{ 'rotate-180': openId === section.id }"
+                           ></i>
+                           <i
+                              class="bx bx-chevron-down text-xl transition-transform xl:hidden!"
+                              [ngClass]="{ 'rotate-180': openId === section.id }"
+                           ></i>
+                        </button>
+
+                        @if (openId === section.id && position) {
                            <button
-                              class="text-second/80 flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-all hover:bg-slate-200 focus:bg-slate-200"
+                              class="fixed inset-0 z-40 cursor-default"
                               type="button"
-                              (click)="handleSelect({ section: section.id, option: option.id })"
+                              tabindex="-1"
+                              (click)="$openId.set(null)"
+                           ></button>
+
+                           <ul
+                              class="fixed z-50 flex flex-col gap-1 rounded-xl border border-slate-300 bg-white p-2 shadow-lg"
+                              [style.top.px]="position.top"
+                              [style.left.px]="position.left"
+                              [style.min-width.px]="position.width"
                            >
-                              <i [class]="'bx text-xl ' + option.icon"></i>
-                              <span class="text-base">{{ option.label | translate }}</span>
-                           </button>
-                        </li>
-                     }
-                  </ul>
-               }
+                              @for (option of section.options; track option.id) {
+                                 <li *fiAuthorized="option.allowed">
+                                    <button
+                                       class="text-second/80 flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-all hover:bg-slate-200 focus:bg-slate-200"
+                                       type="button"
+                                       (click)="handleSelect({ section: section.id, option: option.id })"
+                                    >
+                                       <i [class]="'bx text-xl max-xl:text-lg ' + option.icon"></i>
+                                       <span class="text-base max-xl:text-sm">{{ option.label | translate }}</span>
+                                    </button>
+                                 </li>
+                              }
+                           </ul>
+                        }
+                     </div>
+                  </div>
+               </div>
             </section>
          } @else if (section.type === 'actions') {
-            <section class="flex w-full flex-col gap-3 rounded-2xl border border-slate-500 p-4">
-               <span class="text-lg font-medium">{{ section.title | translate }}</span>
+            <section class="flex w-full flex-col rounded-2xl border border-slate-500 p-4 max-xl:p-3">
+               <ng-container *ngTemplateOutlet="sectionHeader; context: { $implicit: section, icon: null }" />
 
-               @for (option of section.options; track option.id) {
-                  <ng-container *fiAuthorized="option.allowed">
-                     <button
-                        class="group border-contrast text-contrast hover:bg-contrast focus:bg-contrast flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 transition-all hover:text-white focus:text-white"
-                        type="button"
-                        (click)="handleSelect({ section: section.id, option: option.id })"
-                     >
-                        <span class="flex items-center gap-3">
-                           <i [class]="'bx text-xl ' + option.icon"></i>
-                           <span class="text-base">{{ option.label | translate }}</span>
-                        </span>
-                        @if (option.submenu) {
-                           <i class="bx bx-chevron-right text-xl"></i>
+               <div
+                  class="grid transition-[grid-template-rows] duration-300 ease-in-out max-xl:grid-rows-[0fr] xl:grid-rows-[1fr]"
+                  [class.max-xl:grid-rows-[1fr]]="isExpanded({ id: section.id })"
+               >
+                  <div
+                     class="-mx-1 min-h-0 overflow-hidden px-1 transition-[visibility] duration-300"
+                     [class.max-xl:invisible]="!isExpanded({ id: section.id })"
+                  >
+                     <div class="flex w-full flex-col gap-3 pt-3 max-xl:gap-2 max-xl:pt-2">
+                        @for (option of section.options; track option.id) {
+                           <ng-container *fiAuthorized="option.allowed">
+                              <button
+                                 class="group border-contrast text-contrast hover:bg-contrast focus:bg-contrast flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 transition-all hover:text-white focus:text-white max-xl:px-3 max-xl:py-2"
+                                 type="button"
+                                 (click)="handleSelect({ section: section.id, option: option.id })"
+                              >
+                                 <span class="flex items-center gap-3">
+                                    <i [class]="'bx text-xl max-xl:text-lg ' + option.icon"></i>
+                                    <span class="text-base max-xl:text-sm">{{ option.label | translate }}</span>
+                                 </span>
+                                 @if (option.submenu) {
+                                    <i class="bx bx-chevron-right text-xl"></i>
+                                 }
+                              </button>
+                           </ng-container>
                         }
-                     </button>
-                  </ng-container>
-               }
+                     </div>
+                  </div>
+               </div>
             </section>
          } @else {
-            <section class="flex w-full flex-col gap-3 rounded-2xl border border-slate-500 p-4">
-               <div class="flex w-full items-center justify-between">
-                  <span class="text-lg font-medium">{{ section.title | translate }}</span>
-                  <i [class]="'bx text-second text-2xl ' + section.icon"></i>
-               </div>
+            <section class="flex w-full flex-col rounded-2xl border border-slate-500 p-4 max-xl:p-3">
+               <ng-container *ngTemplateOutlet="sectionHeader; context: { $implicit: section, icon: section.icon }" />
 
-               @for (field of section.fields; track field.id) {
-                  @switch (field.type) {
-                     @case ('checkbox') {
-                        <label
-                           class="flex w-full cursor-pointer items-center gap-2 text-sm"
-                           [for]="section.id + '-' + field.id"
-                        >
-                           <p-checkbox
-                              [inputId]="section.id + '-' + field.id"
-                              [binary]="true"
-                              [ngModel]="value({ section, field }) === 'true'"
-                              (ngModelChange)="handleChange({ section, field, value: $event ? 'true' : '' })"
-                           />
-                           {{ field.label | translate }}
-                        </label>
-                     }
-                     @default {
-                        <div class="flex w-full flex-col gap-1">
-                           <label
-                              class="text-xs"
-                              [for]="section.id + '-' + field.id"
-                              >{{ field.label | translate }}</label
-                           >
-
+               <div
+                  class="grid transition-[grid-template-rows] duration-300 ease-in-out max-xl:grid-rows-[0fr] xl:grid-rows-[1fr]"
+                  [class.max-xl:grid-rows-[1fr]]="isExpanded({ id: section.id })"
+               >
+                  <div
+                     class="-mx-1 min-h-0 overflow-hidden px-1 transition-[visibility] duration-300"
+                     [class.max-xl:invisible]="!isExpanded({ id: section.id })"
+                  >
+                     <div
+                        class="flex w-full flex-col gap-3 pt-3 max-xl:gap-2 max-xl:pt-2 max-xl:text-sm max-xl:[&_.p-inputtext]:py-1.5! max-xl:[&_.p-inputtext]:text-sm! max-xl:[&_.p-multiselect-label]:text-sm! max-xl:[&_.p-select-label]:text-sm!"
+                     >
+                        @for (field of section.fields; track field.id) {
                            @switch (field.type) {
-                              @case ('search') {
-                                 <div class="relative w-full">
-                                    <input
-                                       pInputText
-                                       class="border-contrast! w-full pr-10!"
-                                       autocomplete="off"
-                                       maxlength="128"
-                                       [id]="section.id + '-' + field.id"
-                                       [value]="value({ section, field })"
-                                       (input)="handleInput({ section, field, event: $event })"
-                                       (keydown.enter)="handleApply({ section })"
+                              @case ('checkbox') {
+                                 <label
+                                    class="flex w-full cursor-pointer items-center gap-2 text-sm"
+                                    [for]="section.id + '-' + field.id"
+                                 >
+                                    <p-checkbox
+                                       [inputId]="section.id + '-' + field.id"
+                                       [binary]="true"
+                                       [ngModel]="value({ section, field }) === 'true'"
+                                       (ngModelChange)="handleChange({ section, field, value: $event ? 'true' : '' })"
                                     />
-                                    <i
-                                       class="bx bx-search text-contrast pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xl"
-                                    ></i>
-                                 </div>
+                                    {{ field.label | translate }}
+                                 </label>
                               }
-                              @case ('multiselect') {
-                                 <p-multiselect
-                                    class="border-contrast! w-full"
-                                    styleClass="w-full border-contrast!"
-                                    optionLabel="label"
-                                    optionValue="id"
-                                    appendTo="body"
-                                    display="comma"
-                                    [inputId]="section.id + '-' + field.id"
-                                    [options]="visibleOptions({ options: field.options })"
-                                    [placeholder]="I18N.FILTER_PLACEHOLDER | translate"
-                                    [showToggleAll]="false"
-                                    [showClear]="true"
-                                    [ngModel]="ids({ section, field })"
-                                    (ngModelChange)="handleList({ section, field, ids: $event })"
-                                 >
-                                    <ng-template
-                                       #selectedItems
-                                       let-selected
+                              @default {
+                                 <div class="flex w-full flex-col gap-1">
+                                    <label
+                                       class="text-xs"
+                                       [for]="section.id + '-' + field.id"
+                                       >{{ field.label | translate }}</label
                                     >
-                                       {{ labels({ field, ids: selected }) | translate }}
-                                    </ng-template>
-                                    <ng-template
-                                       #item
-                                       let-option
-                                    >
-                                       {{ option.label | translate }}
-                                    </ng-template>
-                                 </p-multiselect>
-                              }
-                              @case ('borrowers') {
-                                 <p-multiselect
-                                    class="border-contrast! w-full"
-                                    styleClass="w-full border-contrast!"
-                                    optionLabel="fullname"
-                                    optionValue="id"
-                                    appendTo="body"
-                                    display="comma"
-                                    filterBy="fullname,username,curp"
-                                    [inputId]="section.id + '-' + field.id"
-                                    [options]="borrowerOptions({ section, field })"
-                                    [placeholder]="I18N.FILTER_PLACEHOLDER | translate"
-                                    [filter]="true"
-                                    [showToggleAll]="false"
-                                    [showClear]="true"
-                                    [resetFilterOnHide]="true"
-                                    [filterPlaceHolder]="LOANS.BORROWER_SEARCH | translate"
-                                    [emptyFilterMessage]="LOANS.BORROWER_EMPTY | translate"
-                                    [emptyMessage]="LOANS.BORROWER_EMPTY | translate"
-                                    [loading]="$searchingBorrowers()"
-                                    [ngModel]="ids({ section, field })"
-                                    (ngModelChange)="handleList({ section, field, ids: $event })"
-                                    (onFilter)="handleBorrowerSearch($event.filter)"
-                                 >
-                                    <ng-template
-                                       #selectedItems
-                                       let-selected
-                                    >
-                                       {{ borrowerNames({ ids: selected }) }}
-                                    </ng-template>
-                                    <ng-template
-                                       #item
-                                       let-borrower
-                                    >
-                                       <div class="flex flex-col">
-                                          <span>{{ borrower.fullname }}</span>
-                                          <span class="text-xs opacity-70">{{
-                                             borrower.curp || borrower.username
-                                          }}</span>
-                                       </div>
-                                    </ng-template>
-                                 </p-multiselect>
-                              }
-                              @case ('daterange') {
-                                 <p-datepicker
-                                    class="w-full"
-                                    styleClass="w-full"
-                                    inputStyleClass="border-contrast! w-full"
-                                    selectionMode="range"
-                                    dateFormat="dd/mm/yy"
-                                    appendTo="body"
-                                    iconDisplay="input"
-                                    [inputId]="section.id + '-' + field.id"
-                                    [showIcon]="true"
-                                    [showClear]="true"
-                                    [readonlyInput]="true"
-                                    [placeholder]="LOANS.FILTER_DATE_PLACEHOLDER | translate"
-                                    [ngModel]="dates({ section, field })"
-                                    (ngModelChange)="handleDates({ section, field, dates: $event })"
-                                 />
-                              }
-                              @case ('range') {
-                                 <div class="grid w-full grid-cols-2 gap-2">
-                                    @for (index of [0, 1]; track index) {
-                                       <p-inputnumber
-                                          class="w-full"
-                                          mode="decimal"
-                                          locale="en-US"
-                                          inputStyleClass="border-contrast! w-full"
-                                          [inputId]="section.id + '-' + field.id + '-' + index"
-                                          [prefix]="field.unit === 'money' ? '$ ' : ''"
-                                          [suffix]="field.unit === 'percent' ? ' %' : ''"
-                                          [min]="0"
-                                          [minFractionDigits]="0"
-                                          [maxFractionDigits]="
-                                             field.unit === 'integer' ? 0 : field.unit === 'money' ? 2 : 3
-                                          "
-                                          [placeholder]="(index === 0 ? LOANS.RANGE_MIN : LOANS.RANGE_MAX) | translate"
-                                          [ngModel]="bound({ section, field, index })"
-                                          (ngModelChange)="handleBound({ section, field, index, bound: $event })"
-                                       />
+
+                                    @switch (field.type) {
+                                       @case ('search') {
+                                          <div class="relative w-full">
+                                             <input
+                                                pInputText
+                                                class="border-contrast! w-full pr-10!"
+                                                autocomplete="off"
+                                                maxlength="128"
+                                                [id]="section.id + '-' + field.id"
+                                                [value]="value({ section, field })"
+                                                (input)="handleInput({ section, field, event: $event })"
+                                                (keydown.enter)="handleApply({ section })"
+                                             />
+                                             <i
+                                                class="bx bx-search text-contrast pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xl"
+                                             ></i>
+                                          </div>
+                                       }
+                                       @case ('multiselect') {
+                                          <p-multiselect
+                                             class="border-contrast! w-full"
+                                             styleClass="w-full border-contrast!"
+                                             optionLabel="label"
+                                             optionValue="id"
+                                             appendTo="body"
+                                             display="comma"
+                                             [inputId]="section.id + '-' + field.id"
+                                             [options]="visibleOptions({ options: field.options })"
+                                             [placeholder]="I18N.FILTER_PLACEHOLDER | translate"
+                                             [showToggleAll]="false"
+                                             [showClear]="true"
+                                             [ngModel]="ids({ section, field })"
+                                             (ngModelChange)="handleList({ section, field, ids: $event })"
+                                          >
+                                             <ng-template
+                                                #selectedItems
+                                                let-selected
+                                             >
+                                                {{ labels({ field, ids: selected }) | translate }}
+                                             </ng-template>
+                                             <ng-template
+                                                #item
+                                                let-option
+                                             >
+                                                {{ option.label | translate }}
+                                             </ng-template>
+                                          </p-multiselect>
+                                       }
+                                       @case ('borrowers') {
+                                          <p-multiselect
+                                             class="border-contrast! w-full"
+                                             styleClass="w-full border-contrast!"
+                                             optionLabel="fullname"
+                                             optionValue="id"
+                                             appendTo="body"
+                                             display="comma"
+                                             filterBy="fullname,username,curp"
+                                             [inputId]="section.id + '-' + field.id"
+                                             [options]="borrowerOptions({ section, field })"
+                                             [placeholder]="I18N.FILTER_PLACEHOLDER | translate"
+                                             [filter]="true"
+                                             [showToggleAll]="false"
+                                             [showClear]="true"
+                                             [resetFilterOnHide]="true"
+                                             [filterPlaceHolder]="LOANS.BORROWER_SEARCH | translate"
+                                             [emptyFilterMessage]="LOANS.BORROWER_EMPTY | translate"
+                                             [emptyMessage]="LOANS.BORROWER_EMPTY | translate"
+                                             [loading]="$searchingBorrowers()"
+                                             [ngModel]="ids({ section, field })"
+                                             (ngModelChange)="handleList({ section, field, ids: $event })"
+                                             (onFilter)="handleBorrowerSearch($event.filter)"
+                                          >
+                                             <ng-template
+                                                #selectedItems
+                                                let-selected
+                                             >
+                                                {{ borrowerNames({ ids: selected }) }}
+                                             </ng-template>
+                                             <ng-template
+                                                #item
+                                                let-borrower
+                                             >
+                                                <div class="flex flex-col">
+                                                   <span>{{ borrower.fullname }}</span>
+                                                   <span class="text-xs opacity-70">{{
+                                                      borrower.curp || borrower.username
+                                                   }}</span>
+                                                </div>
+                                             </ng-template>
+                                          </p-multiselect>
+                                       }
+                                       @case ('daterange') {
+                                          <p-datepicker
+                                             class="w-full"
+                                             styleClass="w-full"
+                                             inputStyleClass="border-contrast! w-full"
+                                             selectionMode="range"
+                                             dateFormat="dd/mm/yy"
+                                             appendTo="body"
+                                             iconDisplay="input"
+                                             [inputId]="section.id + '-' + field.id"
+                                             [showIcon]="true"
+                                             [showClear]="true"
+                                             [readonlyInput]="true"
+                                             [placeholder]="LOANS.FILTER_DATE_PLACEHOLDER | translate"
+                                             [ngModel]="dates({ section, field })"
+                                             (ngModelChange)="handleDates({ section, field, dates: $event })"
+                                          />
+                                       }
+                                       @case ('range') {
+                                          <div class="grid w-full grid-cols-2 gap-2">
+                                             @for (index of [0, 1]; track index) {
+                                                <p-inputnumber
+                                                   class="w-full"
+                                                   mode="decimal"
+                                                   locale="en-US"
+                                                   inputStyleClass="border-contrast! w-full"
+                                                   [inputId]="section.id + '-' + field.id + '-' + index"
+                                                   [prefix]="field.unit === 'money' ? '$ ' : ''"
+                                                   [suffix]="field.unit === 'percent' ? ' %' : ''"
+                                                   [min]="0"
+                                                   [minFractionDigits]="0"
+                                                   [maxFractionDigits]="
+                                                      field.unit === 'integer' ? 0 : field.unit === 'money' ? 2 : 3
+                                                   "
+                                                   [placeholder]="
+                                                      (index === 0 ? LOANS.RANGE_MIN : LOANS.RANGE_MAX) | translate
+                                                   "
+                                                   [ngModel]="bound({ section, field, index })"
+                                                   (ngModelChange)="
+                                                      handleBound({ section, field, index, bound: $event })
+                                                   "
+                                                   (keydown.enter)="handleApply({ section })"
+                                                />
+                                             }
+                                          </div>
+                                       }
+                                       @default {
+                                          <p-select
+                                             class="border-contrast! w-full"
+                                             styleClass="w-full border-contrast!"
+                                             optionLabel="label"
+                                             optionValue="id"
+                                             appendTo="body"
+                                             [inputId]="section.id + '-' + field.id"
+                                             [options]="visibleOptions({ options: field.options })"
+                                             [placeholder]="I18N.FILTER_PLACEHOLDER | translate"
+                                             [showClear]="true"
+                                             [ngModel]="value({ section, field }) || null"
+                                             (ngModelChange)="handleChange({ section, field, value: $event })"
+                                          >
+                                             <ng-template
+                                                #selectedItem
+                                                let-option
+                                             >
+                                                {{ option.label | translate }}
+                                             </ng-template>
+                                             <ng-template
+                                                #item
+                                                let-option
+                                             >
+                                                {{ option.label | translate }}
+                                             </ng-template>
+                                          </p-select>
+                                       }
                                     }
                                  </div>
                               }
-                              @default {
-                                 <p-select
-                                    class="border-contrast! w-full"
-                                    styleClass="w-full border-contrast!"
-                                    optionLabel="label"
-                                    optionValue="id"
-                                    appendTo="body"
-                                    [inputId]="section.id + '-' + field.id"
-                                    [options]="visibleOptions({ options: field.options })"
-                                    [placeholder]="I18N.FILTER_PLACEHOLDER | translate"
-                                    [showClear]="true"
-                                    [ngModel]="value({ section, field }) || null"
-                                    (ngModelChange)="handleChange({ section, field, value: $event })"
-                                 >
-                                    <ng-template
-                                       #selectedItem
-                                       let-option
-                                    >
-                                       {{ option.label | translate }}
-                                    </ng-template>
-                                    <ng-template
-                                       #item
-                                       let-option
-                                    >
-                                       {{ option.label | translate }}
-                                    </ng-template>
-                                 </p-select>
-                              }
                            }
-                        </div>
-                     }
-                  }
-               }
+                        }
 
-               <div class="flex w-full items-center gap-2 pt-2">
-                  <button
-                     class="flex shrink-0 cursor-pointer items-center justify-center rounded-lg bg-red-500 p-3 text-white transition-all hover:bg-red-600 focus:bg-red-600"
-                     type="button"
-                     [attr.aria-label]="I18N.BUTTON_CLEAR_FILTERS | translate"
-                     (click)="handleClear({ section })"
-                  >
-                     <i class="bx bx-trash text-xl"></i>
-                  </button>
-                  <button
-                     class="bg-second hover:bg-second-light focus:bg-second-light flex-auto cursor-pointer rounded-lg px-6 py-3 text-white transition-all"
-                     type="button"
-                     (click)="handleApply({ section })"
-                  >
-                     {{ I18N.BUTTON_FILTER | translate }}
-                  </button>
+                        <div class="flex w-full items-center gap-2 pt-2">
+                           <button
+                              class="flex shrink-0 cursor-pointer items-center justify-center rounded-lg bg-red-500 p-3 text-white transition-all hover:bg-red-600 focus:bg-red-600 max-xl:p-2"
+                              type="button"
+                              [attr.aria-label]="I18N.BUTTON_CLEAR_FILTERS | translate"
+                              (click)="handleClear({ section })"
+                           >
+                              <i class="bx bx-trash text-xl max-xl:text-lg"></i>
+                           </button>
+                           <button
+                              class="bg-second hover:bg-second-light focus:bg-second-light flex-auto cursor-pointer rounded-lg px-6 py-3 text-white transition-all max-xl:py-2 max-xl:text-sm"
+                              type="button"
+                              (click)="handleApply({ section })"
+                           >
+                              {{ I18N.BUTTON_FILTER | translate }}
+                           </button>
+                        </div>
+                     </div>
+                  </div>
                </div>
             </section>
          }
@@ -365,6 +437,8 @@ export class PrivateSectionsComponent {
    public readonly $searchingBorrowers: Signal<boolean> = computed(() => this._borrowers.searching);
 
    public readonly $openId: WritableSignal<string | null> = signal(null);
+   // sections opened on small screens (all start collapsed, on desktop they are always open)
+   public readonly $expanded: WritableSignal<Record<string, boolean>> = signal({});
    public readonly $position: WritableSignal<{ top: number; left: number; width: number } | null> = signal(null);
 
    public $sections: InputSignal<SidebarSection[]> = input([] as SidebarSection[], { alias: 'sections' });
@@ -448,8 +522,19 @@ export class PrivateSectionsComponent {
       this._sidebar.setValue({ section: section.id, field: field.id, value: value ?? '' });
    }
 
+   public isExpanded({ id }: { id: string }): boolean {
+      return !!this.$expanded()[id];
+   }
+
+   public handleCollapse({ id }: { id: string }): void {
+      this.$openId.set(null);
+      this.$expanded.update((state: Record<string, boolean>) => ({ ...state, [id]: !state[id] }));
+   }
+
    public handleApply({ section }: { section: SidebarFiltersSection }): void {
       this._sidebar.applyFilters({ section: section.id });
+      // on small screens the filters close to show the results
+      this.$expanded.update((state: Record<string, boolean>) => ({ ...state, [section.id]: false }));
    }
 
    public handleClear({ section }: { section: SidebarFiltersSection }): void {

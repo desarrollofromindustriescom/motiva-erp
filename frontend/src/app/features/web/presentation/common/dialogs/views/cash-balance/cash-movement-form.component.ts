@@ -65,7 +65,7 @@ import { FieldErrorsComponent } from '../../../forms/field-errors/field-errors.c
          <div class="flex w-full flex-col items-center gap-2 pt-2 sm:flex-row-reverse sm:justify-start">
             <button
                class="bg-contrast w-full cursor-pointer rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
-               type="button"
+               type="submit"
                [disabled]="$loading()"
                (click)="$save.emit()"
             >

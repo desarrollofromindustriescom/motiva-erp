@@ -92,6 +92,7 @@ export class InvestorDashboardComponent {
    public readonly I18N = DASHBOARD_I18N_KEYS;
    public readonly SETTINGS = SETTINGS_I18N_KEYS;
    public readonly contacts: { icon: string; link: string; text: string }[] = [
+      { icon: 'bx-envelope-alt', link: `mailto:${CONTACT.EMAIL}`, text: CONTACT.EMAIL },
       {
          icon: 'bx-phone',
          link: `tel:${CONTACT.PHONE_NUMBER}`,

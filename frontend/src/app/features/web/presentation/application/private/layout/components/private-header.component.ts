@@ -16,7 +16,7 @@ import { UserProfile } from '../../../../../../../interfaces/user';
       @let navModulesBuffer = $navModulesBuffer();
 
       <header
-         class="bg-second flex w-full shrink-0 items-center justify-between gap-3 rounded-2xl px-3 py-3 sm:px-6 md:py-1 md:pr-1"
+         class="bg-second flex w-full shrink-0 items-center justify-between gap-3 rounded-2xl py-2 pr-2 pl-3 sm:pl-6 md:py-1 md:pr-1"
       >
          <div class="flex min-w-0 items-center gap-3">
             <button
@@ -26,15 +26,15 @@ import { UserProfile } from '../../../../../../../interfaces/user';
             >
                <i class="bx bx-menu text-2xl"></i>
             </button>
-            <h1 class="truncate text-lg font-medium text-white sm:text-xl">
+            <h1 class="relative top-px truncate text-lg font-medium text-white sm:text-xl">
                {{ title(navModulesBuffer[currentModule]) | translate }}
             </h1>
          </div>
          <div class="flex shrink-0 items-center gap-2">
-            <div class="hidden rounded-xl bg-white px-3 py-2 md:block">
+            <div class="rounded-lg bg-white px-2 py-1 md:rounded-xl md:px-3 md:py-2">
                <img
                   [src]="logo"
-                  class="h-12"
+                  class="h-8 md:h-12"
                />
             </div>
          </div>

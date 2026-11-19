@@ -21,6 +21,7 @@ import { PasswordFieldsComponent } from '../../../forms/password-fields/password
          <div class="flex w-full flex-col items-center gap-2 sm:flex-row-reverse sm:justify-start">
             <button
                class="bg-contrast w-full cursor-pointer rounded-lg px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
+               type="submit"
                [disabled]="loading"
                (click)="handleContinue()"
             >
@@ -28,6 +29,7 @@ import { PasswordFieldsComponent } from '../../../forms/password-fields/password
             </button>
             <button
                class="w-full cursor-pointer rounded-lg bg-red-500 px-6 py-2 text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-auto"
+               type="button"
                [disabled]="loading"
                (click)="handleCancel()"
             >
