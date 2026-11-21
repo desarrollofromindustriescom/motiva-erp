@@ -33,11 +33,11 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
       @let $formTree = $form();
 
       <form
-         class="flex flex-col w-full gap-3"
+         class="flex w-full flex-col gap-3"
          (submit)="$event.preventDefault()"
       >
          <div class="flex items-end">
-            <h2 class="w-full text-lg sm:text-xl md:text-2xl text-second transition-all">
+            <h2 class="text-second w-full text-2xl transition-all sm:text-xl md:text-2xl">
                {{ I18N.LOGIN.FORM_TITLE | translate }}
             </h2>
 
@@ -70,7 +70,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
                   [mask]="passwordHidden"
                />
                <p-inputicon
-                  class="cursor-pointer -translate-y-1/2 bx"
+                  class="bx -translate-y-1/2 cursor-pointer"
                   (click)="handlePasswordToggle()"
                   [ngClass]="{
                      'bx-eye': passwordHidden,
@@ -82,7 +82,7 @@ import { LoaderComponent } from '../../../../../common/forms/loader/loader.compo
          </p-iftalabel>
 
          <button
-            class="bg-contrast text-white cursor-pointer disabled:opacity-60 disabled:cursor-auto py-2 px-6 rounded-lg w-full sm:w-fit ml-auto text-sm sm:text-base transition-all"
+            class="bg-contrast ml-auto w-full cursor-pointer rounded-lg px-6 py-2 text-lg text-white transition-all disabled:cursor-auto disabled:opacity-60 sm:w-fit sm:text-base"
             [disabled]="loading"
             (click)="$login.emit()"
          >

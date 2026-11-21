@@ -16,14 +16,14 @@ import { LOGIN_I18N_KEYS } from '../../../../../../../data/repository/login.repo
          <div class="flex flex-col">
             <!-- the picture with the logo is hidden below xl, so the logo goes here -->
             <img
-               class="mb-6 h-16 self-start sm:h-20 xl:hidden"
+               class="mb-6 h-24 self-start sm:h-20 xl:hidden"
                [src]="logo"
                alt="Motiva"
             />
-            <h1 class="text-second text-xl font-bold transition-all sm:text-2xl md:text-4xl">
+            <h1 class="text-second text-5xl font-bold transition-all sm:text-2xl md:text-4xl">
                {{ I18N.TITLE | translate }}
             </h1>
-            <span class="text-main text-xs transition-all sm:text-sm">{{ I18N.SUBTITLE | translate }}</span>
+            <span class="text-main text-base transition-all sm:text-sm">{{ I18N.SUBTITLE | translate }}</span>
          </div>
 
          <ng-content />
@@ -34,7 +34,7 @@ import { LOGIN_I18N_KEYS } from '../../../../../../../data/repository/login.repo
                   <i [class]="'text-main bx text-xl ' + contact.icon"></i>
                   <a
                      [href]="contact.link"
-                     class="text-main text-sm transition-all sm:text-base"
+                     class="text-main text-lg transition-all sm:text-base"
                      >{{ contact.text }}</a
                   >
                </li>
