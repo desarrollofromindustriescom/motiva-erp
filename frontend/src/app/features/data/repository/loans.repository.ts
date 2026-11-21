@@ -12,7 +12,7 @@ import { UserProfile } from '../../../interfaces/user';
 export const AGREEMENT_MIN_WEEKS: number = 25;
 export const AGREEMENT_MAX_WEEKS: number = 100;
 
-export const LOAN_MAX_PAYMENTS: Record<LoanType, number> = { monthly: 3, biweekly: 6, weekly: 13 };
+export const LOAN_MAX_PAYMENTS: Record<LoanType, number> = { monthly: 3, biweekly: 8, weekly: 13 };
 
 // borrowers shown on the selector before searching
 export const LOAN_BORROWERS_PAGE_SIZE: number = 20;

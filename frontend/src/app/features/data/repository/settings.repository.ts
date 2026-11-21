@@ -44,5 +44,5 @@ export const SETTINGS_AGREEMENTS: { slug: string; concept: string }[] = [
 ];
 
 export const SETTINGS_MONTHLY_PERIODS: number = 3;
-export const SETTINGS_BIWEEKLY_PERIODS: number = 6;
+export const SETTINGS_BIWEEKLY_PERIODS: number = 8;
 export const SETTINGS_WEEKLY_PERIODS: number = 13;

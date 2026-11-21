@@ -58,7 +58,7 @@ const (
 	LnTypeBiweekly string = "biweekly"
 	LnTypeMonthly  string = "monthly"
 
-	LnMaxBiweeklyPayments int = 6
+	LnMaxBiweeklyPayments int = 8
 	LnMaxMonthlyPayments  int = 3
 	LnMaxWeeklyPayments   int = 13
 

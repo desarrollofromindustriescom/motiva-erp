@@ -23,8 +23,8 @@ type MonthlySettingsPayload struct {
 }
 
 type BiweeklySettingsPayload struct {
-	Investor []float64 `json:"investor" validate:"required,len=6,dive,percentage,lte=100"`
-	General  []float64 `json:"general" validate:"required,len=6,dive,percentage"`
+	Investor []float64 `json:"investor" validate:"required,len=8,dive,percentage,lte=100"`
+	General  []float64 `json:"general" validate:"required,len=8,dive,percentage"`
 }
 
 type WeeklySettingsPayload struct {
