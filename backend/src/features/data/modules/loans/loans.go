@@ -2048,7 +2048,7 @@ func GetBorrowerSummary(ctx context.Context, userID uuid.UUID) (*controller.Borr
 		return nil, err
 	}
 
-	next := &controller.NextPaymentPreview{Amount: float64(owed) / 100, ExpectedDate: date, PayDayType: loanType}
+	next := &controller.NextPaymentPreview{Amount: float64(owed) / 100, ExpectedDate: controller.Day(date), PayDayType: loanType}
 
 	if loanType == repository.LnTypeMonthly {
 		next.PayDay = date.Day()
@@ -2114,10 +2114,10 @@ func GetCalendar(ctx context.Context) ([]*controller.CalendarDayPreview, error) 
 		item.TotalDebt = float64(total) / 100
 
 		// 1 Monday ... 7 Sunday
-		weekday := int(item.ExpectedDate.Weekday()+6)%7 + 1
+		weekday := int(item.ExpectedDate.Time().Weekday()+6)%7 + 1
 
 		if item.PayDayType == repository.LnTypeMonthly {
-			item.PayDay = item.ExpectedDate.Day()
+			item.PayDay = item.ExpectedDate.Time().Day()
 		} else {
 			item.PayDay = weekday
 		}

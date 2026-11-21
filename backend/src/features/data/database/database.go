@@ -6,7 +6,10 @@ import (
 	"log/slog"
 	"motiva-erp/backend/src/features/data/repository"
 	"os"
+	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -76,6 +79,18 @@ func DBConnection() error {
 	config.MaxConnIdleTime = repository.DBMaxConnIdleTime
 	config.HealthCheckPeriod = repository.DBHealthCheckPeriod
 	config.ConnConfig.ConnectTimeout = repository.DBConnConfigTimeout
+
+	// the timestamp columns have no timezone & hold the wall clock of the business (TZ of the container), so they are read
+	// in that same location instead of UTC, which would send them to the client as another instant (and day)
+	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		conn.TypeMap().RegisterType(&pgtype.Type{
+			Name:  "timestamp",
+			OID:   pgtype.TimestampOID,
+			Codec: &pgtype.TimestampCodec{ScanLocation: time.Local},
+		})
+
+		return nil
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), repository.DBContextTimeout)
 

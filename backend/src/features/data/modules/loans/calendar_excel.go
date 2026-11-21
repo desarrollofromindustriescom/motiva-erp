@@ -146,7 +146,7 @@ func writeCalendarDay(file *excelize.File, sheet string, day *controller.Calenda
 			item.Amount,
 			item.TotalDebt,
 			payDay,
-			item.ExpectedDate.Format("02.01.2006"),
+			item.ExpectedDate.Time().Format("02.01.2006"),
 			phone(item.BorrowerPhone),
 			dash(item.Guarantor),
 			phone(item.GuarantorPhone),

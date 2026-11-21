@@ -7,7 +7,12 @@ services:
          - '${DB_PORT}'
       networks:
          - motiva_net
+      # the timezone of the business: TZ & PGTZ set it on a new volume (initdb) & the -c flag forces it on a volume that
+      # already exists, where postgresql.conf keeps the timezone it was created with
+      command: ['postgres', '-c', 'timezone=America/Mexico_City']
       environment:
+         - TZ=America/Mexico_City
+         - PGTZ=America/Mexico_City
          - POSTGRES_DB=${POSTGRES_DB}
          - POSTGRES_USER=${POSTGRES_USER}
          - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -32,6 +37,7 @@ services:
       networks:
          - motiva_net
       environment:
+         - TZ=America/Mexico_City
          - ENV=${ENV}
          - API_PORT=${API_PORT}
          - DB_HOST=${DB_HOST}

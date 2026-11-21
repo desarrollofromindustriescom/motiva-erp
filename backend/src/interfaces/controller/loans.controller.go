@@ -244,7 +244,7 @@ type LoanPaymentPreview struct {
 	Number       int        `json:"number"`
 	Amount       float64    `json:"amount"`
 	Paid         float64    `json:"paid"`
-	ExpectedDate time.Time  `json:"expected_date"`
+	ExpectedDate Day        `json:"expected_date"`
 	PaidDate     *time.Time `json:"paid_date"`
 	State        string     `json:"state"`
 	// the first payment that isn't paid in full: the only one that can receive a payment
@@ -315,10 +315,10 @@ type MyLoansQueryPayload struct {
  * (1 Monday ... 7 Sunday) on weekly & biweekly loans & the day of the month on monthly ones.
  */
 type NextPaymentPreview struct {
-	Amount       float64   `json:"amount"`
-	ExpectedDate time.Time `json:"expected_date"`
-	PayDayType   string    `json:"pay_day_type"`
-	PayDay       int       `json:"pay_day"`
+	Amount       float64 `json:"amount"`
+	ExpectedDate Day     `json:"expected_date"`
+	PayDayType   string  `json:"pay_day_type"`
+	PayDay       int     `json:"pay_day"`
 }
 
 /**
@@ -348,7 +348,7 @@ type CalendarItemPreview struct {
 	TotalDebt      float64   `json:"total_debt"`
 	PayDayType     string    `json:"pay_day_type"`
 	PayDay         int       `json:"pay_day"`
-	ExpectedDate   time.Time `json:"expected_date"`
+	ExpectedDate   Day       `json:"expected_date"`
 	Overdue        bool      `json:"overdue"`
 }
 
