@@ -11,8 +11,8 @@ export const USER_PROFILE_I18N_KEYS: Record<UserProfile, string> = {
    superadmin: 'USER_PROFILE_SUPERADMIN',
    administrator: 'USER_PROFILE_ADMINISTRATOR',
    manager: 'USER_PROFILE_MANAGER',
-   borrower: 'USER_PROFILE_INVESTOR',
-   investor: 'USER_PROFILE_BORROWER',
+   borrower: 'USER_PROFILE_BORROWER',
+   investor: 'USER_PROFILE_INVESTOR',
 };
 
 export const USER_PROFILE_SEVERITY: Record<UserProfile, TagSeverity> = {
